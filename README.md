@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://docdiff.app"><b>docdiff.app</b></a> ·
-  <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html"><b>Download Standalone HTML (2.3 MB)</b></a> ·
+  <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html"><b>Download Standalone HTML (2.5 MB)</b></a> ·
   free and open source (MIT)
 </p>
 
@@ -61,20 +61,24 @@ Doc Diff is built so that any data protection officer or security auditor can ve
 - **Cross-Format Comparison:** Compare `PDF ↔ PDF`, `DOCX ↔ DOCX`, `PDF ↔ DOCX`, or pasted raw text side by side or in a unified inline view.
 - **Responsive Across Desktop, Laptop, Tablet & Mobile:** Switch seamlessly between **Split (Side-by-Side)** and **Inline (Unified Redline)** view modes. Automatically adapts on tablets (slide-over change drawer) and smartphones (single-column inline redline with `100dvh` viewport sizing).
 - **Clause-Aware Alignment:** Pre-tokenized Needleman-Wunsch dynamic programming with $O(N)$ prefix/suffix trimming aligns moved, inserted, or deleted contract clauses (`§`, `(1)`, `1.1`, `Section`) and coalesces adjacent word, number, and date changes into clean red/green inline highlights.
-- **Synchronized Scrolling & Bi-Directional Hover:** Hovering any clause highlights its counterpart across both panes, draws a smooth Bezier connector across the center gutter, and highlights the corresponding entry in the change list.
-- **Direct Inline Clause Editing & 1-Click Revert (`↺ Original`):** Double-click any clause in the revised or unified pane to edit its text directly in place (`Enter` to apply, `Esc` to cancel) and re-run the diff in `< 5 ms`. Hover any changed clause to click **`↺ Original`** and revert that specific clause back to the original version (`Cmd+Z` / `Ctrl+Z` to undo).
+- **Frosted Glass Floating Action Bar & Single-Scrollbar Sync:** A translucent bottom-mid HUD dock (`backdrop-filter: saturate(190%) blur(18px)`) keeps the change stepper (`↑ 1 / 17 ↓`), "Changes only" (`Nur Änderungen`) filter, and Undo/Redo controls within immediate reach. Both panes stay 100% locked in synchronized scroll with a single outer scrollbar and bi-directional Bezier connectors across the symmetric center gutter.
+- **Delta-Only Change Inspector & Click-to-Jump Rail:** The right side rail extracts only the exact modified tokens (`145.000,00 → 168.500,00`, `12.03.2026 → 18.04.2026`, `schriftlich → in Textform`) with section-aware clause references (`§ 1 (1)`, `§ 2 (1)`), category filter tabs (`Alle`, `Geändert`, `Neu`, `Entfernt`), 1-click jump-to-clause, and inline edit/revert actions.
+- **Direct Inline Clause Editing, 1-Click Revert & Undo/Redo:** Double-click or click **Bearbeiten** (`Edit`) on any clause in the revised or unified pane to edit its text directly in place (`Enter` to apply, `Esc` to cancel) and re-run the diff in `< 5 ms`. Click **Vorher übernehmen** (`Use old`) to revert any clause back to the baseline version, with full **Undo / Redo** history (`Cmd+Z` / `Shift+Cmd+Z` or toolbar buttons).
 - **Multi-Format Client-Side Export:** Export comparisons locally without any server roundtrip:
   - **Copy Final Text:** 1-click copy of the clean, edited target text to the clipboard
+  - **Save Clean Text (`.txt`):** Download the final revised document text
   - **PDF / Print (`Cmd+P` / `Ctrl+P`):** Clean two-column or unified redline print layout
   - **Word Redline (`.doc`):** Formatted Word-compatible redline document with `<del>` strikethroughs and `<ins>` insertions
   - **HTML Report (`.html`):** Standalone, read-only HTML diff report for archiving or sharing
   - **Markdown (`.md`):** Clean Markdown diff summary (`~~deleted~~` / `**inserted**`)
-- **Keyboard-First Navigation:**
+- **Keyboard-First Navigation & System-Aware Theme:**
   - `J` / `K` — Jump to next / previous change
   - `/` — Focus full-text search
   - `C` — Toggle "Changes only" (`Nur Änderungen`) filter
   - `Cmd+Z` / `Ctrl+Z` — Undo inline clause edits or reverts
+  - `Shift+Cmd+Z` / `Ctrl+Y` — Redo inline clause edits or reverts
   - `Esc` — Close menus, drawers, or dialogs
+  - Automatic `prefers-color-scheme` Dark / Light detection with a manual header toggle.
 - **Bilingual UI (`DE` / `EN`):** Auto-detects browser language with an instant `DE` / `EN` toggle in the header bar and built-in sample contracts in both German and English.
 
 ---
