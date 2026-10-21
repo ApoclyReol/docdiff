@@ -13,6 +13,14 @@
   free and open source (MIT)
 </p>
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/screenshot-light.png">
+    <img alt="Doc Diff side-by-side comparison of two contract versions showing clause alignment, inline word redlines, center minimap, and change navigation." src="docs/screenshot-light.png" width="100%">
+  </picture>
+</p>
+
 ---
 
 ## Why Doc Diff?

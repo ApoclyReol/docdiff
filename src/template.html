@@ -1731,9 +1731,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
               wordDiffs: [{ value: pair.left.text }],
             };
           } else {
-            const wordDiffs = window.Diff
-              ? window.Diff.diffWordsWithSpace(pair.left.text, pair.right.text)
-              : [{ value: pair.left.text, removed: true }, { value: pair.right.text, added: true }];
+            const wordDiffs = computeCleanWordDiff(pair.left.text, pair.right.text);
 
             return {
               id: rowId,
@@ -1775,6 +1773,69 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         .replace(/'/g, '&#39;');
     }
 
+    // Tokenizes text keeping numbers/dates (e.g. 145.000,00 or 12.03.2026 or 12,0) intact
+    // and coalesces adjacent removed/added phrases across whitespace for clean redline spans.
+    function computeCleanWordDiff(oldText, newText) {
+      if (!window.Diff) {
+        return [
+          { value: oldText, removed: true },
+          { value: newText, added: true },
+        ];
+      }
+
+      const raw = window.Diff.diffWordsWithSpace(oldText, newText);
+
+      // Step 1: Merge number/date fragments where unchanged '.' or ',' sits between changed digits
+      const mergedNums = [];
+      for (let i = 0; i < raw.length; i++) {
+        const cur = raw[i];
+        if (
+          !cur.added &&
+          !cur.removed &&
+          /^[.,]+$/.test(cur.value) &&
+          mergedNums.length > 0 &&
+          i + 1 < raw.length
+        ) {
+          const prev = mergedNums[mergedNums.length - 1];
+          const next = raw[i + 1];
+          if ((prev.removed || prev.added) && (next.removed || next.added)) {
+            mergedNums.push({ value: cur.value, removed: true });
+            mergedNums.push({ value: cur.value, added: true });
+            continue;
+          }
+        }
+        mergedNums.push({ ...cur });
+      }
+
+      return mergedNums;
+    }
+
+    // Coalesces consecutive changed tokens (and whitespace between two changed tokens) on one side
+    function coalesceSideTokens(sideParts, prop) {
+      const out = [];
+      for (let i = 0; i < sideParts.length; i++) {
+        const cur = sideParts[i];
+        // If cur is pure whitespace between two changed tokens, absorb it into the changed span
+        if (
+          !cur[prop] &&
+          /^\s+$/.test(cur.value) &&
+          out.length > 0 &&
+          out[out.length - 1][prop] &&
+          i + 1 < sideParts.length &&
+          sideParts[i + 1][prop]
+        ) {
+          out[out.length - 1].value += cur.value;
+          continue;
+        }
+        if (cur[prop] && out.length > 0 && out[out.length - 1][prop]) {
+          out[out.length - 1].value += cur.value;
+        } else {
+          out.push({ value: cur.value, [prop]: Boolean(cur[prop]) });
+        }
+      }
+      return out;
+    }
+
     // Entity-safe search highlighting: splits raw text BEFORE escaping so HTML entities are never corrupted
     function escapeAndHighlightText(rawText, query) {
       if (!rawText) return '';
@@ -1807,8 +1868,11 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         return `<del class="tok-del">${escapeAndHighlightText(row.leftBlock.text, query)}</del>`;
       }
       if (row.type === 'modified') {
-        return row.wordDiffs
-          .filter(part => !part.added)
+        const sideParts = coalesceSideTokens(
+          row.wordDiffs.filter(part => !part.added),
+          'removed'
+        );
+        return sideParts
           .map(part => {
             const content = escapeAndHighlightText(part.value, query);
             return part.removed ? `<del class="tok-del">${content}</del>` : content;
@@ -1826,8 +1890,11 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         return `<ins class="tok-ins">${escapeAndHighlightText(row.rightBlock.text, query)}</ins>`;
       }
       if (row.type === 'modified') {
-        return row.wordDiffs
-          .filter(part => !part.removed)
+        const sideParts = coalesceSideTokens(
+          row.wordDiffs.filter(part => !part.removed),
+          'added'
+        );
+        return sideParts
           .map(part => {
             const content = escapeAndHighlightText(part.value, query);
             return part.added ? `<ins class="tok-ins">${content}</ins>` : content;
