@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://tschnorpfeil.github.io/docdiff/"><b>Open Web App</b></a> ·
+  <a href="https://docdiff.app"><b>docdiff.app</b></a> ·
   <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html"><b>Download Standalone HTML (2.3 MB)</b></a> ·
   free and open source (MIT)
 </p>
@@ -65,8 +65,8 @@ Doc Diff is built so that any data protection officer or security auditor can ve
 
 ## Usage
 
-### 1. Hosted Web App (GitHub Pages)
-Open **[tschnorpfeil.github.io/docdiff](https://tschnorpfeil.github.io/docdiff/)** in any modern browser and drop two files onto the left and right panes (or drop two files at once).
+### 1. Hosted Web App (`docdiff.app`)
+Open **[docdiff.app](https://docdiff.app)** in any modern browser and drop two files onto the left and right panes (or drop two files at once).
 
 ### 2. Local Standalone File (`file://` / Air-Gapped / Offline)
 Download **[`DocDiff.html`](https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html)** to your computer, intranet share, or USB drive and double-click it to open in Chrome, Safari, Firefox, or Edge. No internet connection or local web server required.

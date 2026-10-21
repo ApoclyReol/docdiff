@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, follow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Datenschutz – Doc Diff</title>
+  <link rel="stylesheet" href="legal.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="./">Doc Diff</a>
+    <a href="./">Zurück zur Anwendung</a>
+  </header>
+  <main>
+    <h1>Datenschutzerklärung</h1>
+    <p>Diese Datenschutzerklärung informiert über die Verarbeitung personenbezogener Daten beim Aufruf der Website <code>docdiff.app</code> sowie bei der Nutzung der Web-Anwendung Doc Diff.</p>
+
+    <h2>1. Verantwortlicher</h2>
+    <p>Tobias Schnorpfeil<br>Im Palert 5<br>56253 Treis-Karden</p>
+    <p>E-Mail für Datenschutzanfragen: <a href="mailto:tschnorpfeil@gmail.com">tschnorpfeil@gmail.com</a></p>
+
+    <h2>2. Dokumentenvergleich ausschließlich lokal im Browser (Keine Übertragung von Dokumenten)</h2>
+    <p>Wenn du in Doc Diff PDF-, Word- (<code>.docx</code>) oder Textdateien auswählst, per Drag-and-Drop ablegst oder Text einfügst, werden diese Daten <strong>ausschließlich lokal im Arbeitsspeicher (RAM) deines Browsers</strong> gelesen und verglichen. Es findet keinerlei Upload auf einen Server statt. Weder ich noch GitHub oder sonstige Dritte erhalten Zugriff auf deine Dokumente, Vertragstexte oder Dateinamen.</p>
+    <p>Technisch ist dies zusätzlich durch eine strikte Content Security Policy (<code>connect-src 'none'; form-action 'none'</code>) im Kopf der HTML-Datei abgesichert: Dein Browser unterbindet damit technisch jede ausgehende Netzwerkverbindung aus der Anwendung heraus. Alle benötigten Parser (PDF.js, Mammoth.js, jsdiff) sowie die verwendeten Schriftarten (Geist) sind direkt in der einzelnen HTML-Datei eingebettet.</p>
+    <p>Es werden keine Dokumentinhalte oder Einstellungen in <code>localStorage</code>, <code>sessionStorage</code>, <code>IndexedDB</code> oder Cookies gespeichert. Sobald du auf „Leeren“ klickst oder den Browser-Tab schließt, werden sämtliche geladenen Texte aus dem Arbeitsspeicher verworfen.</p>
+
+    <h2>3. Aufruf der Website und Hosting (GitHub Pages)</h2>
+    <p>Wenn du <code>docdiff.app</code> im Browser öffnest (und nicht als lokal gespeicherte Datei <code>DocDiff.html</code> von deiner Festplatte startest), wird die statische HTML-Datei über GitHub Pages ausgeliefert, einen Dienst der GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA. Beim Abruf der Seite überträgt dein Browser technisch notwendige Verbindungsdaten an GitHub (insbesondere IP-Adresse, Zeitpunkt des Abrufs, angeforderte URL sowie Browser- und Betriebssystemkennung). GitHub benötigt diese Daten, um die Website auszuliefern und vor Missbrauch zu schützen, und protokolliert Besucher-IP-Adressen zu Sicherheitszwecken.</p>
+    <p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer sicheren und zuverlässigen Bereitstellung der statischen Website). Ich selbst erhalte von GitHub keine Zugriffsprotokolle. Dabei können Verbindungsdaten in die USA übermittelt werden; GitHub ist unter dem EU-US Data Privacy Framework zertifiziert.</p>
+    <p><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages" rel="noopener noreferrer">Informationen zu GitHub Pages</a> · <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener noreferrer">Datenschutzerklärung von GitHub</a></p>
+
+    <h2>4. Domain und DNS (Cloudflare)</h2>
+    <p>Die Domain <code>docdiff.app</code> wird über Cloudflare, Inc. verwaltet. Cloudflare beantwortet im reinen DNS-Modus (DNS Only) ausschließlich die Namensauflösung, damit dein Browser bzw. der DNS-Resolver deines Internetanbieters die IP-Adresse des GitHub-Pages-Servers ermitteln kann. Der eigentliche Seitenabruf (HTTPS-Verbindung) läuft direkt zu GitHub Pages und nicht über einen Proxy von Cloudflare; Cloudflare setzt auf dieser Website keine Cookies.</p>
+
+    <h2>5. Keine Cookies, keine Tracker, keine Besucherzählung</h2>
+    <p>Doc Diff setzt keine Cookies, verwendet keinen lokalen Browser-Speicher und bindet keinerlei Analyse-, Tracking- oder Zähldienste ein. Es werden keine externen Schriften, Skripte oder Bilder von Drittservern nachgeladen.</p>
+
+    <h2>6. Externe Links</h2>
+    <p>Verweise auf das Quellcode-Repository führen zu GitHub. Erst wenn du einen solchen Link anklickst, verlässt du diese Website. Durch die Einstellung <code>referrer="no-referrer"</code> übermittelt dein Browser dabei keine Referrer-Angabe.</p>
+
+    <h2>7. Kontakt per E-Mail</h2>
+    <p>Wenn du mir eine E-Mail schreibst, verarbeite ich deine E-Mail-Adresse und den Inhalt deiner Nachricht ausschließlich zur Bearbeitung deiner Anfrage (Art. 6 Abs. 1 lit. f DSGVO bzw. Art. 6 Abs. 1 lit. b DSGVO). Mein Postfach wird bei Gmail (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland; Übermittlung in die USA an Google LLC auf Grundlage des EU-US Data Privacy Framework) geführt. Anfragen werden gelöscht, sobald sie abschließend beantwortet sind und keine gesetzlichen Aufbewahrungspflichten bestehen.</p>
+
+    <h2>8. Deine Rechte und Aufsichtsbehörde</h2>
+    <p>Nach Maßgabe der DSGVO hast du das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16 DSGVO), Löschung (Art. 17 DSGVO), Einschränkung der Verarbeitung (Art. 18 DSGVO), Datenübertragbarkeit (Art. 20 DSGVO) sowie Widerspruch gegen Verarbeitungen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO (Art. 21 DSGVO).</p>
+    <p>Zudem besteht ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde. Zuständig für meinen Sitz ist der Landesbeauftragte für den Datenschutz und die Informationsfreiheit Rheinland-Pfalz, Hintere Bleiche 34, 55116 Mainz (<a href="https://www.datenschutz.rlp.de" rel="noopener noreferrer">www.datenschutz.rlp.de</a>).</p>
+    <p>Stand: 21. Oktober 2026.</p>
+  </main>
+  <footer>
+    <a href="./">Doc Diff</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a>
+  </footer>
+</body>
+</html>

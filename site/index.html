@@ -23,6 +23,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
   <meta name="referrer" content="no-referrer" />
   <meta name="color-scheme" content="light dark" />
+  <link rel="canonical" href="https://docdiff.app/" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230058b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M12 3v18'/%3E%3C/svg%3E" />
   <title>Doc Diff</title>
 
   <!-- Standalone Inlined Libraries (PDF.js + PDF Worker + Mammoth DOCX + jsdiff) -->
@@ -1187,9 +1189,9 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       <div class="sidebar-footer">
         <button type="button" class="privacy-status" id="btn-privacy-info">
           <span class="privacy-dot"></span>
-          <span>Offline · CSP Locked</span>
+          <span id="i18n-footer-privacy">Offline · Impressum & Datenschutz</span>
         </button>
-        <span>0 B Upload</span>
+        <span>0 B</span>
       </div>
     </aside>
   </main>
@@ -1286,9 +1288,10 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
         modalRightPh: 'Vergleichstext hier einfügen…',
         cancel: 'Abbrechen',
         compare: 'Vergleichen',
-        privacyTitle: 'Datenschutz & Sicherheitsarchitektur (DSGVO)',
+        footerPrivacy: 'Offline · Impressum & Datenschutz',
+        privacyTitle: 'Datenschutz (DSGVO) & Impressum',
         privacyBodyHtml: `
-          <p><strong>Doc Diff</strong> verarbeitet sämtliche Dokumente ausschließlich lokal im Arbeitsspeicher (RAM) Ihres Browsers. Es findet keinerlei Server-Kommunikation statt.</p>
+          <p><strong>Doc Diff</strong> verarbeitet sämtliche Dokumente ausschließlich lokal im Arbeitsspeicher (RAM) Ihres Browsers. Es findet keinerlei Upload auf einen Server statt.</p>
           <div class="sec-grid">
             <div class="sec-item">
               <div class="sec-item-title">
@@ -1299,17 +1302,18 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
             </div>
             <div class="sec-item">
               <div class="sec-item-title">
-                <span>2. Keine Drittanbieter & Keine CDNs</span>
+                <span>2. Keine Drittanbieter, Keine Cookies, Kein Storage</span>
                 <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">100 % Self-Contained</span>
               </div>
-              <div>Alle Parser (PDF.js, Mammoth DOCX, jsdiff) sowie die Geist-Schriften sind direkt in dieser Datei eingebettet. Keine externen Font- oder Script-Aufrufe, keine IP-Weitergabe.</div>
+              <div>Alle Parser (PDF.js, Mammoth DOCX, jsdiff) sowie die Geist-Schriften sind direkt in dieser Datei eingebettet. Keine Cookies, kein Tracking, keine Speicherung in <code>localStorage</code> oder <code>IndexedDB</code>.</div>
             </div>
             <div class="sec-item">
               <div class="sec-item-title">
-                <span>3. Flüchtiger Arbeitsspeicher (Zero Persistence)</span>
-                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">Kein Storage / Keine Cookies</span>
+                <span>3. Impressum (§ 5 DDG) & Verantwortlicher</span>
+                <span class="font-mono" style="font-size:10px;color:hsl(var(--muted-foreground));">MIT Open Source</span>
               </div>
-              <div>Vertragsinhalte werden weder in <code>localStorage</code> noch in <code>IndexedDB</code> oder Cookies gespeichert. Mit Klick auf „Leeren“ oder dem Schließen des Tabs werden alle Daten sofort verworfen.</div>
+              <div>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden · <a href="mailto:tschnorpfeil@gmail.com" style="color:hsl(var(--primary-ink));">tschnorpfeil@gmail.com</a><br/>
+              <a href="impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="datenschutz.html" style="color:hsl(var(--primary-ink));">Datenschutzerklärung</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub Quellcode</a></div>
             </div>
           </div>
         `,
@@ -1366,7 +1370,8 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
         modalRightPh: 'Paste revised text here…',
         cancel: 'Cancel',
         compare: 'Compare',
-        privacyTitle: 'Privacy & Security Architecture (GDPR)',
+        footerPrivacy: 'Offline · Legal & Privacy',
+        privacyTitle: 'Privacy (GDPR) & Legal Notice',
         privacyBodyHtml: `
           <p><strong>Doc Diff</strong> processes all documents strictly inside your browser's volatile memory (RAM). No file or text ever leaves your device.</p>
           <div class="sec-grid">
@@ -1379,17 +1384,18 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
             </div>
             <div class="sec-item">
               <div class="sec-item-title">
-                <span>2. Zero Third Parties & Zero CDNs</span>
+                <span>2. Zero Third Parties, Zero Cookies, Zero Storage</span>
                 <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">100% Self-Contained</span>
               </div>
-              <div>All parsers (PDF.js, Mammoth DOCX, jsdiff) and Geist fonts are embedded directly inside this single HTML file. Zero external script or font calls.</div>
+              <div>All parsers (PDF.js, Mammoth DOCX, jsdiff) and Geist fonts are embedded directly inside this single HTML file. No cookies, no analytics, no <code>localStorage</code> or <code>IndexedDB</code> writes.</div>
             </div>
             <div class="sec-item">
               <div class="sec-item-title">
-                <span>3. Volatile Memory Only (Zero Persistence)</span>
-                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">No Storage / No Cookies</span>
+                <span>3. Legal Notice (§ 5 DDG) & Controller</span>
+                <span class="font-mono" style="font-size:10px;color:hsl(var(--muted-foreground));">MIT Open Source</span>
               </div>
-              <div>Document text is never written to <code>localStorage</code>, <code>IndexedDB</code>, or cookies. Clicking "Clear" or closing the tab immediately discards all data.</div>
+              <div>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden, Germany · <a href="mailto:tschnorpfeil@gmail.com" style="color:hsl(var(--primary-ink));">tschnorpfeil@gmail.com</a><br/>
+              <a href="impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="datenschutz.html" style="color:hsl(var(--primary-ink));">Privacy Policy (DE)</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub Source</a></div>
             </div>
           </div>
         `,
@@ -1663,6 +1669,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
       document.getElementById('i18n-privacy-title').textContent = t('privacyTitle');
       document.getElementById('i18n-privacy-body').innerHTML = t('privacyBodyHtml');
+      document.getElementById('i18n-footer-privacy').textContent = t('footerPrivacy');
     }
 
     function extractClauseRef(line, fallbackIndex) {
