@@ -1188,10 +1188,9 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       <div class="sidebar-list" id="sidebar-list"></div>
       <div class="sidebar-footer">
         <button type="button" class="privacy-status" id="btn-privacy-info">
-          <span class="privacy-dot"></span>
-          <span id="i18n-footer-privacy">Offline · Impressum & Datenschutz</span>
+          <span id="i18n-footer-privacy">Impressum & Datenschutz</span>
         </button>
-        <span>0 B</span>
+        <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;">GitHub</a>
       </div>
     </aside>
   </main>
@@ -1288,34 +1287,12 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
         modalRightPh: 'Vergleichstext hier einfügen…',
         cancel: 'Abbrechen',
         compare: 'Vergleichen',
-        footerPrivacy: 'Offline · Impressum & Datenschutz',
-        privacyTitle: 'Datenschutz (DSGVO) & Impressum',
+        footerPrivacy: 'Impressum & Datenschutz',
+        privacyTitle: 'Impressum & Datenschutz',
         privacyBodyHtml: `
-          <p><strong>Doc Diff</strong> verarbeitet sämtliche Dokumente ausschließlich lokal im Arbeitsspeicher (RAM) Ihres Browsers. Es findet keinerlei Upload auf einen Server statt.</p>
-          <div class="sec-grid">
-            <div class="sec-item">
-              <div class="sec-item-title">
-                <span>1. Content Security Policy (Browser-Lock)</span>
-                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">connect-src 'none'</span>
-              </div>
-              <div>Durch die strikte CSP-Richtlinie im HTML-Header unterbindet der Browser technisch jegliche ausgehenden Netzwerkverbindungen (<code>fetch</code>, <code>XHR</code>, <code>WebSocket</code>, <code>sendBeacon</code>).</div>
-            </div>
-            <div class="sec-item">
-              <div class="sec-item-title">
-                <span>2. Keine Drittanbieter, Keine Cookies, Kein Storage</span>
-                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">100 % Self-Contained</span>
-              </div>
-              <div>Alle Parser (PDF.js, Mammoth DOCX, jsdiff) sowie die Geist-Schriften sind direkt in dieser Datei eingebettet. Keine Cookies, kein Tracking, keine Speicherung in <code>localStorage</code> oder <code>IndexedDB</code>.</div>
-            </div>
-            <div class="sec-item">
-              <div class="sec-item-title">
-                <span>3. Impressum (§ 5 DDG) & Verantwortlicher</span>
-                <span class="font-mono" style="font-size:10px;color:hsl(var(--muted-foreground));">MIT Open Source</span>
-              </div>
-              <div>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden · <a href="mailto:tschnorpfeil@gmail.com" style="color:hsl(var(--primary-ink));">tschnorpfeil@gmail.com</a><br/>
-              <a href="impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="datenschutz.html" style="color:hsl(var(--primary-ink));">Datenschutzerklärung</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub Quellcode</a></div>
-            </div>
-          </div>
+          <p><strong>Impressum (§ 5 DDG):</strong><br/>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden · <a href="mailto:tschnorpfeil@gmail.com" style="color:hsl(var(--primary-ink));">tschnorpfeil@gmail.com</a></p>
+          <p><strong>Datenschutz:</strong><br/>Alle Dateien und Texte werden ausschließlich lokal im Arbeitsspeicher Ihres Browsers verarbeitet. Es werden keine Dokumente hochgeladen, keine Cookies gesetzt und keine Tracker genutzt. Beim Aufruf über <code>docdiff.app</code> werden technisch notwendige Verbindungsdaten durch GitHub Pages (GitHub, Inc., USA) und Cloudflare DNS verarbeitet (Art. 6 Abs. 1 lit. f DSGVO).</p>
+          <p><a href="impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="datenschutz.html" style="color:hsl(var(--primary-ink));">Datenschutz</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub</a></p>
         `,
         sampleLeftName: 'Mustervertrag_v1_Original.docx',
         sampleRightName: 'Mustervertrag_v2_Vergleich.docx',
@@ -1370,34 +1347,12 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
         modalRightPh: 'Paste revised text here…',
         cancel: 'Cancel',
         compare: 'Compare',
-        footerPrivacy: 'Offline · Legal & Privacy',
-        privacyTitle: 'Privacy (GDPR) & Legal Notice',
+        footerPrivacy: 'Legal & Privacy',
+        privacyTitle: 'Legal Notice & Privacy',
         privacyBodyHtml: `
-          <p><strong>Doc Diff</strong> processes all documents strictly inside your browser's volatile memory (RAM). No file or text ever leaves your device.</p>
-          <div class="sec-grid">
-            <div class="sec-item">
-              <div class="sec-item-title">
-                <span>1. Content Security Policy (Browser Lock)</span>
-                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">connect-src 'none'</span>
-              </div>
-              <div>Enforced in the HTML head: the browser engine itself blocks any outbound network request (<code>fetch</code>, <code>XHR</code>, <code>WebSocket</code>, <code>sendBeacon</code>).</div>
-            </div>
-            <div class="sec-item">
-              <div class="sec-item-title">
-                <span>2. Zero Third Parties, Zero Cookies, Zero Storage</span>
-                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">100% Self-Contained</span>
-              </div>
-              <div>All parsers (PDF.js, Mammoth DOCX, jsdiff) and Geist fonts are embedded directly inside this single HTML file. No cookies, no analytics, no <code>localStorage</code> or <code>IndexedDB</code> writes.</div>
-            </div>
-            <div class="sec-item">
-              <div class="sec-item-title">
-                <span>3. Legal Notice (§ 5 DDG) & Controller</span>
-                <span class="font-mono" style="font-size:10px;color:hsl(var(--muted-foreground));">MIT Open Source</span>
-              </div>
-              <div>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden, Germany · <a href="mailto:tschnorpfeil@gmail.com" style="color:hsl(var(--primary-ink));">tschnorpfeil@gmail.com</a><br/>
-              <a href="impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="datenschutz.html" style="color:hsl(var(--primary-ink));">Privacy Policy (DE)</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub Source</a></div>
-            </div>
-          </div>
+          <p><strong>Legal Notice (§ 5 DDG):</strong><br/>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden, Germany · <a href="mailto:tschnorpfeil@gmail.com" style="color:hsl(var(--primary-ink));">tschnorpfeil@gmail.com</a></p>
+          <p><strong>Privacy:</strong><br/>All files and texts are processed strictly locally in your browser's memory. No documents are uploaded, no cookies are set, and no analytics are used. When accessed via <code>docdiff.app</code>, standard connection metadata (IP address, timestamp, user agent) is processed by GitHub Pages (GitHub, Inc., USA) and Cloudflare DNS (Art. 6(1)(f) GDPR).</p>
+          <p><a href="impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="datenschutz.html" style="color:hsl(var(--primary-ink));">Privacy Policy</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub</a></p>
         `,
         sampleLeftName: 'Master_Agreement_v1_Original.docx',
         sampleRightName: 'Master_Agreement_v2_Revised.docx',
