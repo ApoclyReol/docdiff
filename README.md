@@ -58,15 +58,20 @@ Doc Diff is built so that any data protection officer or security auditor can ve
 
 ## Key Features
 
-- **Cross-Format Comparison:** Compare `PDF ↔ PDF`, `DOCX ↔ DOCX`, `PDF ↔ DOCX`, or pasted raw text side by side.
-- **Clause-Aware Alignment:** Pre-tokenized Needleman-Wunsch dynamic programming with $O(N)$ prefix/suffix trimming aligns moved, inserted, or deleted contract clauses (`§`, `(1)`, `1.1`, `Section`) and highlights inline word additions and deletions.
+- **Cross-Format Comparison:** Compare `PDF ↔ PDF`, `DOCX ↔ DOCX`, `PDF ↔ DOCX`, or pasted raw text side by side or in a unified inline view.
+- **Responsive Across Desktop, Laptop, Tablet & Mobile:** Switch seamlessly between **Split (Side-by-Side)** and **Inline (Unified Redline)** view modes. Automatically adapts on tablets (slide-over change drawer) and smartphones (single-column inline redline with `100dvh` viewport sizing).
+- **Clause-Aware Alignment:** Pre-tokenized Needleman-Wunsch dynamic programming with $O(N)$ prefix/suffix trimming aligns moved, inserted, or deleted contract clauses (`§`, `(1)`, `1.1`, `Section`) and coalesces adjacent word, number, and date changes into clean red/green inline highlights.
 - **Synchronized Scrolling & Bi-Directional Hover:** Hovering any clause highlights its counterpart across both panes, draws a smooth Bezier connector across the center gutter, and highlights the corresponding entry in the change list.
+- **Multi-Format Client-Side Export:** Export comparisons locally without any server roundtrip:
+  - **PDF / Print (`Cmd+P` / `Ctrl+P`):** Clean two-column or unified redline print layout
+  - **Word Redline (`.doc`):** Formatted Word-compatible redline document with `<del>` strikethroughs and `<ins>` insertions
+  - **HTML Report (`.html`):** Standalone, read-only HTML diff report for archiving or sharing
+  - **Markdown (`.md`):** Clean Markdown diff summary (`~~deleted~~` / `**inserted**`)
 - **Keyboard-First Navigation:**
   - `J` / `K` — Jump to next / previous change
   - `/` — Focus full-text search
   - `C` — Toggle "Changes only" (`Nur Änderungen`) filter
-  - `Esc` — Close dialogs or blur search
-- **Print & PDF Redline Export:** Built-in `@media print` stylesheet for saving clean two-column PDF redlines via the browser's native print dialog (`Cmd+P` / `Ctrl+P`).
+  - `Esc` — Close menus, drawers, or dialogs
 - **Bilingual UI (`DE` / `EN`):** Auto-detects browser language with an instant `DE` / `EN` toggle in the header bar and built-in sample contracts in both German and English.
 
 ---

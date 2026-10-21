@@ -2,6 +2,7 @@
 <!--
   Doc Diff — 100% Client-Side Document Comparison (PDF / DOCX / TXT)
   Copyright (c) 2026 Tobias Schnorpfeil (MIT License)
+  Website: https://docdiff.app
   Repository: https://github.com/tschnorpfeil/docdiff
 
   Security & Privacy Architecture:
@@ -18,7 +19,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <!-- Hardened Content Security Policy: Physically blocks all outbound network connections (connect-src 'none') -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
   <meta name="referrer" content="no-referrer" />
@@ -141,6 +142,7 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
 
       --radius-md: 0.25rem;         /* 4px */
       --radius-sm: 0.125rem;        /* 2px */
+      --radius-lg: 0.5rem;          /* 8px */
       --radius-xl: 0.75rem;         /* 12px */
 
       --background: 0 0% 98%;
@@ -182,6 +184,7 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       --warning-ton-2: 41.9 100.0% 94.5%;
 
       --elev-1: 0px 2px 2px #0000000a;
+      --elev-3: 0px 1px 1px #00000005, 0px 4px 8px #0000000a, 0px 12px 20px #0000000f;
       --elev-4: 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f;
       --overlay: rgb(0 0 0 / 0.8);
     }
@@ -226,6 +229,7 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       --warning-ton-2: 37.0 78.0% 15.0%;
 
       --elev-1: 0px 2px 2px #00000040;
+      --elev-3: 0 0 0 1px hsl(0 0% 18%), 0px 8px 20px #00000080;
       --elev-4: 0 0 0 1px hsl(0 0% 18%), 0px 16px 32px #00000080;
       --overlay: rgb(0 0 0 / 0.85);
     }
@@ -238,6 +242,7 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
 
     html, body {
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
       font-family: var(--font-sans);
       font-size: var(--text-xs);
@@ -273,14 +278,16 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 6px;
       user-select: none;
+      position: relative;
+      z-index: 50;
     }
 
     .header-cluster {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       min-width: 0;
     }
 
@@ -382,12 +389,101 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       padding: 0;
     }
 
+    /* Segmented View Mode Pill (Split / Inline) */
+    .seg-group {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 2px;
+      border-radius: var(--radius-md);
+      background: hsl(var(--ton-1));
+      box-shadow: inset 0 0 0 1px var(--kante-200);
+      flex-shrink: 0;
+    }
+    .seg-btn {
+      height: 22px;
+      padding: 0 7px;
+      border-radius: 3px;
+      border: 0;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      font-family: var(--font-sans);
+      font-size: var(--text-2xs);
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 100ms ease-out, color 100ms ease-out;
+    }
+    .seg-btn:hover {
+      color: hsl(var(--foreground));
+    }
+    .seg-btn[aria-pressed="true"] {
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      font-weight: 600;
+      box-shadow: 0 0 0 1px var(--kante-200), var(--elev-1);
+    }
+
+    /* Export Dropdown Menu */
+    .dropdown-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 210px;
+      padding: 4px;
+      background: hsl(var(--card));
+      border-radius: var(--radius-lg);
+      box-shadow: 0 0 0 1px hsl(var(--border)), var(--elev-3);
+      display: none;
+      flex-direction: column;
+      gap: 1px;
+      z-index: 100;
+    }
+    .dropdown-menu.is-open {
+      display: flex;
+    }
+    .dropdown-item {
+      width: 100%;
+      padding: 6px 8px;
+      border: 0;
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: hsl(var(--foreground));
+      font-family: var(--font-sans);
+      font-size: var(--text-xs);
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .dropdown-item:hover {
+      background: hsl(var(--ton-2));
+    }
+    .dropdown-item-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .dropdown-ext {
+      font-family: var(--font-mono);
+      font-size: var(--text-4xs);
+      color: hsl(var(--muted-foreground));
+    }
+
     /* Search Box */
     .search-box {
       position: relative;
       display: flex;
       align-items: center;
-      width: 152px;
+      width: 144px;
       height: 26px;
       background: hsl(var(--card));
       border-radius: var(--radius-md);
@@ -397,7 +493,7 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       transition: width 120ms ease-out, box-shadow 120ms ease-out;
     }
     .search-box:focus-within {
-      width: 192px;
+      width: 184px;
       box-shadow: inset 0 0 0 1.5px hsl(var(--ring));
     }
     .search-box input {
@@ -433,6 +529,12 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       user-select: none;
     }
     body.sidebar-collapsed .col-bars {
+      grid-template-columns: 1fr 24px 1fr 0px;
+    }
+    body.view-inline .col-bars {
+      grid-template-columns: 1fr 24px 1fr 240px;
+    }
+    body.view-inline.sidebar-collapsed .col-bars {
       grid-template-columns: 1fr 24px 1fr 0px;
     }
 
@@ -497,9 +599,10 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       overflow: hidden;
     }
 
-    /* ── 3. Main Split Workspace ───────────────────────────────────────────── */
+    /* ── 3. Main Split / Inline Workspace ──────────────────────────────────── */
     .workspace {
       height: calc(100vh - 72px);
+      height: calc(100dvh - 72px);
       display: grid;
       grid-template-columns: 1fr 24px 1fr 240px;
       position: relative;
@@ -507,6 +610,32 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
     }
     body.sidebar-collapsed .workspace {
       grid-template-columns: 1fr 24px 1fr 0px;
+    }
+
+    /* Unified Inline View Mode */
+    .doc-pane-unified {
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px 20px 80px 20px;
+      position: relative;
+      border-right: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+    }
+    body.view-inline .workspace {
+      grid-template-columns: 1fr 240px;
+    }
+    body.view-inline.sidebar-collapsed .workspace {
+      grid-template-columns: 1fr 0px;
+    }
+    body.view-inline .doc-pane-left,
+    body.view-inline .doc-pane-right,
+    body.view-inline .center-gutter {
+      display: none;
+    }
+    body.view-inline .doc-pane-unified {
+      display: block;
     }
 
     .doc-pane {
@@ -526,8 +655,8 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       top: 0;
       left: 0;
       right: 0;
-      height: calc(100vh - 104px);
-      margin-bottom: calc(-100vh + 104px);
+      height: calc(100dvh - 104px);
+      margin-bottom: calc(-100dvh + 104px);
       z-index: 30;
       background: hsl(var(--primary-ton-1) / 0.92);
       border: 1.5px dashed hsl(var(--primary));
@@ -560,6 +689,9 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       display: flex;
       flex-direction: column;
       min-height: 100%;
+    }
+    .doc-pane-unified .doc-sheet {
+      max-width: 780px;
     }
 
     /* ── PRIME Empty State Pattern ─────────────────────────────────────────── */
@@ -850,13 +982,6 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
     .privacy-status:hover {
       color: hsl(var(--foreground));
     }
-    .privacy-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 9999px;
-      background: hsl(var(--success));
-      flex-shrink: 0;
-    }
 
     .nav-item {
       padding: 6px 8px;
@@ -943,25 +1068,6 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       line-height: 1.55;
       color: hsl(var(--muted-foreground));
     }
-    .sec-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-    }
-    .sec-item {
-      padding: 10px 12px;
-      border-radius: var(--radius-md);
-      background: hsl(var(--ton-1));
-      box-shadow: inset 0 0 0 1px var(--kante-200);
-    }
-    .sec-item-title {
-      font-weight: 600;
-      color: hsl(var(--foreground));
-      margin-bottom: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
     .dialog-col {
       display: flex;
       flex-direction: column;
@@ -971,7 +1077,7 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
     }
     .dialog-textarea {
       width: 100%;
-      height: min(340px, 55vh);
+      height: min(340px, 55dvh);
       padding: 8px 10px;
       background: hsl(var(--card));
       color: hsl(var(--foreground));
@@ -998,19 +1104,102 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       gap: 8px;
     }
 
-    /* ── Responsive & Print Hardening ──────────────────────────────────────── */
-    @media (max-width: 960px) {
-      .col-bars, .workspace {
-        grid-template-columns: 1fr 16px 1fr 0px !important;
-      }
-      .sidebar-panel, .col-sidebar-head {
-        display: none !important;
+    /* ── Responsive Tiers: Laptop (<= 1120px), Tablet (<= 960px), Mobile (<= 680px) */
+    @media (max-width: 1120px) {
+      #btn-sync-scroll {
+        display: none;
       }
       .search-box {
-        width: 115px;
+        width: 120px;
       }
       .search-box:focus-within {
-        width: 145px;
+        width: 150px;
+      }
+    }
+
+    @media (max-width: 960px) {
+      /* On Tablet: Sidebar becomes a slide-over drawer on the right */
+      .col-bars {
+        grid-template-columns: 1fr 20px 1fr !important;
+      }
+      .col-sidebar-head {
+        display: none !important;
+      }
+      .workspace,
+      body.sidebar-collapsed .workspace {
+        grid-template-columns: 1fr 20px 1fr !important;
+      }
+      body.view-inline .workspace,
+      body.view-inline.sidebar-collapsed .workspace {
+        grid-template-columns: 1fr !important;
+      }
+      .sidebar-panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(280px, 84vw);
+        z-index: 40;
+        border-left: 1px solid hsl(var(--border));
+        box-shadow: var(--elev-4);
+        transition: transform 150ms ease-out;
+      }
+      body.sidebar-collapsed .sidebar-panel {
+        transform: translateX(105%);
+        pointer-events: none;
+      }
+      .doc-pane, .doc-pane-unified {
+        padding: 12px 14px 64px 14px;
+      }
+    }
+
+    @media (max-width: 680px) {
+      /* On Mobile: Compact two-row header & full-width readable panes */
+      .header-bar {
+        height: auto;
+        min-height: 40px;
+        padding: 6px 10px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .header-cluster {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .search-box {
+        width: 108px;
+      }
+      .search-box:focus-within {
+        width: 136px;
+      }
+      .kbd-hint, #i18n-changes-label {
+        display: none;
+      }
+      .col-bars {
+        height: auto;
+        min-height: 56px;
+        grid-template-columns: 1fr !important;
+      }
+      .col-bars > div:nth-child(2) {
+        display: none !important;
+      }
+      .col-bar {
+        height: 28px;
+        padding: 0 10px;
+        border-right: 0;
+        border-bottom: 1px solid hsl(var(--border));
+      }
+      .col-bar:last-of-type {
+        border-bottom: 0;
+      }
+      .workspace {
+        height: calc(100dvh - 104px);
+      }
+      .dialog-body {
+        grid-template-columns: 1fr;
+      }
+      .dialog-textarea {
+        height: 180px;
       }
     }
 
@@ -1034,7 +1223,10 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
       }
-      .doc-pane {
+      body.view-inline .workspace {
+        grid-template-columns: 1fr !important;
+      }
+      .doc-pane, .doc-pane-unified {
         height: auto !important;
         overflow: visible !important;
         padding: 8px 12px !important;
@@ -1079,6 +1271,16 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
 
       <div class="divider-v"></div>
 
+      <!-- View Mode Toggle: Split (Side-by-Side) vs. Inline (Unified Redline) -->
+      <div class="seg-group" role="group" aria-label="View mode">
+        <button type="button" class="seg-btn" id="btn-mode-split" aria-pressed="true">
+          <span>Split</span>
+        </button>
+        <button type="button" class="seg-btn" id="btn-mode-inline" aria-pressed="false">
+          <span>Inline</span>
+        </button>
+      </div>
+
       <button type="button" class="btn" id="btn-only-changes" aria-pressed="false">
         <span id="i18n-btn-only-changes">Nur Änderungen</span>
       </button>
@@ -1091,9 +1293,43 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
         <span id="i18n-btn-text">Text</span>
       </button>
 
-      <button type="button" class="btn btn-icon btn-ghost" id="btn-print" title="Print / PDF">
-        <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
-      </button>
+      <!-- Multi-Format Export Dropdown -->
+      <div class="dropdown-wrap" id="export-dropdown-wrap">
+        <button type="button" class="btn" id="btn-export-menu" aria-expanded="false">
+          <svg class="icon" style="width:12px;height:12px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span id="i18n-btn-export">Export</span>
+        </button>
+        <div class="dropdown-menu" id="export-menu" role="menu">
+          <button type="button" class="dropdown-item" data-export="print" role="menuitem">
+            <span class="dropdown-item-left">
+              <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+              <span id="i18n-exp-pdf">PDF / Drucken</span>
+            </span>
+            <span class="dropdown-ext">PDF</span>
+          </button>
+          <button type="button" class="dropdown-item" data-export="word" role="menuitem">
+            <span class="dropdown-item-left">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span id="i18n-exp-word">Word Redline</span>
+            </span>
+            <span class="dropdown-ext">.doc</span>
+          </button>
+          <button type="button" class="dropdown-item" data-export="html" role="menuitem">
+            <span class="dropdown-item-left">
+              <svg class="icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <span id="i18n-exp-html">HTML Diff-Report</span>
+            </span>
+            <span class="dropdown-ext">.html</span>
+          </button>
+          <button type="button" class="dropdown-item" data-export="md" role="menuitem">
+            <span class="dropdown-item-left">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span id="i18n-exp-md">Markdown Bericht</span>
+            </span>
+            <span class="dropdown-ext">.md</span>
+          </button>
+        </div>
+      </div>
 
       <button type="button" class="btn btn-ghost" id="btn-clear">
         <span id="i18n-btn-clear">Leeren</span>
@@ -1184,6 +1420,11 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
       <div class="doc-sheet" id="sheet-right"></div>
     </section>
 
+    <!-- Unified Inline Redline Pane -->
+    <section class="doc-pane-unified" id="pane-unified">
+      <div class="doc-sheet" id="sheet-unified"></div>
+    </section>
+
     <aside class="sidebar-panel" id="sidebar">
       <div class="sidebar-list" id="sidebar-list"></div>
       <div class="sidebar-footer">
@@ -1219,10 +1460,10 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
     </div>
   </dialog>
 
-  <!-- ── PRIVACY & ARCHITECTURE MODAL ───────────────────────────────────────── -->
+  <!-- ── PRIVACY & LEGAL MODAL ──────────────────────────────────────────────── -->
   <dialog class="prime-dialog dialog-sm" id="privacy-modal">
     <div class="dialog-header">
-      <span id="i18n-privacy-title">Datenschutz & Sicherheitsarchitektur (DSGVO)</span>
+      <span id="i18n-privacy-title">Impressum & Datenschutz</span>
       <button type="button" class="btn btn-icon btn-ghost" id="btn-close-privacy" aria-label="Close">
         <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
@@ -1247,7 +1488,11 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
         syncTitle: 'Parallel-Scrollen ein/aus',
         textBtn: 'Text',
         textBtnTitle: 'Text direkt einfügen',
-        printTitle: 'Vergleich drucken / als PDF sichern',
+        exportBtn: 'Export',
+        expPdf: 'PDF / Drucken',
+        expWord: 'Word Redline',
+        expHtml: 'HTML Diff-Report',
+        expMd: 'Markdown Bericht',
         clearBtn: 'Leeren',
         clearBtnTitle: 'Alle Dokumente aus dem Arbeitsspeicher entfernen',
         themeTitle: 'Hell / Dunkel umschalten',
@@ -1307,7 +1552,11 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
         syncTitle: 'Toggle synchronized scrolling',
         textBtn: 'Text',
         textBtnTitle: 'Paste text directly',
-        printTitle: 'Print comparison / Save as PDF',
+        exportBtn: 'Export',
+        expPdf: 'PDF / Print',
+        expWord: 'Word Redline',
+        expHtml: 'HTML Diff Report',
+        expMd: 'Markdown Report',
         clearBtn: 'Clear',
         clearBtnTitle: 'Wipe all documents from memory',
         themeTitle: 'Toggle light / dark theme',
@@ -1557,8 +1806,12 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         ? 'de'
         : 'en';
 
+    const isMobileViewport = typeof window !== 'undefined' && window.innerWidth <= 680;
+    const isTabletOrSmaller = typeof window !== 'undefined' && window.innerWidth <= 960;
+
     const state = {
       lang: initialLang,
+      viewMode: isMobileViewport ? 'inline' : 'split',
       leftText: '',
       rightText: '',
       leftName: '',
@@ -1581,8 +1834,10 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
     const paneLeft = document.getElementById('pane-left');
     const paneRight = document.getElementById('pane-right');
+    const paneUnified = document.getElementById('pane-unified');
     const sheetLeft = document.getElementById('sheet-left');
     const sheetRight = document.getElementById('sheet-right');
+    const sheetUnified = document.getElementById('sheet-unified');
     const sidebarList = document.getElementById('sidebar-list');
     const connectorSvg = document.getElementById('connector-svg');
     const minimapTrack = document.getElementById('minimap-track');
@@ -1599,7 +1854,11 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       document.getElementById('btn-sync-scroll').title = t('syncTitle');
       document.getElementById('i18n-btn-text').textContent = t('textBtn');
       document.getElementById('btn-paste-modal').title = t('textBtnTitle');
-      document.getElementById('btn-print').title = t('printTitle');
+      document.getElementById('i18n-btn-export').textContent = t('exportBtn');
+      document.getElementById('i18n-exp-pdf').textContent = t('expPdf');
+      document.getElementById('i18n-exp-word').textContent = t('expWord');
+      document.getElementById('i18n-exp-html').textContent = t('expHtml');
+      document.getElementById('i18n-exp-md').textContent = t('expMd');
       document.getElementById('i18n-btn-clear').textContent = t('clearBtn');
       document.getElementById('btn-clear').title = t('clearBtnTitle');
       document.getElementById('btn-theme').title = t('themeTitle');
@@ -1625,6 +1884,17 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       document.getElementById('i18n-privacy-title').textContent = t('privacyTitle');
       document.getElementById('i18n-privacy-body').innerHTML = t('privacyBodyHtml');
       document.getElementById('i18n-footer-privacy').textContent = t('footerPrivacy');
+    }
+
+    function setViewMode(mode) {
+      state.viewMode = mode;
+      document.body.classList.toggle('view-inline', mode === 'inline');
+      document.getElementById('btn-mode-split').setAttribute('aria-pressed', String(mode === 'split'));
+      document.getElementById('btn-mode-inline').setAttribute('aria-pressed', String(mode === 'inline'));
+      requestAnimationFrame(() => {
+        if (mode === 'split') equalizeRowHeights();
+        scheduleGutterDraw();
+      });
     }
 
     function extractClauseRef(line, fallbackIndex) {
@@ -1836,8 +2106,6 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         .replace(/'/g, '&#39;');
     }
 
-    // Tokenizes text keeping numbers/dates (e.g. 145.000,00 or 12.03.2026 or 12,0) intact
-    // and coalesces adjacent removed/added phrases across whitespace for clean redline spans.
     function computeCleanWordDiff(oldText, newText) {
       if (!window.Diff) {
         return [
@@ -1848,7 +2116,6 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
       const raw = window.Diff.diffWordsWithSpace(oldText, newText);
 
-      // Step 1: Merge number/date fragments where unchanged '.' or ',' sits between changed digits
       const mergedNums = [];
       for (let i = 0; i < raw.length; i++) {
         const cur = raw[i];
@@ -1873,12 +2140,10 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       return mergedNums;
     }
 
-    // Coalesces consecutive changed tokens (and whitespace between two changed tokens) on one side
     function coalesceSideTokens(sideParts, prop) {
       const out = [];
       for (let i = 0; i < sideParts.length; i++) {
         const cur = sideParts[i];
-        // If cur is pure whitespace between two changed tokens, absorb it into the changed span
         if (
           !cur[prop] &&
           /^\s+$/.test(cur.value) &&
@@ -1961,6 +2226,29 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
           .map(part => {
             const content = escapeAndHighlightText(part.value, query);
             return part.added ? `<ins class="tok-ins">${content}</ins>` : content;
+          })
+          .join('');
+      }
+      return '';
+    }
+
+    function renderUnifiedBlockHtml(row, query) {
+      if (row.type === 'equal') {
+        return escapeAndHighlightText(row.rightBlock.text, query);
+      }
+      if (row.type === 'deleted') {
+        return `<del class="tok-del">${escapeAndHighlightText(row.leftBlock.text, query)}</del>`;
+      }
+      if (row.type === 'inserted') {
+        return `<ins class="tok-ins">${escapeAndHighlightText(row.rightBlock.text, query)}</ins>`;
+      }
+      if (row.type === 'modified') {
+        return row.wordDiffs
+          .map(part => {
+            const content = escapeAndHighlightText(part.value, query);
+            if (part.removed) return `<del class="tok-del">${content}</del>`;
+            if (part.added) return `<ins class="tok-ins">${content}</ins>`;
+            return content;
           })
           .join('');
       }
@@ -2057,6 +2345,11 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
           );
         }
 
+        setSafeContainerHtml(
+          sheetUnified,
+          renderPaneEmptyState(leftBlocks.length === 0 ? 'left' : 'right')
+        );
+
         bindEmptyStateButtons();
         renderSidebarList(bothLoaded);
         minimapTrack.innerHTML = '';
@@ -2080,17 +2373,18 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       renderMinimap();
 
       requestAnimationFrame(() => {
-        equalizeRowHeights();
+        if (state.viewMode === 'split') equalizeRowHeights();
         scheduleGutterDraw();
       });
     }
 
     function bindEmptyStateButtons() {
-      const btnL = document.getElementById('btn-empty-upload-left');
-      if (btnL) btnL.addEventListener('click', () => document.getElementById('file-input-left').click());
-
-      const btnR = document.getElementById('btn-empty-upload-right');
-      if (btnR) btnR.addEventListener('click', () => document.getElementById('file-input-right').click());
+      document.querySelectorAll('#btn-empty-upload-left').forEach(btn => {
+        btn.addEventListener('click', () => document.getElementById('file-input-left').click());
+      });
+      document.querySelectorAll('#btn-empty-upload-right').forEach(btn => {
+        btn.addEventListener('click', () => document.getElementById('file-input-right').click());
+      });
 
       document.querySelectorAll('.btn-open-paste').forEach(btn => {
         btn.addEventListener('click', () => openPasteModal());
@@ -2113,6 +2407,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     function renderDocumentPanes() {
       const leftFragments = [];
       const rightFragments = [];
+      const unifiedFragments = [];
       const q = state.searchQuery;
 
       state.alignedRows.forEach((row, idx) => {
@@ -2161,13 +2456,32 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
             </div>
           `);
         }
+
+        const primaryBlock = row.rightBlock || row.leftBlock;
+        const uHeadingClass = primaryBlock && primaryBlock.isHeading ? 'is-heading' : '';
+        const uStateClass =
+          row.type === 'equal'
+            ? 'state-equal'
+            : row.type === 'modified'
+            ? 'state-modified'
+            : row.type === 'inserted'
+            ? 'state-inserted'
+            : 'state-deleted';
+
+        unifiedFragments.push(`
+          <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+            <div class="clause ${uStateClass} ${uHeadingClass} ${deferClass}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q)}</div>
+          </div>
+        `);
       });
 
       setSafeContainerHtml(sheetLeft, leftFragments.join(''));
       setSafeContainerHtml(sheetRight, rightFragments.join(''));
+      setSafeContainerHtml(sheetUnified, unifiedFragments.join(''));
     }
 
     function equalizeRowHeights() {
+      if (state.viewMode !== 'split') return;
       const leftAnchors = sheetLeft.querySelectorAll('.diff-row-anchor');
       const rightAnchors = sheetRight.querySelectorAll('.diff-row-anchor');
       const len = Math.min(leftAnchors.length, rightAnchors.length);
@@ -2294,6 +2608,10 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     }
 
     function drawGutterConnectors() {
+      if (state.viewMode !== 'split') {
+        connectorSvg.innerHTML = '';
+        return;
+      }
       const gutterRect = connectorSvg.getBoundingClientRect();
       if (!gutterRect.width || !gutterRect.height) return;
 
@@ -2358,17 +2676,23 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
       const leftTarget = sheetLeft.querySelector(`.clause[data-row-id="${rowId}"]`);
       const rightTarget = sheetRight.querySelector(`.clause[data-row-id="${rowId}"]`);
+      const unifiedTarget = sheetUnified.querySelector(`.clause[data-row-id="${rowId}"]`);
       const navTarget = sidebarList.querySelector(`.nav-item[data-row-id="${rowId}"]`);
 
       state.isProgrammaticScroll = true;
 
-      if (leftTarget) {
-        const topOffset = leftTarget.offsetTop - paneLeft.clientHeight / 3;
-        paneLeft.scrollTo({ top: Math.max(0, topOffset), behavior: smooth ? 'smooth' : 'auto' });
-      }
-      if (rightTarget) {
-        const topOffset = rightTarget.offsetTop - paneRight.clientHeight / 3;
-        paneRight.scrollTo({ top: Math.max(0, topOffset), behavior: smooth ? 'smooth' : 'auto' });
+      if (state.viewMode === 'inline' && unifiedTarget) {
+        const topOffset = unifiedTarget.offsetTop - paneUnified.clientHeight / 3;
+        paneUnified.scrollTo({ top: Math.max(0, topOffset), behavior: smooth ? 'smooth' : 'auto' });
+      } else {
+        if (leftTarget) {
+          const topOffset = leftTarget.offsetTop - paneLeft.clientHeight / 3;
+          paneLeft.scrollTo({ top: Math.max(0, topOffset), behavior: smooth ? 'smooth' : 'auto' });
+        }
+        if (rightTarget) {
+          const topOffset = rightTarget.offsetTop - paneRight.clientHeight / 3;
+          paneRight.scrollTo({ top: Math.max(0, topOffset), behavior: smooth ? 'smooth' : 'auto' });
+        }
       }
       if (navTarget) {
         navTarget.scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
@@ -2380,7 +2704,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       }, smooth ? 300 : 40);
     }
 
-    [sheetLeft, sheetRight, sidebarList].forEach(container => {
+    [sheetLeft, sheetRight, sheetUnified, sidebarList].forEach(container => {
       container.addEventListener('mouseover', e => {
         const target = e.target.closest('[data-row-id]');
         if (target) setHoveredRow(target.getAttribute('data-row-id'));
@@ -2388,7 +2712,13 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       container.addEventListener('mouseleave', () => setHoveredRow(null));
       container.addEventListener('click', e => {
         const target = e.target.closest('[data-row-id]');
-        if (target) selectAndScrollToRow(target.getAttribute('data-row-id'), true);
+        if (target) {
+          selectAndScrollToRow(target.getAttribute('data-row-id'), true);
+          if (window.innerWidth <= 960 && container === sidebarList) {
+            document.body.classList.add('sidebar-collapsed');
+            document.getElementById('btn-toggle-sidebar').setAttribute('aria-pressed', 'false');
+          }
+        }
       });
     });
 
@@ -2440,6 +2770,134 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         scheduleGutterDraw();
       }, 60);
     });
+
+    /* ── Client-Side Multi-Format Export Engine (PDF, Word .doc, HTML, Markdown) */
+    function downloadBlob(content, mimeType, filename) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function buildExportHtmlDocument(forWord = false) {
+      const rows = state.onlyChanges ? state.changeRows : state.alignedRows;
+      const title = `Doc Diff — ${state.leftName || 'Original'} vs. ${state.rightName || 'Revised'}`;
+      const bodyRows = rows
+        .map(row => {
+          const primaryBlock = row.rightBlock || row.leftBlock;
+          const isHeading = primaryBlock && primaryBlock.isHeading;
+          const tag = isHeading ? 'h3' : 'p';
+          const borderColor =
+            row.type === 'modified'
+              ? '#0058b8'
+              : row.type === 'inserted'
+              ? '#2a9d4e'
+              : row.type === 'deleted'
+              ? '#b30027'
+              : 'transparent';
+          const bgColor =
+            row.type === 'inserted'
+              ? '#f2fbf5'
+              : row.type === 'deleted'
+              ? '#fff5f7'
+              : 'transparent';
+          return `<${tag} style="margin:0 0 8px 0;padding:4px 10px;border-left:3px solid ${borderColor};background:${bgColor};font-size:${
+            isHeading ? '13px' : '11.5px'
+          };line-height:1.5;">${renderUnifiedBlockHtml(row, '')}</${tag}>`;
+        })
+        .join('\n');
+
+      return `<!DOCTYPE html>
+<html lang="${state.lang}">
+<head>
+<meta charset="UTF-8">
+<title>${escapeHtml(title)}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; max-width: 820px; margin: 32px auto; padding: 0 20px; font-size: 12px; line-height: 1.5; }
+  header { border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px; }
+  h1 { font-size: 16px; margin: 0 0 4px 0; }
+  .meta { font-size: 11px; color: #64748b; }
+  del.tok-del { background: #ffe4e8; color: #b30027; text-decoration: line-through; padding: 1px 3px; border-radius: 2px; }
+  ins.tok-ins { background: #dcfce7; color: #166534; text-decoration: none; font-weight: 600; padding: 1px 3px; border-radius: 2px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>${escapeHtml(title)}</h1>
+    <div class="meta">${escapeHtml(t('colLeft'))}: ${escapeHtml(state.leftName || '-')} · ${escapeHtml(t('colRight'))}: ${escapeHtml(state.rightName || '-')} · ${state.changeRows.length} ${escapeHtml(t('changesLabel'))}</div>
+  </header>
+  <main>
+    ${bodyRows}
+  </main>
+</body>
+</html>`;
+    }
+
+    function buildExportMarkdown() {
+      const rows = state.onlyChanges ? state.changeRows : state.alignedRows;
+      const lines = [
+        `# Doc Diff: ${state.leftName || 'Original'} vs. ${state.rightName || 'Revised'}`,
+        '',
+        `- **${t('colLeft')}:** ${state.leftName || '-'}`,
+        `- **${t('colRight')}:** ${state.rightName || '-'}`,
+        `- **${t('sidebarTitle')}:** ${state.changeRows.length}`,
+        '',
+        '---',
+        '',
+      ];
+
+      for (const row of rows) {
+        const primaryBlock = row.rightBlock || row.leftBlock;
+        const prefix = primaryBlock && primaryBlock.isHeading ? '### ' : '';
+        if (row.type === 'equal') {
+          lines.push(`${prefix}${row.rightBlock.text}`);
+        } else if (row.type === 'deleted') {
+          lines.push(`${prefix}~~${row.leftBlock.text}~~`);
+        } else if (row.type === 'inserted') {
+          lines.push(`${prefix}**${row.rightBlock.text}**`);
+        } else if (row.type === 'modified') {
+          const mdDiff = row.wordDiffs
+            .map(p => (p.removed ? `~~${p.value}~~` : p.added ? `**${p.value}**` : p.value))
+            .join('');
+          lines.push(`${prefix}${mdDiff}`);
+        }
+        lines.push('');
+      }
+      return lines.join('\n');
+    }
+
+    function handleExportAction(type) {
+      if (type === 'print') {
+        window.print();
+        return;
+      }
+      if (!state.alignedRows.length) {
+        const sample = SAMPLES[state.lang] || SAMPLES.de;
+        state.leftName = t('sampleLeftName');
+        state.leftFormat = 'DEMO';
+        state.leftText = sample.v1;
+        state.rightName = t('sampleRightName');
+        state.rightFormat = 'DEMO';
+        state.rightText = sample.v2;
+        runComparison();
+      }
+      const baseName = `DocDiff_${(state.rightName || 'Comparison').replace(/\.[^.]+$/, '')}`;
+      if (type === 'word') {
+        const html = buildExportHtmlDocument(true);
+        downloadBlob('\ufeff' + html, 'application/msword;charset=utf-8', `${baseName}_Redline.doc`);
+      } else if (type === 'html') {
+        const html = buildExportHtmlDocument(false);
+        downloadBlob(html, 'text/html;charset=utf-8', `${baseName}_Report.html`);
+      } else if (type === 'md') {
+        const md = buildExportMarkdown();
+        downloadBlob(md, 'text/markdown;charset=utf-8', `${baseName}_Report.md`);
+      }
+    }
 
     async function extractPdfText(arrayBuffer) {
       const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -2564,6 +3022,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     [
       { el: paneLeft, side: 'left' },
       { el: paneRight, side: 'right' },
+      { el: paneUnified, side: 'right' },
       { el: document.querySelector('.col-bar-left'), side: 'left' },
       { el: document.querySelector('.col-bar-right'), side: 'right' },
     ].forEach(({ el, side }) => {
@@ -2582,7 +3041,8 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         document.body.classList.remove('is-dragging-file');
         paneLeft.classList.remove('drag-over');
         paneRight.classList.remove('drag-over');
-        await handleDropFiles(e.dataTransfer.files, side);
+        const actualSide = !state.leftText ? 'left' : side;
+        await handleDropFiles(e.dataTransfer.files, actualSide);
       });
     });
 
@@ -2624,6 +3084,28 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     document.getElementById('btn-prev').addEventListener('click', () => stepChange(-1));
     document.getElementById('btn-next').addEventListener('click', () => stepChange(1));
 
+    document.getElementById('btn-mode-split').addEventListener('click', () => setViewMode('split'));
+    document.getElementById('btn-mode-inline').addEventListener('click', () => setViewMode('inline'));
+
+    const btnExportMenu = document.getElementById('btn-export-menu');
+    const exportMenu = document.getElementById('export-menu');
+    btnExportMenu.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = exportMenu.classList.toggle('is-open');
+      btnExportMenu.setAttribute('aria-expanded', String(open));
+    });
+    exportMenu.addEventListener('click', e => {
+      const item = e.target.closest('[data-export]');
+      if (!item) return;
+      exportMenu.classList.remove('is-open');
+      btnExportMenu.setAttribute('aria-expanded', 'false');
+      handleExportAction(item.getAttribute('data-export'));
+    });
+    window.addEventListener('click', () => {
+      exportMenu.classList.remove('is-open');
+      btnExportMenu.setAttribute('aria-expanded', 'false');
+    });
+
     const searchInput = document.getElementById('search-input');
 
     window.addEventListener('keydown', e => {
@@ -2643,6 +3125,8 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       } else if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
         document.getElementById('btn-only-changes').click();
+      } else if (e.key === 'Escape') {
+        exportMenu.classList.remove('is-open');
       }
     });
 
@@ -2663,10 +3147,6 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       });
     });
 
-    document.getElementById('btn-print').addEventListener('click', () => {
-      window.print();
-    });
-
     document.getElementById('btn-clear').addEventListener('click', () => {
       state.leftText = '';
       state.rightText = '';
@@ -2685,7 +3165,6 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
     document.getElementById('btn-lang').addEventListener('click', () => {
       state.lang = state.lang === 'de' ? 'en' : 'de';
-      // If demo sample is currently loaded, switch sample language too
       if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
         const sample = SAMPLES[state.lang] || SAMPLES.de;
         state.leftName = t('sampleLeftName');
@@ -2776,6 +3255,11 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     });
 
     window.addEventListener('DOMContentLoaded', () => {
+      if (isTabletOrSmaller) {
+        document.body.classList.add('sidebar-collapsed');
+        btnToggleSidebar.setAttribute('aria-pressed', 'false');
+      }
+      setViewMode(state.viewMode);
       applyTranslationsToStaticDom();
       runComparison();
     });
