@@ -1,0 +1,2692 @@
+<!DOCTYPE html>
+<!--
+  Doc Diff — 100% Client-Side Document Comparison (PDF / DOCX / TXT)
+  Copyright (c) 2026 Tobias Schnorpfeil (MIT License)
+  Repository: https://github.com/tschnorpfeil/docdiff
+
+  Security & Privacy Architecture:
+  - Zero-Backend, Zero-Network: Enforced via Content-Security-Policy (connect-src 'none'; form-action 'none')
+  - Zero-Persistence: All parsing and diffing runs strictly in volatile browser RAM (no localStorage, IndexedDB, or cookies)
+  - Standalone Single-File HTML: Works both hosted on static pages and opened locally via file://
+
+  Bundled Open-Source Components (see THIRD_PARTY_NOTICES.md):
+  - Geist & Geist Mono Fonts: Copyright (c) Vercel, Inc. (SIL Open Font License 1.1)
+  - Mozilla PDF.js v3.11.174: Copyright (c) Mozilla Foundation (Apache License 2.0)
+  - Mammoth.js v1.6.0: Copyright (c) Michael Williamson (BSD-2-Clause License)
+  - jsdiff v5.2.0: Copyright (c) Kevin Decker (BSD-3-Clause License)
+-->
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Hardened Content Security Policy: Physically blocks all outbound network connections (connect-src 'none') -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Doc Diff</title>
+
+  <!-- Standalone Inlined Libraries (PDF.js + PDF Worker + Mammoth DOCX + jsdiff) -->
+  <script>
+__PDF_JS__
+  </script>
+  <script>
+__PDF_WORKER_JS__
+  </script>
+  <script>
+__MAMMOTH_JS__
+  </script>
+  <script>
+__DIFF_JS__
+  </script>
+
+  <style>
+    @font-face {
+      font-family: 'Geist';
+      src: url('data:font/woff2;base64,__GEIST_B64__') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Geist';
+      src: url('data:font/woff2;base64,__GEIST_GREEK_B64__') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+      unicode-range: U+0370-03FF;
+    }
+    @font-face {
+      font-family: 'Geist Mono';
+      src: url('data:font/woff2;base64,__GEIST_MONO_B64__') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+      --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+      --text-4xs: 0.625rem;         /* 10px */
+      --text-2xs: 0.6875rem;        /* 11px */
+      --text-xs: 0.75rem;           /* 12px */
+      --text-chat-label: 0.8125rem; /* 13px */
+      --text-sm: 0.875rem;          /* 14px */
+      --text-base: 1rem;            /* 16px */
+
+      --radius-md: 0.25rem;         /* 4px */
+      --radius-sm: 0.125rem;        /* 2px */
+      --radius-xl: 0.75rem;         /* 12px */
+
+      --background: 0 0% 98%;
+      --foreground: 215 20% 20%;
+      --card: 0 0% 100%;
+
+      --ton-1: 0 0% 94.9%;
+      --ton-2: 0 0% 92.2%;
+      --ton-3: 0 0% 90.2%;
+
+      --muted-foreground: 215 20% 30.2%;
+      --secondary: 0 0% 78.8%;
+      --secondary-foreground: 0 0% 9%;
+
+      --border: 0 0% 87.4%;
+      --input: 0 0% 87.4%;
+      --ring: 212.8 100% 48.4%;
+      --trenner: 0 0% 49%;
+
+      --kante-200: rgb(0 0 0 / 0.082);
+      --kante-300: rgb(0 0 0 / 0.102);
+      --kante-500: rgb(0 0 0 / 0.212);
+
+      --primary: 212.8 100% 36%;
+      --primary-foreground: 0 0% 100%;
+      --primary-ink: 213.5 100% 40.2%;
+      --primary-ton-1: 212.8 100.0% 97.0%;
+
+      --destructive: 347.4 100% 35%;
+      --destructive-ink: 351 100% 38.5%;
+      --destructive-ton-1: 347.4 100.0% 97.0%;
+      --destructive-ton-2: 347.4 100.0% 94.5%;
+
+      --success: 134.9 61.7% 43.3%;
+      --success-ink: 138.7 77.3% 24.7%;
+      --success-ton-1: 134.9 61.7% 97.0%;
+      --success-ton-2: 134.9 61.7% 94.5%;
+
+      --warning-ton-2: 41.9 100.0% 94.5%;
+
+      --elev-1: 0px 2px 2px #0000000a;
+      --elev-4: 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f;
+      --overlay: rgb(0 0 0 / 0.8);
+    }
+
+    .dark {
+      --background: 0 0% 0%;
+      --foreground: 0 0% 92.9%;
+      --card: 0 0% 0%;
+
+      --ton-1: 0.0 0.0% 10.2%;
+      --ton-2: 0.0 0.0% 12.2%;
+      --ton-3: 0.0 0.0% 16.1%;
+
+      --muted-foreground: 240 6% 74%;
+      --secondary: 0 0% 27.1%;
+      --secondary-foreground: 0 0% 92.9%;
+
+      --border: 0 0% 18%;
+      --input: 0 0% 18%;
+      --ring: 209.8 100% 65.7%;
+      --trenner: 0 0% 49%;
+
+      --kante-200: rgb(255 255 255 / 0.09);
+      --kante-300: rgb(255 255 255 / 0.13);
+      --kante-500: rgb(255 255 255 / 0.24);
+
+      --primary: 212.4 100% 35.7%;
+      --primary-foreground: 0 0% 100%;
+      --primary-ink: 212.4 100% 74.9%;
+      --primary-ton-1: 218.1 81.3% 12.5%;
+
+      --destructive: 355 87.2% 37%;
+      --destructive-ink: 356 100% 74.3%;
+      --destructive-ton-1: 354.5 64.7% 13.3%;
+      --destructive-ton-2: 355.0 69.2% 18.0%;
+
+      --success: 132.5 62.6% 42%;
+      --success-ink: 130.9 62.7% 64.3%;
+      --success-ton-1: 136.4 55.0% 10.2%;
+      --success-ton-2: 136.0 58.0% 14.5%;
+
+      --warning-ton-2: 37.0 78.0% 15.0%;
+
+      --elev-1: 0px 2px 2px #00000040;
+      --elev-4: 0 0 0 1px hsl(0 0% 18%), 0px 16px 32px #00000080;
+      --overlay: rgb(0 0 0 / 0.85);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      font-size: var(--text-xs);
+      line-height: 1.5;
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .font-mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    svg.icon {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    /* ── 1. Compact Header Bar (40px) ──────────────────────────────────────── */
+    .header-bar {
+      height: 40px;
+      padding: 0 12px;
+      background: hsl(var(--background));
+      border-bottom: 1px solid hsl(var(--border));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      user-select: none;
+    }
+
+    .header-cluster {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .app-title {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: hsl(var(--foreground));
+      white-space: nowrap;
+    }
+
+    .divider-v {
+      width: 1px;
+      height: 14px;
+      background: hsl(var(--border));
+      margin: 0 2px;
+      flex-shrink: 0;
+    }
+
+    /* Compact Inline Stats */
+    .stat-summary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: var(--text-2xs);
+      color: hsl(var(--muted-foreground));
+      white-space: nowrap;
+    }
+    .stat-summary strong {
+      font-weight: 600;
+      color: hsl(var(--foreground));
+    }
+    .trenner {
+      color: hsl(var(--trenner));
+    }
+
+    /* Buttons */
+    .btn {
+      height: 26px;
+      padding: 0 8px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      border: 0;
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      box-shadow: inset 0 0 0 1px var(--kante-200);
+      transition: background-color 100ms ease-out, box-shadow 100ms ease-out, color 100ms ease-out;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn:hover {
+      background: hsl(var(--ton-2));
+      box-shadow: inset 0 0 0 1px var(--kante-300);
+    }
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px hsl(var(--ring));
+    }
+    .btn[aria-pressed="true"] {
+      background: hsl(var(--ton-3));
+      box-shadow: inset 0 0 0 1px var(--kante-500);
+      font-weight: 600;
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .btn-primary {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      box-shadow: none;
+    }
+    .btn-primary:hover {
+      opacity: 0.92;
+      background: hsl(var(--primary));
+      box-shadow: none;
+    }
+    .btn-ghost {
+      background: transparent;
+      box-shadow: none;
+      color: hsl(var(--muted-foreground));
+    }
+    .btn-ghost:hover {
+      background: hsl(var(--ton-2));
+      color: hsl(var(--foreground));
+      box-shadow: none;
+    }
+    .btn-icon {
+      width: 26px;
+      padding: 0;
+    }
+
+    /* Search Box */
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 152px;
+      height: 26px;
+      background: hsl(var(--card));
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 0 0 1px hsl(var(--input));
+      padding: 0 7px;
+      gap: 5px;
+      transition: width 120ms ease-out, box-shadow 120ms ease-out;
+    }
+    .search-box:focus-within {
+      width: 192px;
+      box-shadow: inset 0 0 0 1.5px hsl(var(--ring));
+    }
+    .search-box input {
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: hsl(var(--foreground));
+      font-family: var(--font-sans);
+      font-size: var(--text-xs);
+      width: 100%;
+    }
+    .search-box input::placeholder {
+      color: hsl(var(--muted-foreground));
+    }
+    .kbd-hint {
+      font-family: var(--font-mono);
+      font-size: var(--text-4xs);
+      color: hsl(var(--muted-foreground));
+      padding: 0 3px;
+      border-radius: 2px;
+      background: hsl(var(--ton-1));
+      box-shadow: inset 0 0 0 1px var(--kante-200);
+      pointer-events: none;
+    }
+
+    /* ── 2. Sub-Header Document Bars (32px) ────────────────────────────────── */
+    .col-bars {
+      height: 32px;
+      display: grid;
+      grid-template-columns: 1fr 24px 1fr 240px;
+      background: hsl(var(--ton-1));
+      border-bottom: 1px solid hsl(var(--border));
+      user-select: none;
+    }
+    body.sidebar-collapsed .col-bars {
+      grid-template-columns: 1fr 24px 1fr 0px;
+    }
+
+    .col-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      gap: 8px;
+      min-width: 0;
+      border-right: 1px solid hsl(var(--border));
+    }
+
+    .col-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .col-label {
+      font-size: var(--text-2xs);
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      flex-shrink: 0;
+    }
+
+    .col-filename {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: hsl(var(--foreground));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .col-meta-badge {
+      display: none;
+      align-items: center;
+      height: 16px;
+      padding: 0 5px;
+      border-radius: var(--radius-sm);
+      background: hsl(var(--ton-2));
+      box-shadow: inset 0 0 0 1px var(--kante-200);
+      font-family: var(--font-mono);
+      font-size: var(--text-4xs);
+      color: hsl(var(--muted-foreground));
+      flex-shrink: 0;
+    }
+    .col-meta-badge.is-visible {
+      display: inline-flex;
+    }
+
+    .col-sidebar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-size: var(--text-2xs);
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      overflow: hidden;
+    }
+
+    /* ── 3. Main Split Workspace ───────────────────────────────────────────── */
+    .workspace {
+      height: calc(100vh - 72px);
+      display: grid;
+      grid-template-columns: 1fr 24px 1fr 240px;
+      position: relative;
+      background: hsl(var(--background));
+    }
+    body.sidebar-collapsed .workspace {
+      grid-template-columns: 1fr 24px 1fr 0px;
+    }
+
+    .doc-pane {
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px 20px 80px 20px;
+      position: relative;
+      scroll-behavior: auto;
+      border-right: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+    }
+
+    /* Drag & Drop Overlay */
+    .drop-zone-overlay {
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: calc(100vh - 104px);
+      margin-bottom: calc(-100vh + 104px);
+      z-index: 30;
+      background: hsl(var(--primary-ton-1) / 0.92);
+      border: 1.5px dashed hsl(var(--primary));
+      border-radius: var(--radius-md);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    body.is-dragging-file .drop-zone-overlay,
+    .doc-pane.drag-over .drop-zone-overlay {
+      display: flex;
+    }
+
+    .drop-box {
+      padding: 12px 18px;
+      background: hsl(var(--card));
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 0 1px hsl(var(--border)), var(--elev-1);
+      text-align: center;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: hsl(var(--foreground));
+    }
+
+    /* ── Continuous Document Sheet ─────────────────────────────────────────── */
+    .doc-sheet {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    /* ── PRIME Empty State Pattern ─────────────────────────────────────────── */
+    .empty-state {
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 48px 24px;
+      max-width: 340px;
+      user-select: none;
+    }
+
+    .empty-glyph {
+      width: 28px;
+      height: 28px;
+      stroke: hsl(var(--muted-foreground));
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      opacity: 0.45;
+      margin-bottom: 12px;
+    }
+
+    .empty-title {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      letter-spacing: -0.01em;
+    }
+
+    .empty-desc {
+      margin-top: 4px;
+      font-size: var(--text-xs);
+      line-height: 1.45;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .empty-actions {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .empty-sample-trigger {
+      margin-top: 14px;
+      background: transparent;
+      border: 0;
+      color: hsl(var(--muted-foreground));
+      font-family: var(--font-sans);
+      font-size: var(--text-2xs);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 100ms ease-out;
+    }
+    .empty-sample-trigger:hover {
+      color: hsl(var(--foreground));
+    }
+
+    .empty-state-sm {
+      padding: 32px 16px;
+      max-width: 220px;
+    }
+    .empty-state-sm .empty-glyph {
+      width: 22px;
+      height: 22px;
+      margin-bottom: 8px;
+    }
+    .empty-state-sm .empty-title {
+      font-size: var(--text-xs);
+    }
+    .empty-state-sm .empty-desc {
+      font-size: var(--text-2xs);
+    }
+
+    .diff-row-anchor {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+    }
+
+    .clause.deferred-block {
+      content-visibility: auto;
+      contain-intrinsic-size: auto none auto 36px;
+    }
+
+    /* Continuous Document Paragraph Flow (12px body, 1.5 line-height) */
+    .clause {
+      flex: 1;
+      position: relative;
+      padding: 5px 10px;
+      border-left: 2px solid transparent;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: var(--text-xs);
+      line-height: 1.5;
+      color: hsl(var(--foreground));
+      cursor: pointer;
+      transition: background-color 80ms ease-out, border-color 80ms ease-out;
+    }
+
+    .clause.is-heading {
+      font-weight: 600;
+      font-size: var(--text-chat-label);
+      padding-top: 10px;
+      padding-bottom: 2px;
+      color: hsl(var(--foreground));
+    }
+
+    .clause.state-equal {
+      background: transparent;
+      border-left-color: transparent;
+    }
+
+    .clause.state-modified {
+      border-left-color: hsl(var(--primary));
+    }
+
+    .clause.state-deleted {
+      border-left-color: hsl(var(--destructive));
+      background: hsl(var(--destructive-ton-1));
+    }
+
+    .clause.state-inserted {
+      border-left-color: hsl(var(--success));
+      background: hsl(var(--success-ton-1));
+    }
+
+    .clause.state-placeholder {
+      display: flex;
+      align-items: center;
+      color: hsl(var(--muted-foreground));
+      font-size: var(--text-2xs);
+      user-select: none;
+      opacity: 0.45;
+    }
+    .clause.state-placeholder::before {
+      content: "";
+      flex: 1;
+      height: 1px;
+      border-top: 1px dashed hsl(var(--border));
+    }
+
+    /* Synchronized Mouse-Over Highlight across both documents */
+    .clause.is-hovered {
+      background: hsl(var(--ton-1));
+      border-left-color: hsl(var(--foreground));
+    }
+    .clause.state-modified.is-hovered {
+      background: hsl(var(--ton-1));
+      border-left-color: hsl(var(--primary));
+    }
+    .clause.state-deleted.is-hovered {
+      background: hsl(var(--destructive-ton-2));
+    }
+    .clause.state-inserted.is-hovered {
+      background: hsl(var(--success-ton-2));
+    }
+
+    .clause.is-active {
+      background: hsl(var(--ton-2));
+      box-shadow: inset 0 0 0 1px var(--kante-300);
+    }
+
+    del.tok-del {
+      padding: 1px 3px;
+      margin: 0 0.5px;
+      border-radius: var(--radius-sm);
+      background: hsl(var(--destructive-ton-2));
+      color: hsl(var(--destructive-ink));
+      text-decoration: line-through;
+    }
+
+    ins.tok-ins {
+      padding: 1px 3px;
+      margin: 0 0.5px;
+      border-radius: var(--radius-sm);
+      background: hsl(var(--success-ton-2));
+      color: hsl(var(--success-ink));
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    mark.tok-search {
+      background: hsl(var(--warning-ton-2));
+      color: hsl(var(--foreground));
+      border-radius: var(--radius-sm);
+      padding: 0 2px;
+    }
+
+    body.only-changes .diff-row-anchor[data-type="equal"] {
+      display: none;
+    }
+
+    /* ── Slim 24px Center Gutter ───────────────────────────────────────────── */
+    .center-gutter {
+      height: 100%;
+      background: hsl(var(--background));
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #connector-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .minimap-rail {
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      background: transparent;
+      z-index: 1;
+    }
+
+    .minimap-tick {
+      position: absolute;
+      left: 0;
+      width: 4px;
+      min-height: 4px;
+      border-radius: 1px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .minimap-tick:hover { opacity: 1; transform: scaleX(1.5); }
+    .minimap-tick.mod { background: hsl(var(--primary)); }
+    .minimap-tick.ins { background: hsl(var(--success)); }
+    .minimap-tick.del { background: hsl(var(--destructive)); }
+
+    /* ── Clean Change List Sidebar ─────────────────────────────────────────── */
+    .sidebar-panel {
+      height: 100%;
+      background: hsl(var(--background));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sidebar-footer {
+      height: 28px;
+      padding: 0 10px;
+      border-top: 1px solid hsl(var(--border));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: var(--text-4xs);
+      color: hsl(var(--muted-foreground));
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .privacy-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      background: transparent;
+      border: 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-4xs);
+      color: hsl(var(--muted-foreground));
+    }
+    .privacy-status:hover {
+      color: hsl(var(--foreground));
+    }
+    .privacy-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+      background: hsl(var(--success));
+      flex-shrink: 0;
+    }
+
+    .nav-item {
+      padding: 6px 8px;
+      border-radius: var(--radius-md);
+      border-left: 2px solid transparent;
+      cursor: pointer;
+      font-size: var(--text-xs);
+      line-height: 1.4;
+      color: hsl(var(--muted-foreground));
+      transition: background-color 80ms ease-out;
+    }
+    .nav-item.mod { border-left-color: hsl(var(--primary)); }
+    .nav-item.ins { border-left-color: hsl(var(--success)); }
+    .nav-item.del { border-left-color: hsl(var(--destructive)); }
+
+    .nav-item:hover,
+    .nav-item.is-hovered {
+      background: hsl(var(--ton-2));
+      color: hsl(var(--foreground));
+    }
+    .nav-item.is-active {
+      background: hsl(var(--ton-3));
+      color: hsl(var(--foreground));
+    }
+
+    .nav-item-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: var(--text-4xs);
+      color: hsl(var(--muted-foreground));
+      margin-bottom: 2px;
+    }
+
+    .nav-item-snippet {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
+    }
+
+    /* ── Dialogs ───────────────────────────────────────────────────────────── */
+    dialog.prime-dialog {
+      margin: auto;
+      width: min(860px, 92vw);
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      border: 0;
+      border-radius: var(--radius-xl);
+      box-shadow: 0 0 0 1px hsl(var(--border)), var(--elev-4);
+      padding: 0;
+    }
+    dialog.prime-dialog.dialog-sm {
+      width: min(520px, 92vw);
+    }
+    dialog.prime-dialog::backdrop {
+      background: var(--overlay);
+      backdrop-filter: blur(2px);
+    }
+    .dialog-header {
+      height: 40px;
+      padding: 0 14px;
+      border-bottom: 1px solid hsl(var(--border));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+    .dialog-body {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .dialog-body-single {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: var(--text-xs);
+      line-height: 1.55;
+      color: hsl(var(--muted-foreground));
+    }
+    .sec-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .sec-item {
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: hsl(var(--ton-1));
+      box-shadow: inset 0 0 0 1px var(--kante-200);
+    }
+    .sec-item-title {
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dialog-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+    .dialog-textarea {
+      width: 100%;
+      height: min(340px, 55vh);
+      padding: 8px 10px;
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      border: 0;
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 0 0 1px hsl(var(--input));
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      line-height: 1.5;
+      resize: vertical;
+    }
+    .dialog-textarea:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 1.5px hsl(var(--ring));
+    }
+    .dialog-footer {
+      height: 44px;
+      padding: 0 14px;
+      background: hsl(var(--ton-1));
+      border-top: 1px solid hsl(var(--border));
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* ── Responsive & Print Hardening ──────────────────────────────────────── */
+    @media (max-width: 960px) {
+      .col-bars, .workspace {
+        grid-template-columns: 1fr 16px 1fr 0px !important;
+      }
+      .sidebar-panel, .col-sidebar-head {
+        display: none !important;
+      }
+      .search-box {
+        width: 115px;
+      }
+      .search-box:focus-within {
+        width: 145px;
+      }
+    }
+
+    @media print {
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .header-bar, .sidebar-panel, .col-sidebar-head, .center-gutter, #btn-upload-left, #btn-upload-right, #btn-swap-docs, .btn-clear-side {
+        display: none !important;
+      }
+      .col-bars {
+        grid-template-columns: 1fr 1fr !important;
+        height: 28px !important;
+        border-bottom: 1px solid #ccc !important;
+      }
+      .workspace {
+        height: auto !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+      }
+      .doc-pane {
+        height: auto !important;
+        overflow: visible !important;
+        padding: 8px 12px !important;
+      }
+      .clause.deferred-block {
+        content-visibility: visible !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <input type="file" id="file-input-left" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
+  <input type="file" id="file-input-right" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
+
+  <!-- ── 1. HEADER BAR ──────────────────────────────────────────────────────── -->
+  <header class="header-bar">
+    <div class="header-cluster">
+      <span class="app-title">Doc Diff</span>
+      <div class="divider-v"></div>
+      <div class="stat-summary" aria-live="polite">
+        <span><strong id="count-all">0</strong> <span id="i18n-changes-label">Änderungen</span></span>
+        <span class="trenner">·</span>
+        <span style="color:hsl(var(--success-ink))">+<strong id="count-ins" style="color:inherit">0</strong></span>
+        <span style="color:hsl(var(--destructive-ink))">−<strong id="count-del" style="color:inherit">0</strong></span>
+      </div>
+    </div>
+
+    <div class="header-cluster">
+      <div class="search-box">
+        <svg class="icon" style="color:hsl(var(--muted-foreground))" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="search-input" placeholder="Suchen…" aria-label="Search" />
+        <span class="kbd-hint">/</span>
+      </div>
+
+      <button type="button" class="btn btn-icon" id="btn-prev" title="Vorherige Änderung (K)">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+      </button>
+      <button type="button" class="btn btn-icon" id="btn-next" title="Nächste Änderung (J)">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+
+      <div class="divider-v"></div>
+
+      <button type="button" class="btn" id="btn-only-changes" aria-pressed="false">
+        <span id="i18n-btn-only-changes">Nur Änderungen</span>
+      </button>
+
+      <button type="button" class="btn" id="btn-sync-scroll" aria-pressed="true">
+        <span>Sync</span>
+      </button>
+
+      <button type="button" class="btn" id="btn-paste-modal">
+        <span id="i18n-btn-text">Text</span>
+      </button>
+
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-print" title="Print / PDF">
+        <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+      </button>
+
+      <button type="button" class="btn btn-ghost" id="btn-clear">
+        <span id="i18n-btn-clear">Leeren</span>
+      </button>
+
+      <button type="button" class="btn btn-ghost font-mono" id="btn-lang" style="padding:0 6px;font-size:11px;" title="Sprache / Language (DE/EN)">
+        DE
+      </button>
+
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-theme" title="Light / Dark">
+        <svg class="icon" id="icon-theme" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+
+      <button type="button" class="btn btn-icon" id="btn-toggle-sidebar" aria-pressed="true">
+        <svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── 2. DOCUMENT BARS ───────────────────────────────────────────────────── -->
+  <div class="col-bars">
+    <div class="col-bar col-bar-left">
+      <div class="col-title-wrap">
+        <span class="col-label" id="i18n-col-left">Original</span>
+        <span class="trenner">·</span>
+        <span class="col-filename" id="filename-left">Keine Datei geladen</span>
+        <span class="col-meta-badge" id="meta-left"></span>
+      </div>
+      <div class="header-cluster" style="gap:4px;">
+        <button type="button" class="btn btn-icon btn-ghost btn-clear-side" id="btn-clear-left" style="width:22px;height:22px;display:none;">
+          <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+        <button type="button" class="btn" style="height:22px; padding:0 6px; font-size:11px;" id="btn-upload-left">
+          <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="i18n-upload-left">Datei</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:center;">
+      <button type="button" class="btn btn-icon btn-ghost" style="width:20px;height:20px;" id="btn-swap-docs">
+        <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+      </button>
+    </div>
+
+    <div class="col-bar col-bar-right">
+      <div class="col-title-wrap">
+        <span class="col-label" id="i18n-col-right">Vergleich</span>
+        <span class="trenner">·</span>
+        <span class="col-filename" id="filename-right">Keine Datei geladen</span>
+        <span class="col-meta-badge" id="meta-right"></span>
+      </div>
+      <div class="header-cluster" style="gap:4px;">
+        <button type="button" class="btn btn-icon btn-ghost btn-clear-side" id="btn-clear-right" style="width:22px;height:22px;display:none;">
+          <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+        <button type="button" class="btn" style="height:22px; padding:0 6px; font-size:11px;" id="btn-upload-right">
+          <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="i18n-upload-right">Datei</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="col-sidebar-head">
+      <span id="i18n-sidebar-title">Änderungen</span>
+      <span class="font-mono" style="font-size:10px; color:hsl(var(--muted-foreground));">J / K</span>
+    </div>
+  </div>
+
+  <!-- ── 3. MAIN WORKSPACE ──────────────────────────────────────────────────── -->
+  <main class="workspace">
+    <section class="doc-pane doc-pane-left" id="pane-left" data-side="left">
+      <div class="drop-zone-overlay">
+        <div class="drop-box" id="i18n-drop-left">Original hier ablegen (PDF / DOCX / TXT)</div>
+      </div>
+      <div class="doc-sheet" id="sheet-left"></div>
+    </section>
+
+    <div class="center-gutter" id="center-gutter" aria-hidden="true">
+      <div class="minimap-rail" id="minimap-track"></div>
+      <svg id="connector-svg"></svg>
+    </div>
+
+    <section class="doc-pane doc-pane-right" id="pane-right" data-side="right">
+      <div class="drop-zone-overlay">
+        <div class="drop-box" id="i18n-drop-right">Vergleich hier ablegen (PDF / DOCX / TXT)</div>
+      </div>
+      <div class="doc-sheet" id="sheet-right"></div>
+    </section>
+
+    <aside class="sidebar-panel" id="sidebar">
+      <div class="sidebar-list" id="sidebar-list"></div>
+      <div class="sidebar-footer">
+        <button type="button" class="privacy-status" id="btn-privacy-info">
+          <span class="privacy-dot"></span>
+          <span>Offline · CSP Locked</span>
+        </button>
+        <span>0 B Upload</span>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ── TEXT MODAL ─────────────────────────────────────────────────────────── -->
+  <dialog class="prime-dialog" id="paste-modal">
+    <div class="dialog-header">
+      <span id="i18n-modal-paste-title">Text direkt vergleichen</span>
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-modal" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <div class="dialog-col">
+        <label for="textarea-left" id="i18n-modal-left-label">Original (Links)</label>
+        <textarea class="dialog-textarea" id="textarea-left" spellcheck="false"></textarea>
+      </div>
+      <div class="dialog-col">
+        <label for="textarea-right" id="i18n-modal-right-label">Vergleich (Rechts)</label>
+        <textarea class="dialog-textarea" id="textarea-right" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="btn" id="btn-cancel-modal">Abbrechen</button>
+      <button type="button" class="btn btn-primary" id="btn-apply-modal">Vergleichen</button>
+    </div>
+  </dialog>
+
+  <!-- ── PRIVACY & ARCHITECTURE MODAL ───────────────────────────────────────── -->
+  <dialog class="prime-dialog dialog-sm" id="privacy-modal">
+    <div class="dialog-header">
+      <span id="i18n-privacy-title">Datenschutz & Sicherheitsarchitektur (DSGVO)</span>
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-privacy" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body-single" id="i18n-privacy-body"></div>
+    <div class="dialog-footer">
+      <button type="button" class="btn btn-primary" id="btn-ok-privacy">OK</button>
+    </div>
+  </dialog>
+
+  <script>
+    // PDF.js worker is inlined via globalThis.pdfjsWorker (100% offline & file:// compatible)
+
+    const I18N = {
+      de: {
+        changesLabel: 'Änderungen',
+        searchPlaceholder: 'Suchen…',
+        prevTitle: 'Vorherige Änderung (K)',
+        nextTitle: 'Nächste Änderung (J)',
+        onlyChanges: 'Nur Änderungen',
+        onlyChangesTitle: 'Unveränderte Absätze ausblenden (C)',
+        syncTitle: 'Parallel-Scrollen ein/aus',
+        textBtn: 'Text',
+        textBtnTitle: 'Text direkt einfügen',
+        printTitle: 'Vergleich drucken / als PDF sichern',
+        clearBtn: 'Leeren',
+        clearBtnTitle: 'Alle Dokumente aus dem Arbeitsspeicher entfernen',
+        themeTitle: 'Hell / Dunkel umschalten',
+        sidebarToggleTitle: 'Änderungsliste ein-/ausblenden',
+        colLeft: 'Original',
+        colRight: 'Vergleich',
+        noFile: 'Keine Datei geladen',
+        fileBtn: 'Datei',
+        swapTitle: 'Original und Vergleich tauschen',
+        sidebarTitle: 'Änderungen',
+        dropLeft: 'Original hier ablegen (PDF / DOCX / TXT)',
+        dropRight: 'Vergleich hier ablegen (PDF / DOCX / TXT)',
+        emptyLeftTitle: 'Kein Originaldokument geladen',
+        emptyRightTitle: 'Kein Vergleichsdokument geladen',
+        emptyDesc: 'PDF-, Word- (.docx) oder Textdatei hierher ziehen oder Datei auswählen.',
+        chooseFile: 'Datei auswählen',
+        pasteText: 'Text einfügen',
+        loadSample: 'Beispielvertrag laden (v1 vs. v2)',
+        sidebarEmptyTitle: 'Noch kein Vergleich aktiv',
+        sidebarEmptyDesc: 'Laden Sie links und rechts jeweils ein Dokument, um Abweichungen zu prüfen.',
+        noMatchesTitle: 'Keine Treffer',
+        noMatchesDesc: 'Keine Änderung entspricht dem Suchbegriff.',
+        identicalTitle: 'Dokumente sind identisch',
+        identicalDesc: 'Zwischen beiden Dokumenten wurden keine Textabweichungen festgestellt.',
+        typeMod: 'Geändert',
+        typeIns: 'Eingefügt',
+        typeDel: 'Gelöscht',
+        unitPara: 'Abs.',
+        readingFile: 'Lese',
+        readError: 'Fehler beim Lesen der Datei',
+        manualLeft: 'Manuelle Eingabe (Links)',
+        manualRight: 'Manuelle Eingabe (Rechts)',
+        modalPasteTitle: 'Text direkt vergleichen',
+        modalLeftLabel: 'Original (Links)',
+        modalRightLabel: 'Vergleich (Rechts)',
+        modalLeftPh: 'Originaltext hier einfügen…',
+        modalRightPh: 'Vergleichstext hier einfügen…',
+        cancel: 'Abbrechen',
+        compare: 'Vergleichen',
+        privacyTitle: 'Datenschutz & Sicherheitsarchitektur (DSGVO)',
+        privacyBodyHtml: `
+          <p><strong>Doc Diff</strong> verarbeitet sämtliche Dokumente ausschließlich lokal im Arbeitsspeicher (RAM) Ihres Browsers. Es findet keinerlei Server-Kommunikation statt.</p>
+          <div class="sec-grid">
+            <div class="sec-item">
+              <div class="sec-item-title">
+                <span>1. Content Security Policy (Browser-Lock)</span>
+                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">connect-src 'none'</span>
+              </div>
+              <div>Durch die strikte CSP-Richtlinie im HTML-Header unterbindet der Browser technisch jegliche ausgehenden Netzwerkverbindungen (<code>fetch</code>, <code>XHR</code>, <code>WebSocket</code>, <code>sendBeacon</code>).</div>
+            </div>
+            <div class="sec-item">
+              <div class="sec-item-title">
+                <span>2. Keine Drittanbieter & Keine CDNs</span>
+                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">100 % Self-Contained</span>
+              </div>
+              <div>Alle Parser (PDF.js, Mammoth DOCX, jsdiff) sowie die Geist-Schriften sind direkt in dieser Datei eingebettet. Keine externen Font- oder Script-Aufrufe, keine IP-Weitergabe.</div>
+            </div>
+            <div class="sec-item">
+              <div class="sec-item-title">
+                <span>3. Flüchtiger Arbeitsspeicher (Zero Persistence)</span>
+                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">Kein Storage / Keine Cookies</span>
+              </div>
+              <div>Vertragsinhalte werden weder in <code>localStorage</code> noch in <code>IndexedDB</code> oder Cookies gespeichert. Mit Klick auf „Leeren“ oder dem Schließen des Tabs werden alle Daten sofort verworfen.</div>
+            </div>
+          </div>
+        `,
+        sampleLeftName: 'Mustervertrag_v1_Original.docx',
+        sampleRightName: 'Mustervertrag_v2_Vergleich.docx',
+      },
+      en: {
+        changesLabel: 'changes',
+        searchPlaceholder: 'Search…',
+        prevTitle: 'Previous change (K)',
+        nextTitle: 'Next change (J)',
+        onlyChanges: 'Changes only',
+        onlyChangesTitle: 'Hide unchanged paragraphs (C)',
+        syncTitle: 'Toggle synchronized scrolling',
+        textBtn: 'Text',
+        textBtnTitle: 'Paste text directly',
+        printTitle: 'Print comparison / Save as PDF',
+        clearBtn: 'Clear',
+        clearBtnTitle: 'Wipe all documents from memory',
+        themeTitle: 'Toggle light / dark theme',
+        sidebarToggleTitle: 'Toggle changes sidebar',
+        colLeft: 'Original',
+        colRight: 'Revised',
+        noFile: 'No file loaded',
+        fileBtn: 'File',
+        swapTitle: 'Swap original and revised documents',
+        sidebarTitle: 'Changes',
+        dropLeft: 'Drop original file here (PDF / DOCX / TXT)',
+        dropRight: 'Drop revised file here (PDF / DOCX / TXT)',
+        emptyLeftTitle: 'No original document loaded',
+        emptyRightTitle: 'No revised document loaded',
+        emptyDesc: 'Drag and drop a PDF, Word (.docx), or text file here, or choose a file.',
+        chooseFile: 'Choose file',
+        pasteText: 'Paste text',
+        loadSample: 'Load sample contract (v1 vs. v2)',
+        sidebarEmptyTitle: 'No active comparison',
+        sidebarEmptyDesc: 'Load a document on both sides to inspect clause and word changes.',
+        noMatchesTitle: 'No matches',
+        noMatchesDesc: 'No change matches your search query.',
+        identicalTitle: 'Documents are identical',
+        identicalDesc: 'No text differences were found between the two documents.',
+        typeMod: 'Modified',
+        typeIns: 'Inserted',
+        typeDel: 'Deleted',
+        unitPara: 'paras',
+        readingFile: 'Reading',
+        readError: 'Failed to read file',
+        manualLeft: 'Pasted text (Original)',
+        manualRight: 'Pasted text (Revised)',
+        modalPasteTitle: 'Compare raw text',
+        modalLeftLabel: 'Original (Left)',
+        modalRightLabel: 'Revised (Right)',
+        modalLeftPh: 'Paste original text here…',
+        modalRightPh: 'Paste revised text here…',
+        cancel: 'Cancel',
+        compare: 'Compare',
+        privacyTitle: 'Privacy & Security Architecture (GDPR)',
+        privacyBodyHtml: `
+          <p><strong>Doc Diff</strong> processes all documents strictly inside your browser's volatile memory (RAM). No file or text ever leaves your device.</p>
+          <div class="sec-grid">
+            <div class="sec-item">
+              <div class="sec-item-title">
+                <span>1. Content Security Policy (Browser Lock)</span>
+                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">connect-src 'none'</span>
+              </div>
+              <div>Enforced in the HTML head: the browser engine itself blocks any outbound network request (<code>fetch</code>, <code>XHR</code>, <code>WebSocket</code>, <code>sendBeacon</code>).</div>
+            </div>
+            <div class="sec-item">
+              <div class="sec-item-title">
+                <span>2. Zero Third Parties & Zero CDNs</span>
+                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">100% Self-Contained</span>
+              </div>
+              <div>All parsers (PDF.js, Mammoth DOCX, jsdiff) and Geist fonts are embedded directly inside this single HTML file. Zero external script or font calls.</div>
+            </div>
+            <div class="sec-item">
+              <div class="sec-item-title">
+                <span>3. Volatile Memory Only (Zero Persistence)</span>
+                <span class="font-mono" style="font-size:10px;color:hsl(var(--success-ink));">No Storage / No Cookies</span>
+              </div>
+              <div>Document text is never written to <code>localStorage</code>, <code>IndexedDB</code>, or cookies. Clicking "Clear" or closing the tab immediately discards all data.</div>
+            </div>
+          </div>
+        `,
+        sampleLeftName: 'Master_Agreement_v1_Original.docx',
+        sampleRightName: 'Master_Agreement_v2_Revised.docx',
+      },
+    };
+
+    const SAMPLES = {
+      de: {
+        v1: `RAHMENVERTRAG ÜBER IT- UND PLANUNGSLEISTUNGEN
+
+Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin (nachfolgend „Auftraggeber“ genannt) und der Alpha Systems Engineering AG, Maximilianstraße 35, 80539 München (nachfolgend „Auftragnehmer“ genannt).
+
+§ 1 Vertragsgegenstand und Leistungsumfang
+
+(1) Der Auftragnehmer verpflichtet sich zur schlüsselfertigen Erstellung, Konfiguration und Dokumentation der Cloud-Kalkulationsplattform gemäß dem Lastenheft vom 12.03.2026 (Anlage 1).
+
+(2) Nachträgliche Änderungswünsche des Auftraggebers (Change Requests) sind schriftlich einzureichen und werden auf Basis der vereinbarten Tagessätze gesondert vergütet, sofern sie den ursprünglichen Aufwand um mehr als 5,0 % überschreiten.
+
+(3) Der Auftragnehmer erbringt sämtliche Leistungen ausschließlich durch eigenes, festangestelltes Fachpersonal am Standort Deutschland.
+
+§ 2 Vergütung, Urkalkulation und Zahlungsbedingungen
+
+(1) Für die in § 1 genannten Leistungen vereinbaren die Parteien einen Pauschalfestpreis in Höhe von 145.000,00 € netto zuzüglich der gesetzlichen Umsatzsteuer.
+
+(2) Der Auftragnehmer hinterlegt vor Vertragsbeginn eine verschlossene Urkalkulation beim Auftraggeber, in der sämtliche Einzelkosten der Teilleistungen (EKT) sowie der kalkulierte Zuschlag für Allgemeine Geschäftskosten (AGK) in Höhe von 12,0 % und Wagnis und Gewinn (WuG) in Höhe von 6,0 % offengelegt sind.
+
+(3) Abschlagsrechnungen sind innerhalb von 14 Kalendertagen nach Rechnungseingang ohne Abzug zur Zahlung fällig. Bei Zahlung innerhalb von 7 Kalendertagen gewährt der Auftragnehmer 2,0 % Skonto.
+
+§ 3 Termine und Vertragsstrafe bei Verzug
+
+(1) Die produktive Bereitstellung (Go-Live) der Gesamtlösung erfolgt spätestens am 30.09.2026.
+
+(2) Gerät der Auftragnehmer mit dem verbindlichen Fertigstellungstermin in Verzug, verwirkt er für jede vollendete Kalenderwoche des Verzugs eine Vertragsstrafe in Höhe von 0,5 % der Netto-Auftragssumme, maximal jedoch 5,0 % der Gesamtauftragssumme.
+
+§ 4 Gewährleistung und Haftung
+
+(1) Die Verjährungsfrist für Mängelansprüche beträgt 24 Monate ab schriftlicher Endabnahme durch den Auftraggeber.
+
+(2) Die Haftung der Parteien für leichte Fahrlässigkeit ist bei Verletzung wesentlicher Vertragspflichten (Kardinalpflichten) auf den vertragstypischen, vorhersehbaren Schaden, höchstens jedoch auf 500.000,00 € je Schadensfall begrenzt.
+
+(3) Eine Haftung für entgangenen Gewinn oder mittelbare Folgeschäden ist im Falle leichter Fahrlässigkeit ausgeschlossen.
+
+§ 5 Geheimhaltung und Datenschutz
+
+(1) Beide Vertragsparteien verpflichten sich, alle im Rahmen der Zusammenarbeit erlangten vertraulichen Informationen sowie Geschäfts- und Betriebsgeheimnisse zeitlich unbegrenzt vertraulich zu behandeln.
+
+(2) Die Verarbeitung personenbezogener Daten erfolgt ausschließlich auf Servern innerhalb der Europäischen Union gemäß dem beigefügten Auftragsverarbeitungsvertrag (Anlage 2).
+
+§ 6 Kündigung und Schlussbestimmungen
+
+(1) Dieser Vertrag kann von beiden Parteien mit einer Frist von 3 Monaten zum Quartalsende ordentlich gekündigt werden.
+
+(2) Es gilt ausschließlich das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Ausschließlicher Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist Berlin.`,
+        v2: `RAHMENVERTRAG ÜBER IT- UND PLANUNGSLEISTUNGEN
+
+Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin (nachfolgend „Auftraggeber“ genannt) und der Alpha Systems Engineering AG, Maximilianstraße 35, 80539 München (nachfolgend „Auftragnehmer“ genannt).
+
+§ 1 Vertragsgegenstand und Leistungsumfang
+
+(1) Der Auftragnehmer verpflichtet sich zur schlüsselfertigen Erstellung, Konfiguration, Schulung und Dokumentation der Cloud-Kalkulationsplattform gemäß dem aktualisierten Lastenheft vom 18.04.2026 (Anlage 1).
+
+(2) Nachträgliche Änderungswünsche des Auftraggebers (Change Requests) sind in Textform einzureichen und werden auf Basis der vereinbarten Tagessätze gesondert vergütet, sofern sie den ursprünglichen Aufwand um mehr als 10,0 % überschreiten.
+
+(3) Der Auftragnehmer ist berechtigt, nach vorheriger schriftlicher Zustimmung des Auftraggebers qualifizierte Nachunternehmer innerhalb der Europäischen Union einzusetzen.
+
+§ 2 Vergütung, Urkalkulation und Zahlungsbedingungen
+
+(1) Für die in § 1 genannten Leistungen vereinbaren die Parteien einen Pauschalfestpreis in Höhe von 168.500,00 € netto zuzüglich der gesetzlichen Umsatzsteuer.
+
+(2) Der Auftragnehmer hinterlegt vor Vertragsbeginn eine verschlossene Urkalkulation beim Auftraggeber, in der sämtliche Einzelkosten der Teilleistungen (EKT) sowie der kalkulierte Zuschlag für Allgemeine Geschäftskosten (AGK) in Höhe von 14,5 % und Wagnis und Gewinn (WuG) in Höhe von 7,5 % offengelegt sind.
+
+(3) Abschlagsrechnungen sind innerhalb von 30 Kalendertagen nach Rechnungseingang ohne Abzug zur Zahlung fällig. Ein Skontoabzug wird nicht gewährt.
+
+(4) NEU: Preisanpassungsklausel — Bei einer Laufzeitverlängerung von mehr als 12 Monaten sind beide Parteien berechtigt, eine angemessene Anpassung der Vergütungssätze entsprechend dem Verbraucherpreisindex zu verlangen.
+
+§ 3 Termine und Vertragsstrafe bei Verzug
+
+(1) Die produktive Bereitstellung (Go-Live) der Gesamtlösung erfolgt spätestens am 15.11.2026.
+
+(2) Gerät der Auftragnehmer mit dem verbindlichen Fertigstellungstermin schuldhaft in Verzug, verwirkt er für jede vollendete Kalenderwoche des Verzugs eine Vertragsstrafe in Höhe von 0,3 % der Netto-Auftragssumme, maximal jedoch 3,0 % der Gesamtauftragssumme.
+
+§ 4 Gewährleistung und Haftung
+
+(1) Die Verjährungsfrist für Mängelansprüche beträgt 12 Monate ab schriftlicher Endabnahme durch den Auftraggeber.
+
+(2) Die Haftung der Parteien für leichte Fahrlässigkeit ist bei Verletzung wesentlicher Vertragspflichten (Kardinalpflichten) auf den vertragstypischen, vorhersehbaren Schaden, höchstens jedoch auf 250.000,00 € je Schadensfall begrenzt.
+
+§ 5 Geheimhaltung, KI-Nutzung und Datenschutz
+
+(1) Beide Vertragsparteien verpflichten sich, alle im Rahmen der Zusammenarbeit erlangten vertraulichen Informationen für einen Zeitraum von 3 Jahren nach Vertragsende vertraulich zu behandeln.
+
+(2) Die Verarbeitung personenbezogener Daten erfolgt ausschließlich auf Servern innerhalb der Europäischen Union gemäß dem beigefügten Auftragsverarbeitungsvertrag (Anlage 2).
+
+(3) NEU: Dem Auftragnehmer ist es gestattet, anonymisierte Projektdaten zur Weiterentwicklung und zum Training eigener KI-gestützter Kalkulationsmodelle zu verwenden.
+
+§ 6 Kündigung und Schlussbestimmungen
+
+(1) Dieser Vertrag kann von beiden Parteien mit einer Frist von 6 Monaten zum Jahresende ordentlich gekündigt werden.
+
+(2) Es gilt ausschließlich das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Ausschließlicher Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist München.`,
+      },
+      en: {
+        v1: `MASTER SOFTWARE & ENGINEERING SERVICES AGREEMENT
+
+Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter referred to as "Client") and Alpha Systems Engineering Inc., 35 Market Street, San Francisco (hereinafter referred to as "Contractor").
+
+1. Scope of Services
+
+(1) The Contractor undertakes to deliver, configure, and document the turnkey cloud cost-estimation platform in accordance with the Statement of Work dated March 12, 2026 (Exhibit A).
+
+(2) Subsequent change requests by the Client must be submitted in writing and shall be billed separately at the agreed daily rates if they exceed the baseline effort by more than 5.0%.
+
+(3) The Contractor shall perform all services exclusively using its own permanent, full-time engineering staff.
+
+2. Fees, Baseline Cost Calculation and Payment Terms
+
+(1) For the services specified in Section 1, the parties agree on a fixed lump-sum fee of EUR 145,000.00 net plus applicable statutory value-added tax.
+
+(2) Prior to commencement, the Contractor shall deposit a sealed baseline cost calculation (Urkalkulation) disclosing all direct unit costs as well as the overhead markup (Zuschlag) of 12.0% and profit margin of 6.0%.
+
+(3) Milestone invoices are due and payable without deduction within 14 calendar days of receipt. A 2.0% early-payment discount applies if paid within 7 calendar days.
+
+3. Delivery Schedule and Liquidated Damages
+
+(1) Production deployment (Go-Live) of the complete platform shall take place no later than September 30, 2026.
+
+(2) If the Contractor misses the binding completion date, liquidated damages of 0.5% of the net contract price shall apply per completed calendar week of delay, capped at 5.0% of the total contract value.
+
+4. Warranty and Limitation of Liability
+
+(1) The warranty period for defects is 24 months from written final acceptance by the Client.
+
+(2) Liability for slight negligence in the event of a breach of material contractual obligations is limited to foreseeable, typical damages up to a maximum of EUR 500,000.00 per incident.
+
+(3) Liability for lost profits or indirect consequential damages in cases of slight negligence is excluded.
+
+5. Confidentiality and Data Protection
+
+(1) Both parties undertake to keep all confidential information and trade secrets obtained during the collaboration strictly confidential without time limitation.
+
+(2) Personal data shall be processed exclusively on servers located within the European Union in accordance with the Data Processing Addendum (Exhibit B).
+
+6. Termination and Governing Law
+
+(1) Either party may terminate this Agreement for convenience with 3 months' prior written notice to the end of a calendar quarter.
+
+(2) This Agreement is governed by the laws of the Federal Republic of Germany. Exclusive venue for all disputes arising out of this Agreement is Berlin.`,
+        v2: `MASTER SOFTWARE & ENGINEERING SERVICES AGREEMENT
+
+Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter referred to as "Client") and Alpha Systems Engineering Inc., 35 Market Street, San Francisco (hereinafter referred to as "Contractor").
+
+1. Scope of Services
+
+(1) The Contractor undertakes to deliver, configure, train users on, and document the turnkey cloud cost-estimation platform in accordance with the updated Statement of Work dated April 18, 2026 (Exhibit A).
+
+(2) Subsequent change requests by the Client may be submitted in text form and shall be billed separately at the agreed daily rates if they exceed the baseline effort by more than 10.0%.
+
+(3) The Contractor is entitled to engage qualified subcontractors within the European Union subject to the Client's prior written consent.
+
+2. Fees, Baseline Cost Calculation and Payment Terms
+
+(1) For the services specified in Section 1, the parties agree on a fixed lump-sum fee of EUR 168,500.00 net plus applicable statutory value-added tax.
+
+(2) Prior to commencement, the Contractor shall deposit a sealed baseline cost calculation (Urkalkulation) disclosing all direct unit costs as well as the overhead markup (Zuschlag) of 14.5% and profit margin of 7.5%.
+
+(3) Milestone invoices are due and payable without deduction within 30 calendar days of receipt. Early-payment discounts are not granted.
+
+(4) NEW: Price Adjustment Clause — In the event of a term extension exceeding 12 months, either party may request an adjustment of daily rates aligned with the consumer price index.
+
+3. Delivery Schedule and Liquidated Damages
+
+(1) Production deployment (Go-Live) of the complete platform shall take place no later than November 15, 2026.
+
+(2) If the Contractor culpably misses the binding completion date, liquidated damages of 0.3% of the net contract price shall apply per completed calendar week of delay, capped at 3.0% of the total contract value.
+
+4. Warranty and Limitation of Liability
+
+(1) The warranty period for defects is 12 months from written final acceptance by the Client.
+
+(2) Liability for slight negligence in the event of a breach of material contractual obligations is limited to foreseeable, typical damages up to a maximum of EUR 250,000.00 per incident.
+
+5. Confidentiality, AI Training and Data Protection
+
+(1) Both parties undertake to keep all confidential information obtained during the collaboration strictly confidential for a period of 3 years following termination.
+
+(2) Personal data shall be processed exclusively on servers located within the European Union in accordance with the Data Processing Addendum (Exhibit B).
+
+(3) NEW: The Contractor is permitted to use anonymized project telemetry and metadata to train and improve its proprietary AI estimation models.
+
+6. Termination and Governing Law
+
+(1) Either party may terminate this Agreement for convenience with 6 months' prior written notice to the end of a calendar year.
+
+(2) This Agreement is governed by the laws of the Federal Republic of Germany. Exclusive venue for all disputes arising out of this Agreement is Munich.`,
+      },
+    };
+
+    const initialLang =
+      typeof navigator !== 'undefined' &&
+      navigator.language &&
+      navigator.language.toLowerCase().startsWith('de')
+        ? 'de'
+        : 'en';
+
+    const state = {
+      lang: initialLang,
+      leftText: '',
+      rightText: '',
+      leftName: '',
+      rightName: '',
+      leftFormat: '',
+      rightFormat: '',
+      alignedRows: [],
+      changeRows: [],
+      hoveredRowId: null,
+      activeRowId: null,
+      syncScroll: true,
+      onlyChanges: false,
+      searchQuery: '',
+      isProgrammaticScroll: false,
+    };
+
+    function t(key) {
+      return I18N[state.lang][key] || I18N.de[key] || key;
+    }
+
+    const paneLeft = document.getElementById('pane-left');
+    const paneRight = document.getElementById('pane-right');
+    const sheetLeft = document.getElementById('sheet-left');
+    const sheetRight = document.getElementById('sheet-right');
+    const sidebarList = document.getElementById('sidebar-list');
+    const connectorSvg = document.getElementById('connector-svg');
+    const minimapTrack = document.getElementById('minimap-track');
+
+    function applyTranslationsToStaticDom() {
+      document.documentElement.lang = state.lang;
+      document.getElementById('btn-lang').textContent = state.lang.toUpperCase();
+      document.getElementById('i18n-changes-label').textContent = t('changesLabel');
+      document.getElementById('search-input').placeholder = t('searchPlaceholder');
+      document.getElementById('btn-prev').title = t('prevTitle');
+      document.getElementById('btn-next').title = t('nextTitle');
+      document.getElementById('i18n-btn-only-changes').textContent = t('onlyChanges');
+      document.getElementById('btn-only-changes').title = t('onlyChangesTitle');
+      document.getElementById('btn-sync-scroll').title = t('syncTitle');
+      document.getElementById('i18n-btn-text').textContent = t('textBtn');
+      document.getElementById('btn-paste-modal').title = t('textBtnTitle');
+      document.getElementById('btn-print').title = t('printTitle');
+      document.getElementById('i18n-btn-clear').textContent = t('clearBtn');
+      document.getElementById('btn-clear').title = t('clearBtnTitle');
+      document.getElementById('btn-theme').title = t('themeTitle');
+      document.getElementById('btn-toggle-sidebar').title = t('sidebarToggleTitle');
+
+      document.getElementById('i18n-col-left').textContent = t('colLeft');
+      document.getElementById('i18n-col-right').textContent = t('colRight');
+      document.getElementById('i18n-upload-left').textContent = t('fileBtn');
+      document.getElementById('i18n-upload-right').textContent = t('fileBtn');
+      document.getElementById('btn-swap-docs').title = t('swapTitle');
+      document.getElementById('i18n-sidebar-title').textContent = t('sidebarTitle');
+      document.getElementById('i18n-drop-left').textContent = t('dropLeft');
+      document.getElementById('i18n-drop-right').textContent = t('dropRight');
+
+      document.getElementById('i18n-modal-paste-title').textContent = t('modalPasteTitle');
+      document.getElementById('i18n-modal-left-label').textContent = t('modalLeftLabel');
+      document.getElementById('i18n-modal-right-label').textContent = t('modalRightLabel');
+      document.getElementById('textarea-left').placeholder = t('modalLeftPh');
+      document.getElementById('textarea-right').placeholder = t('modalRightPh');
+      document.getElementById('btn-cancel-modal').textContent = t('cancel');
+      document.getElementById('btn-apply-modal').textContent = t('compare');
+
+      document.getElementById('i18n-privacy-title').textContent = t('privacyTitle');
+      document.getElementById('i18n-privacy-body').innerHTML = t('privacyBodyHtml');
+    }
+
+    function extractClauseRef(line, fallbackIndex) {
+      const match = line.match(/^(§\s*\d+[a-z]?|\(\d+\)|\d+(?:\.\d+)+|\d+\.)/);
+      return match ? match[1] : `#${fallbackIndex}`;
+    }
+
+    function tokenizeWords(str) {
+      const words = str.toLowerCase().split(/\s+/).filter(Boolean);
+      return { words, set: new Set(words) };
+    }
+
+    function parseIntoBlocks(rawText) {
+      const normalized = rawText.replace(/\r\n/g, '\n').replace(/\u00A0/g, ' ').trim();
+      if (!normalized) return [];
+
+      const rawLines = normalized.split(/\n+/);
+      const blocks = [];
+
+      for (let i = 0; i < rawLines.length; i++) {
+        const line = rawLines[i].trim();
+        if (!line) continue;
+
+        const isHeading =
+          /^(\S*\s*)?(§\s*\d+|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+|\d+\.\s+[A-ZÄÖÜ]|[A-ZÄÖÜ\s&-]{8,}$)/.test(line) &&
+          line.length < 110;
+
+        const idx = blocks.length + 1;
+        const { words, set } = tokenizeWords(line);
+        blocks.push({
+          index: idx,
+          refCode: extractClauseRef(line, idx),
+          text: line,
+          isHeading,
+          words,
+          wordSet: set,
+        });
+      }
+      return blocks;
+    }
+
+    function computeBlockSimilarity(blockA, blockB) {
+      if (blockA.text === blockB.text) return 1.0;
+      const lenA = blockA.words.length;
+      const lenB = blockB.words.length;
+      if (!lenA || !lenB) return 0;
+
+      const maxPossible = (2.0 * Math.min(lenA, lenB)) / (lenA + lenB);
+      if (maxPossible < 0.28) return 0;
+
+      let intersection = 0;
+      const smallerWords = lenA <= lenB ? blockA.words : blockB.words;
+      const largerSet = lenA <= lenB ? blockB.wordSet : blockA.wordSet;
+
+      for (let i = 0; i < smallerWords.length; i++) {
+        if (largerSet.has(smallerWords[i])) intersection++;
+      }
+      return (2.0 * intersection) / (lenA + lenB);
+    }
+
+    function alignDocumentBlocks(leftBlocks, rightBlocks) {
+      const totalN = leftBlocks.length;
+      const totalM = rightBlocks.length;
+      if (totalN === 0 && totalM === 0) return [];
+
+      let prefixLen = 0;
+      while (
+        prefixLen < totalN &&
+        prefixLen < totalM &&
+        leftBlocks[prefixLen].text === rightBlocks[prefixLen].text
+      ) {
+        prefixLen++;
+      }
+
+      let suffixLen = 0;
+      while (
+        suffixLen < totalN - prefixLen &&
+        suffixLen < totalM - prefixLen &&
+        leftBlocks[totalN - 1 - suffixLen].text === rightBlocks[totalM - 1 - suffixLen].text
+      ) {
+        suffixLen++;
+      }
+
+      const midLeft = leftBlocks.slice(prefixLen, totalN - suffixLen);
+      const midRight = rightBlocks.slice(prefixLen, totalM - suffixLen);
+      const n = midLeft.length;
+      const m = midRight.length;
+
+      const rawPairs = [];
+      for (let p = 0; p < prefixLen; p++) {
+        rawPairs.push({ left: leftBlocks[p], right: rightBlocks[p] });
+      }
+
+      if (n > 0 || m > 0) {
+        const dp = Array.from({ length: n + 1 }, () => new Float32Array(m + 1));
+        const ptr = Array.from({ length: n + 1 }, () => new Uint8Array(m + 1));
+        const GAP_PENALTY = -0.22;
+
+        for (let i = 1; i <= n; i++) {
+          dp[i][0] = i * GAP_PENALTY;
+          ptr[i][0] = 2;
+        }
+        for (let j = 1; j <= m; j++) {
+          dp[0][j] = j * GAP_PENALTY;
+          ptr[0][j] = 3;
+        }
+
+        for (let i = 1; i <= n; i++) {
+          for (let j = 1; j <= m; j++) {
+            const sim = computeBlockSimilarity(midLeft[i - 1], midRight[j - 1]);
+            const matchScore = sim >= 0.28 ? sim : -0.5;
+            const scoreDiag = dp[i - 1][j - 1] + matchScore;
+            const scoreUp = dp[i - 1][j] + GAP_PENALTY;
+            const scoreLeft = dp[i][j - 1] + GAP_PENALTY;
+
+            if (scoreDiag >= scoreUp && scoreDiag >= scoreLeft) {
+              dp[i][j] = scoreDiag;
+              ptr[i][j] = 1;
+            } else if (scoreUp >= scoreLeft) {
+              dp[i][j] = scoreUp;
+              ptr[i][j] = 2;
+            } else {
+              dp[i][j] = scoreLeft;
+              ptr[i][j] = 3;
+            }
+          }
+        }
+
+        const midPairs = [];
+        let i = n;
+        let j = m;
+        while (i > 0 || j > 0) {
+          const move = ptr[i][j];
+          if (i > 0 && j > 0 && move === 1) {
+            midPairs.push({ left: midLeft[i - 1], right: midRight[j - 1] });
+            i--;
+            j--;
+          } else if (i > 0 && (j === 0 || move === 2)) {
+            midPairs.push({ left: midLeft[i - 1], right: null });
+            i--;
+          } else {
+            midPairs.push({ left: null, right: midRight[j - 1] });
+            j--;
+          }
+        }
+        midPairs.reverse();
+        for (const pair of midPairs) rawPairs.push(pair);
+      }
+
+      for (let s = 0; s < suffixLen; s++) {
+        rawPairs.push({
+          left: leftBlocks[totalN - suffixLen + s],
+          right: rightBlocks[totalM - suffixLen + s],
+        });
+      }
+
+      return rawPairs.map((pair, idx) => {
+        const rowId = `row-${idx + 1}`;
+        if (pair.left && pair.right) {
+          if (pair.left.text === pair.right.text) {
+            return {
+              id: rowId,
+              rowNumber: idx + 1,
+              type: 'equal',
+              leftBlock: pair.left,
+              rightBlock: pair.right,
+              wordDiffs: [{ value: pair.left.text }],
+            };
+          } else {
+            const wordDiffs = window.Diff
+              ? window.Diff.diffWordsWithSpace(pair.left.text, pair.right.text)
+              : [{ value: pair.left.text, removed: true }, { value: pair.right.text, added: true }];
+
+            return {
+              id: rowId,
+              rowNumber: idx + 1,
+              type: 'modified',
+              leftBlock: pair.left,
+              rightBlock: pair.right,
+              wordDiffs,
+            };
+          }
+        } else if (pair.left && !pair.right) {
+          return {
+            id: rowId,
+            rowNumber: idx + 1,
+            type: 'deleted',
+            leftBlock: pair.left,
+            rightBlock: null,
+            wordDiffs: [{ value: pair.left.text, removed: true }],
+          };
+        } else {
+          return {
+            id: rowId,
+            rowNumber: idx + 1,
+            type: 'inserted',
+            leftBlock: null,
+            rightBlock: pair.right,
+            wordDiffs: [{ value: pair.right.text, added: true }],
+          };
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Entity-safe search highlighting: splits raw text BEFORE escaping so HTML entities are never corrupted
+    function escapeAndHighlightText(rawText, query) {
+      if (!rawText) return '';
+      if (!query || query.trim().length < 2) return escapeHtml(rawText);
+      const q = query.trim();
+      const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${safeQ})`, 'gi');
+      const parts = rawText.split(regex);
+      if (parts.length === 1) return escapeHtml(rawText);
+
+      const qLower = q.toLowerCase();
+      return parts
+        .map(part =>
+          part.toLowerCase() === qLower
+            ? `<mark class="tok-search">${escapeHtml(part)}</mark>`
+            : escapeHtml(part)
+        )
+        .join('');
+    }
+
+    function setSafeContainerHtml(container, trustedHtmlString) {
+      container.innerHTML = trustedHtmlString;
+    }
+
+    function renderLeftBlockHtml(row, query) {
+      if (row.type === 'equal') {
+        return escapeAndHighlightText(row.leftBlock.text, query);
+      }
+      if (row.type === 'deleted') {
+        return `<del class="tok-del">${escapeAndHighlightText(row.leftBlock.text, query)}</del>`;
+      }
+      if (row.type === 'modified') {
+        return row.wordDiffs
+          .filter(part => !part.added)
+          .map(part => {
+            const content = escapeAndHighlightText(part.value, query);
+            return part.removed ? `<del class="tok-del">${content}</del>` : content;
+          })
+          .join('');
+      }
+      return '';
+    }
+
+    function renderRightBlockHtml(row, query) {
+      if (row.type === 'equal') {
+        return escapeAndHighlightText(row.rightBlock.text, query);
+      }
+      if (row.type === 'inserted') {
+        return `<ins class="tok-ins">${escapeAndHighlightText(row.rightBlock.text, query)}</ins>`;
+      }
+      if (row.type === 'modified') {
+        return row.wordDiffs
+          .filter(part => !part.removed)
+          .map(part => {
+            const content = escapeAndHighlightText(part.value, query);
+            return part.added ? `<ins class="tok-ins">${content}</ins>` : content;
+          })
+          .join('');
+      }
+      return '';
+    }
+
+    function renderPaneEmptyState(side) {
+      const isLeft = side === 'left';
+      const title = isLeft ? t('emptyLeftTitle') : t('emptyRightTitle');
+      const uploadId = isLeft ? 'btn-empty-upload-left' : 'btn-empty-upload-right';
+      return `
+        <div class="empty-state" data-empty-state>
+          <svg class="empty-glyph" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          <h2 class="empty-title">${escapeHtml(title)}</h2>
+          <div class="empty-desc">${escapeHtml(t('emptyDesc'))}</div>
+          <div class="empty-actions">
+            <button type="button" class="btn btn-primary" id="${uploadId}">${escapeHtml(t('chooseFile'))}</button>
+            <button type="button" class="btn btn-open-paste">${escapeHtml(t('pasteText'))}</button>
+          </div>
+          <button type="button" class="empty-sample-trigger btn-load-sample">${escapeHtml(t('loadSample'))}</button>
+        </div>
+      `;
+    }
+
+    function updateColumnMeta(side, blocksCount) {
+      const metaEl = document.getElementById(side === 'left' ? 'meta-left' : 'meta-right');
+      const clearBtn = document.getElementById(side === 'left' ? 'btn-clear-left' : 'btn-clear-right');
+      const fmt = side === 'left' ? state.leftFormat : state.rightFormat;
+
+      if (blocksCount > 0) {
+        metaEl.textContent = fmt ? `${fmt} · ${blocksCount} ${t('unitPara')}` : `${blocksCount} ${t('unitPara')}`;
+        metaEl.classList.add('is-visible');
+        clearBtn.style.display = 'inline-flex';
+      } else {
+        metaEl.textContent = '';
+        metaEl.classList.remove('is-visible');
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    function runComparison() {
+      const leftBlocks = parseIntoBlocks(state.leftText);
+      const rightBlocks = parseIntoBlocks(state.rightText);
+
+      document.getElementById('filename-left').textContent = state.leftName || t('noFile');
+      document.getElementById('filename-right').textContent = state.rightName || t('noFile');
+
+      updateColumnMeta('left', leftBlocks.length);
+      updateColumnMeta('right', rightBlocks.length);
+
+      const bothLoaded = leftBlocks.length > 0 && rightBlocks.length > 0;
+
+      if (!bothLoaded) {
+        state.alignedRows = [];
+        state.changeRows = [];
+        document.getElementById('count-all').textContent = '0';
+        document.getElementById('count-ins').textContent = '0';
+        document.getElementById('count-del').textContent = '0';
+
+        if (leftBlocks.length === 0) {
+          setSafeContainerHtml(sheetLeft, renderPaneEmptyState('left'));
+        } else {
+          setSafeContainerHtml(
+            sheetLeft,
+            leftBlocks
+              .map(
+                b =>
+                  `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${
+                    b.isHeading ? 'is-heading' : ''
+                  }">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
+              )
+              .join('')
+          );
+        }
+
+        if (rightBlocks.length === 0) {
+          setSafeContainerHtml(sheetRight, renderPaneEmptyState('right'));
+        } else {
+          setSafeContainerHtml(
+            sheetRight,
+            rightBlocks
+              .map(
+                b =>
+                  `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${
+                    b.isHeading ? 'is-heading' : ''
+                  }">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
+              )
+              .join('')
+          );
+        }
+
+        bindEmptyStateButtons();
+        renderSidebarList(bothLoaded);
+        minimapTrack.innerHTML = '';
+        connectorSvg.innerHTML = '';
+        return;
+      }
+
+      state.alignedRows = alignDocumentBlocks(leftBlocks, rightBlocks);
+      state.changeRows = state.alignedRows.filter(r => r.type !== 'equal');
+
+      const modCount = state.alignedRows.filter(r => r.type === 'modified').length;
+      const insCount = state.alignedRows.filter(r => r.type === 'inserted').length;
+      const delCount = state.alignedRows.filter(r => r.type === 'deleted').length;
+
+      document.getElementById('count-all').textContent = String(modCount + insCount + delCount);
+      document.getElementById('count-ins').textContent = String(insCount + modCount);
+      document.getElementById('count-del').textContent = String(delCount + modCount);
+
+      renderDocumentPanes();
+      renderSidebarList(true);
+      renderMinimap();
+
+      requestAnimationFrame(() => {
+        equalizeRowHeights();
+        scheduleGutterDraw();
+      });
+    }
+
+    function bindEmptyStateButtons() {
+      const btnL = document.getElementById('btn-empty-upload-left');
+      if (btnL) btnL.addEventListener('click', () => document.getElementById('file-input-left').click());
+
+      const btnR = document.getElementById('btn-empty-upload-right');
+      if (btnR) btnR.addEventListener('click', () => document.getElementById('file-input-right').click());
+
+      document.querySelectorAll('.btn-open-paste').forEach(btn => {
+        btn.addEventListener('click', () => openPasteModal());
+      });
+
+      document.querySelectorAll('.btn-load-sample').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const sample = SAMPLES[state.lang] || SAMPLES.de;
+          state.leftName = t('sampleLeftName');
+          state.leftFormat = 'DEMO';
+          state.leftText = sample.v1;
+          state.rightName = t('sampleRightName');
+          state.rightFormat = 'DEMO';
+          state.rightText = sample.v2;
+          runComparison();
+        });
+      });
+    }
+
+    function renderDocumentPanes() {
+      const leftFragments = [];
+      const rightFragments = [];
+      const q = state.searchQuery;
+
+      state.alignedRows.forEach((row, idx) => {
+        const deferClass = idx > 14 ? 'deferred-block' : '';
+
+        if (row.leftBlock) {
+          const headingClass = row.leftBlock.isHeading ? 'is-heading' : '';
+          const stateClass =
+            row.type === 'equal'
+              ? 'state-equal'
+              : row.type === 'modified'
+              ? 'state-modified'
+              : 'state-deleted';
+
+          leftFragments.push(`
+            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+              <div class="clause ${stateClass} ${headingClass} ${deferClass}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div>
+            </div>
+          `);
+        } else {
+          leftFragments.push(`
+            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+              <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}"></div>
+            </div>
+          `);
+        }
+
+        if (row.rightBlock) {
+          const headingClass = row.rightBlock.isHeading ? 'is-heading' : '';
+          const stateClass =
+            row.type === 'equal'
+              ? 'state-equal'
+              : row.type === 'modified'
+              ? 'state-modified'
+              : 'state-inserted';
+
+          rightFragments.push(`
+            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+              <div class="clause ${stateClass} ${headingClass} ${deferClass}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}</div>
+            </div>
+          `);
+        } else {
+          rightFragments.push(`
+            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+              <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}"></div>
+            </div>
+          `);
+        }
+      });
+
+      setSafeContainerHtml(sheetLeft, leftFragments.join(''));
+      setSafeContainerHtml(sheetRight, rightFragments.join(''));
+    }
+
+    function equalizeRowHeights() {
+      const leftAnchors = sheetLeft.querySelectorAll('.diff-row-anchor');
+      const rightAnchors = sheetRight.querySelectorAll('.diff-row-anchor');
+      const len = Math.min(leftAnchors.length, rightAnchors.length);
+
+      for (let i = 0; i < len; i++) {
+        const lBlock = leftAnchors[i].firstElementChild;
+        const rBlock = rightAnchors[i].firstElementChild;
+        if (!lBlock || !rBlock) continue;
+        lBlock.style.minHeight = '';
+        rBlock.style.minHeight = '';
+      }
+
+      const heights = new Array(len);
+      for (let i = 0; i < len; i++) {
+        const lBlock = leftAnchors[i].firstElementChild;
+        const rBlock = rightAnchors[i].firstElementChild;
+        if (!lBlock || !rBlock) {
+          heights[i] = 0;
+          continue;
+        }
+        heights[i] = Math.max(lBlock.offsetHeight, rBlock.offsetHeight);
+      }
+
+      for (let i = 0; i < len; i++) {
+        if (!heights[i]) continue;
+        leftAnchors[i].firstElementChild.style.minHeight = `${heights[i]}px`;
+        rightAnchors[i].firstElementChild.style.minHeight = `${heights[i]}px`;
+      }
+    }
+
+    function renderSidebarList(bothLoaded) {
+      if (!bothLoaded) {
+        setSafeContainerHtml(
+          sidebarList,
+          `
+          <div class="empty-state empty-state-sm" data-empty-state>
+            <svg class="empty-glyph" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/>
+            </svg>
+            <p class="empty-title">${escapeHtml(t('sidebarEmptyTitle'))}</p>
+            <div class="empty-desc">${escapeHtml(t('sidebarEmptyDesc'))}</div>
+          </div>
+        `
+        );
+        return;
+      }
+
+      const filtered = state.changeRows.filter(row => {
+        if (state.searchQuery.trim().length >= 2) {
+          const q = state.searchQuery.toLowerCase();
+          const lText = row.leftBlock ? row.leftBlock.text.toLowerCase() : '';
+          const rText = row.rightBlock ? row.rightBlock.text.toLowerCase() : '';
+          return lText.includes(q) || rText.includes(q);
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        const isSearch = state.searchQuery.trim().length >= 2;
+        setSafeContainerHtml(
+          sidebarList,
+          `
+          <div class="empty-state empty-state-sm" data-empty-state>
+            <svg class="empty-glyph" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <p class="empty-title">${escapeHtml(isSearch ? t('noMatchesTitle') : t('identicalTitle'))}</p>
+            <div class="empty-desc">${escapeHtml(isSearch ? t('noMatchesDesc') : t('identicalDesc'))}</div>
+          </div>
+        `
+        );
+        return;
+      }
+
+      setSafeContainerHtml(
+        sidebarList,
+        filtered
+          .map((row, idx) => {
+            const cls = row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del';
+            const typeLabel =
+              row.type === 'modified' ? t('typeMod') : row.type === 'inserted' ? t('typeIns') : t('typeDel');
+            const refCode = row.rightBlock ? row.rightBlock.refCode : row.leftBlock.refCode;
+            const snippetHtml =
+              row.type === 'deleted'
+                ? renderLeftBlockHtml(row, state.searchQuery)
+                : renderRightBlockHtml(row, state.searchQuery);
+
+            return `
+              <div class="nav-item ${cls}" data-row-id="${row.id}">
+                <div class="nav-item-head">
+                  <span>${idx + 1} · ${escapeHtml(refCode)}</span>
+                  <span>${escapeHtml(typeLabel)}</span>
+                </div>
+                <div class="nav-item-snippet">${snippetHtml}</div>
+              </div>
+            `;
+          })
+          .join('')
+      );
+    }
+
+    function renderMinimap() {
+      const totalRows = state.alignedRows.length || 1;
+      setSafeContainerHtml(
+        minimapTrack,
+        state.changeRows
+          .map(row => {
+            const pct = ((row.rowNumber - 1) / totalRows) * 100;
+            const cls = row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del';
+            return `<div class="minimap-tick ${cls}" style="top: ${pct}%" data-row-id="${row.id}"></div>`;
+          })
+          .join('')
+      );
+    }
+
+    let gutterRafPending = false;
+    function scheduleGutterDraw() {
+      if (gutterRafPending) return;
+      gutterRafPending = true;
+      requestAnimationFrame(() => {
+        gutterRafPending = false;
+        drawGutterConnectors();
+      });
+    }
+
+    function drawGutterConnectors() {
+      const gutterRect = connectorSvg.getBoundingClientRect();
+      if (!gutterRect.width || !gutterRect.height) return;
+
+      const targetIds = new Set([state.hoveredRowId, state.activeRowId].filter(Boolean));
+      if (targetIds.size === 0) {
+        connectorSvg.innerHTML = '';
+        return;
+      }
+
+      const paths = [];
+      const w = gutterRect.width;
+
+      targetIds.forEach(rowId => {
+        const leftEl = sheetLeft.querySelector(`.clause[data-row-id="${rowId}"]`);
+        const rightEl = sheetRight.querySelector(`.clause[data-row-id="${rowId}"]`);
+        if (!leftEl || !rightEl) return;
+
+        const lRect = leftEl.getBoundingClientRect();
+        const rRect = rightEl.getBoundingClientRect();
+
+        const yLeft = lRect.top + lRect.height / 2 - gutterRect.top;
+        const yRight = rRect.top + rRect.height / 2 - gutterRect.top;
+
+        const d = `M 0 ${yLeft} C ${w * 0.45} ${yLeft}, ${w * 0.55} ${yRight}, ${w} ${yRight}`;
+        paths.push(`<path d="${d}" fill="none" stroke="hsl(var(--ring))" stroke-width="1.5" />`);
+      });
+
+      connectorSvg.innerHTML = paths.join('');
+    }
+
+    function setHoveredRow(rowId) {
+      if (state.hoveredRowId === rowId) return;
+      state.hoveredRowId = rowId;
+
+      document.querySelectorAll('.clause.is-hovered, .nav-item.is-hovered').forEach(el => {
+        el.classList.remove('is-hovered');
+      });
+
+      if (rowId) {
+        document.querySelectorAll(`[data-row-id="${rowId}"]`).forEach(el => {
+          if (el.classList.contains('clause') || el.classList.contains('nav-item')) {
+            el.classList.add('is-hovered');
+          }
+        });
+      }
+      scheduleGutterDraw();
+    }
+
+    function selectAndScrollToRow(rowId, smooth = true) {
+      state.activeRowId = rowId;
+      document.querySelectorAll('.clause.is-active, .nav-item.is-active').forEach(el => {
+        el.classList.remove('is-active');
+      });
+
+      if (!rowId) return;
+
+      document.querySelectorAll(`[data-row-id="${rowId}"]`).forEach(el => {
+        if (el.classList.contains('clause') || el.classList.contains('nav-item')) {
+          el.classList.add('is-active');
+        }
+      });
+
+      const leftTarget = sheetLeft.querySelector(`.clause[data-row-id="${rowId}"]`);
+      const rightTarget = sheetRight.querySelector(`.clause[data-row-id="${rowId}"]`);
+      const navTarget = sidebarList.querySelector(`.nav-item[data-row-id="${rowId}"]`);
+
+      state.isProgrammaticScroll = true;
+
+      if (leftTarget) {
+        const topOffset = leftTarget.offsetTop - paneLeft.clientHeight / 3;
+        paneLeft.scrollTo({ top: Math.max(0, topOffset), behavior: smooth ? 'smooth' : 'auto' });
+      }
+      if (rightTarget) {
+        const topOffset = rightTarget.offsetTop - paneRight.clientHeight / 3;
+        paneRight.scrollTo({ top: Math.max(0, topOffset), behavior: smooth ? 'smooth' : 'auto' });
+      }
+      if (navTarget) {
+        navTarget.scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+      }
+
+      setTimeout(() => {
+        state.isProgrammaticScroll = false;
+        scheduleGutterDraw();
+      }, smooth ? 300 : 40);
+    }
+
+    [sheetLeft, sheetRight, sidebarList].forEach(container => {
+      container.addEventListener('mouseover', e => {
+        const target = e.target.closest('[data-row-id]');
+        if (target) setHoveredRow(target.getAttribute('data-row-id'));
+      });
+      container.addEventListener('mouseleave', () => setHoveredRow(null));
+      container.addEventListener('click', e => {
+        const target = e.target.closest('[data-row-id]');
+        if (target) selectAndScrollToRow(target.getAttribute('data-row-id'), true);
+      });
+    });
+
+    minimapTrack.addEventListener('click', e => {
+      const tick = e.target.closest('[data-row-id]');
+      if (tick) selectAndScrollToRow(tick.getAttribute('data-row-id'), true);
+    });
+
+    let activeScrollSide = null;
+    let scrollUnlockTimer = null;
+
+    function handlePaneScroll(sourcePane, targetPane, side) {
+      scheduleGutterDraw();
+      if (!state.syncScroll || state.isProgrammaticScroll) return;
+      if (activeScrollSide && activeScrollSide !== side) return;
+      activeScrollSide = side;
+
+      targetPane.scrollTop = sourcePane.scrollTop;
+
+      clearTimeout(scrollUnlockTimer);
+      scrollUnlockTimer = setTimeout(() => {
+        activeScrollSide = null;
+      }, 80);
+    }
+
+    paneLeft.addEventListener('scroll', () => handlePaneScroll(paneLeft, paneRight, 'left'), { passive: true });
+    paneRight.addEventListener('scroll', () => handlePaneScroll(paneRight, paneLeft, 'right'), { passive: true });
+
+    function attachScrollEnd(scroller, callback) {
+      if ('onscrollend' in window) {
+        scroller.addEventListener('scrollend', callback, { passive: true });
+      } else {
+        let timer = null;
+        scroller.addEventListener('scroll', () => {
+          clearTimeout(timer);
+          timer = setTimeout(callback, 100);
+        }, { passive: true });
+      }
+    }
+
+    attachScrollEnd(paneLeft, () => { activeScrollSide = null; scheduleGutterDraw(); });
+    attachScrollEnd(paneRight, () => { activeScrollSide = null; scheduleGutterDraw(); });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        equalizeRowHeights();
+        scheduleGutterDraw();
+      }, 60);
+    });
+
+    async function extractPdfText(arrayBuffer) {
+      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const pageTexts = [];
+
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        let lastY = null;
+        let currentLine = '';
+        const lines = [];
+
+        for (const item of textContent.items) {
+          const str = item.str;
+          if (!str) continue;
+          const y = item.transform ? item.transform[5] : 0;
+
+          if (lastY !== null && Math.abs(y - lastY) > 6) {
+            if (currentLine.trim()) lines.push(currentLine.trim());
+            if (Math.abs(y - lastY) > 16) lines.push('');
+            currentLine = str;
+          } else {
+            currentLine += (currentLine && !currentLine.endsWith(' ') && !str.startsWith(' ') ? ' ' : '') + str;
+          }
+          lastY = y;
+        }
+        if (currentLine.trim()) lines.push(currentLine.trim());
+
+        const paragraphs = [];
+        let buffer = '';
+        for (const line of lines) {
+          if (!line) {
+            if (buffer) {
+              paragraphs.push(buffer);
+              buffer = '';
+            }
+            continue;
+          }
+          const isNewClause = /^(§\s*\d+|\(\d+\)|\d+\.\d*|\([a-z]\)|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+)\s/.test(line);
+          if (isNewClause && buffer) {
+            paragraphs.push(buffer);
+            buffer = line;
+          } else {
+            buffer = buffer ? `${buffer} ${line}` : line;
+          }
+        }
+        if (buffer) paragraphs.push(buffer);
+        pageTexts.push(paragraphs.join('\n\n'));
+      }
+      return pageTexts.join('\n\n');
+    }
+
+    async function extractDocxText(arrayBuffer) {
+      const result = await window.mammoth.extractRawText({ arrayBuffer });
+      return result.value;
+    }
+
+    async function handleFileUpload(file, side) {
+      if (!file) return;
+      const fnLabel = document.getElementById(side === 'left' ? 'filename-left' : 'filename-right');
+      const prevName = fnLabel.textContent;
+      fnLabel.textContent = `${t('readingFile')} ${file.name}…`;
+
+      try {
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        let extractedText = '';
+
+        if (ext === 'pdf') {
+          const buffer = await file.arrayBuffer();
+          extractedText = await extractPdfText(buffer);
+        } else if (ext === 'docx') {
+          const buffer = await file.arrayBuffer();
+          extractedText = await extractDocxText(buffer);
+        } else {
+          extractedText = await file.text();
+        }
+
+        if (side === 'left') {
+          state.leftName = file.name;
+          state.leftFormat = ext.toUpperCase() || 'TEXT';
+          state.leftText = extractedText;
+        } else {
+          state.rightName = file.name;
+          state.rightFormat = ext.toUpperCase() || 'TEXT';
+          state.rightText = extractedText;
+        }
+        runComparison();
+      } catch (err) {
+        fnLabel.textContent = prevName;
+        alert(`${t('readError')} "${file.name}": ${err.message}`);
+      }
+    }
+
+    let dragCounter = 0;
+    window.addEventListener('dragenter', e => {
+      if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+        dragCounter++;
+        document.body.classList.add('is-dragging-file');
+      }
+    });
+    window.addEventListener('dragleave', () => {
+      dragCounter = Math.max(0, dragCounter - 1);
+      if (dragCounter === 0) document.body.classList.remove('is-dragging-file');
+    });
+    window.addEventListener('dragover', e => e.preventDefault());
+    window.addEventListener('drop', e => {
+      e.preventDefault();
+      dragCounter = 0;
+      document.body.classList.remove('is-dragging-file');
+    });
+
+    async function handleDropFiles(files, targetSide) {
+      if (!files || !files.length) return;
+      if (files.length >= 2) {
+        await handleFileUpload(files[0], 'left');
+        await handleFileUpload(files[1], 'right');
+      } else {
+        await handleFileUpload(files[0], targetSide);
+      }
+    }
+
+    [
+      { el: paneLeft, side: 'left' },
+      { el: paneRight, side: 'right' },
+      { el: document.querySelector('.col-bar-left'), side: 'left' },
+      { el: document.querySelector('.col-bar-right'), side: 'right' },
+    ].forEach(({ el, side }) => {
+      if (!el) return;
+      el.addEventListener('dragover', e => {
+        e.preventDefault();
+        (side === 'left' ? paneLeft : paneRight).classList.add('drag-over');
+      });
+      el.addEventListener('dragleave', () => {
+        (side === 'left' ? paneLeft : paneRight).classList.remove('drag-over');
+      });
+      el.addEventListener('drop', async e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+        document.body.classList.remove('is-dragging-file');
+        paneLeft.classList.remove('drag-over');
+        paneRight.classList.remove('drag-over');
+        await handleDropFiles(e.dataTransfer.files, side);
+      });
+    });
+
+    const fileInputLeft = document.getElementById('file-input-left');
+    const fileInputRight = document.getElementById('file-input-right');
+    document.getElementById('btn-upload-left').addEventListener('click', () => fileInputLeft.click());
+    document.getElementById('btn-upload-right').addEventListener('click', () => fileInputRight.click());
+    fileInputLeft.addEventListener('change', e => handleFileUpload(e.target.files[0], 'left'));
+    fileInputRight.addEventListener('change', e => handleFileUpload(e.target.files[0], 'right'));
+
+    document.getElementById('btn-clear-left').addEventListener('click', () => {
+      state.leftText = '';
+      state.leftName = '';
+      state.leftFormat = '';
+      fileInputLeft.value = '';
+      runComparison();
+    });
+
+    document.getElementById('btn-clear-right').addEventListener('click', () => {
+      state.rightText = '';
+      state.rightName = '';
+      state.rightFormat = '';
+      fileInputRight.value = '';
+      runComparison();
+    });
+
+    function stepChange(direction) {
+      if (!state.changeRows.length) return;
+      const curIdx = state.changeRows.findIndex(r => r.id === state.activeRowId);
+      let nextIdx = 0;
+      if (curIdx === -1) {
+        nextIdx = direction > 0 ? 0 : state.changeRows.length - 1;
+      } else {
+        nextIdx = (curIdx + direction + state.changeRows.length) % state.changeRows.length;
+      }
+      selectAndScrollToRow(state.changeRows[nextIdx].id, true);
+    }
+
+    document.getElementById('btn-prev').addEventListener('click', () => stepChange(-1));
+    document.getElementById('btn-next').addEventListener('click', () => stepChange(1));
+
+    const searchInput = document.getElementById('search-input');
+
+    window.addEventListener('keydown', e => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        if (e.key === 'Escape') document.activeElement.blur();
+        return;
+      }
+      if (e.key === 'j' || e.key === 'J') {
+        e.preventDefault();
+        stepChange(1);
+      } else if (e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        stepChange(-1);
+      } else if (e.key === '/') {
+        e.preventDefault();
+        searchInput.focus();
+      } else if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        document.getElementById('btn-only-changes').click();
+      }
+    });
+
+    const btnSyncScroll = document.getElementById('btn-sync-scroll');
+    btnSyncScroll.addEventListener('click', () => {
+      state.syncScroll = !state.syncScroll;
+      btnSyncScroll.setAttribute('aria-pressed', String(state.syncScroll));
+    });
+
+    const btnOnlyChanges = document.getElementById('btn-only-changes');
+    btnOnlyChanges.addEventListener('click', () => {
+      state.onlyChanges = !state.onlyChanges;
+      document.body.classList.toggle('only-changes', state.onlyChanges);
+      btnOnlyChanges.setAttribute('aria-pressed', String(state.onlyChanges));
+      requestAnimationFrame(() => {
+        equalizeRowHeights();
+        scheduleGutterDraw();
+      });
+    });
+
+    document.getElementById('btn-print').addEventListener('click', () => {
+      window.print();
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      state.leftText = '';
+      state.rightText = '';
+      state.leftName = '';
+      state.rightName = '';
+      state.leftFormat = '';
+      state.rightFormat = '';
+      state.activeRowId = null;
+      state.hoveredRowId = null;
+      state.searchQuery = '';
+      searchInput.value = '';
+      fileInputLeft.value = '';
+      fileInputRight.value = '';
+      runComparison();
+    });
+
+    document.getElementById('btn-lang').addEventListener('click', () => {
+      state.lang = state.lang === 'de' ? 'en' : 'de';
+      // If demo sample is currently loaded, switch sample language too
+      if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
+        const sample = SAMPLES[state.lang] || SAMPLES.de;
+        state.leftName = t('sampleLeftName');
+        state.leftText = sample.v1;
+        state.rightName = t('sampleRightName');
+        state.rightText = sample.v2;
+      }
+      applyTranslationsToStaticDom();
+      runComparison();
+    });
+
+    document.getElementById('btn-theme').addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      document.getElementById('icon-theme').innerHTML = isDark
+        ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>'
+        : '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
+      scheduleGutterDraw();
+    });
+
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    btnToggleSidebar.addEventListener('click', () => {
+      const collapsed = document.body.classList.toggle('sidebar-collapsed');
+      btnToggleSidebar.setAttribute('aria-pressed', String(!collapsed));
+      requestAnimationFrame(() => {
+        equalizeRowHeights();
+        scheduleGutterDraw();
+      });
+    });
+
+    document.getElementById('btn-swap-docs').addEventListener('click', () => {
+      [state.leftText, state.rightText] = [state.rightText, state.leftText];
+      [state.leftName, state.rightName] = [state.rightName, state.leftName];
+      [state.leftFormat, state.rightFormat] = [state.rightFormat, state.leftFormat];
+      runComparison();
+    });
+
+    searchInput.addEventListener('input', e => {
+      state.searchQuery = e.target.value;
+      if (state.alignedRows.length > 0) {
+        renderDocumentPanes();
+        renderSidebarList(true);
+        requestAnimationFrame(() => {
+          equalizeRowHeights();
+          scheduleGutterDraw();
+        });
+      } else {
+        runComparison();
+      }
+    });
+
+    const pasteModal = document.getElementById('paste-modal');
+    const textareaLeft = document.getElementById('textarea-left');
+    const textareaRight = document.getElementById('textarea-right');
+
+    function openPasteModal() {
+      textareaLeft.value = state.leftText;
+      textareaRight.value = state.rightText;
+      pasteModal.showModal();
+    }
+
+    document.getElementById('btn-paste-modal').addEventListener('click', openPasteModal);
+    document.getElementById('btn-close-modal').addEventListener('click', () => pasteModal.close());
+    document.getElementById('btn-cancel-modal').addEventListener('click', () => pasteModal.close());
+    document.getElementById('btn-apply-modal').addEventListener('click', () => {
+      state.leftText = textareaLeft.value;
+      state.rightText = textareaRight.value;
+      if (state.leftText.trim() && !state.leftName) {
+        state.leftName = t('manualLeft');
+        state.leftFormat = 'TEXT';
+      }
+      if (state.rightText.trim() && !state.rightName) {
+        state.rightName = t('manualRight');
+        state.rightFormat = 'TEXT';
+      }
+      pasteModal.close();
+      runComparison();
+    });
+
+    const privacyModal = document.getElementById('privacy-modal');
+    document.getElementById('btn-privacy-info').addEventListener('click', () => privacyModal.showModal());
+    document.getElementById('btn-close-privacy').addEventListener('click', () => privacyModal.close());
+    document.getElementById('btn-ok-privacy').addEventListener('click', () => privacyModal.close());
+
+    [pasteModal, privacyModal].forEach(dlg => {
+      dlg.addEventListener('click', e => {
+        if (e.target === dlg) dlg.close();
+      });
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      applyTranslationsToStaticDom();
+      runComparison();
+    });
+  </script>
+</body>
+</html>
