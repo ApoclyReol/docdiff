@@ -309,8 +309,8 @@ svg.icon {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
+  /* No z-index: menus and popovers stack at the page level, above the backdrop of a sheet. */
   position: relative;
-  z-index: 50;
 }
 body:not(.is-comparing) .topbar {
   background: hsl(var(--background));
