@@ -165,6 +165,12 @@ const I18N = {
     errScannedPdf: 'Dieses PDF enthält keinen Text (eingescanntes Dokument oder Bild). Scans werden nicht unterstützt, da keine Texterkennung (OCR) verfügbar ist.',
     warnPdfPagesWithoutText: 'Hinweis: Seiten ohne Textebene (Scan/Bild) können nicht verglichen werden:',
     errDocxEmpty: 'Im Word-Dokument wurde kein Text gefunden.',
+    errPdfPassword:
+      'Das PDF ist mit einem Kennwort geschützt. Bitte den Kennwortschutz entfernen (z. B. ungeschützt neu speichern oder drucken) und die Datei erneut laden.',
+    errPdfCorrupt: 'Das PDF ist beschädigt oder unvollständig und kann nicht gelesen werden.',
+    errDocxCorrupt: 'Das Word-Dokument ist beschädigt, unvollständig oder kein gültiges .docx und kann nicht gelesen werden.',
+    warnTextLegacyEncoding:
+      'Hinweis: Die Textdatei ist nicht UTF-8-kodiert und wurde als Windows-1252 (Westeuropäisch) gelesen. Bitte Umlaute und Sonderzeichen prüfen.',
     warnDocxTrackedChanges:
       'Hinweis: Das Word-Dokument enthält nachverfolgte Änderungen. Verglichen wird die Fassung mit allen Änderungen angenommen; gelöschter Text ist nicht enthalten.',
     errImage: 'Bilddateien werden nicht unterstützt, da keine Texterkennung (OCR) verfügbar ist. Bitte ein PDF mit Textebene, Word (.docx) oder Text verwenden.',
@@ -465,6 +471,12 @@ const I18N = {
     errScannedPdf: 'This PDF contains no text (scanned document or image). Scans are not supported because text recognition (OCR) is not available.',
     warnPdfPagesWithoutText: 'Note: pages without a text layer (scan/image) cannot be compared:',
     errDocxEmpty: 'No text was found in the Word document.',
+    errPdfPassword:
+      'The PDF is password-protected. Please remove the password protection (e.g. save or print it without protection) and load the file again.',
+    errPdfCorrupt: 'The PDF is damaged or incomplete and cannot be read.',
+    errDocxCorrupt: 'The Word document is damaged, incomplete or not a valid .docx and cannot be read.',
+    warnTextLegacyEncoding:
+      'Note: the text file is not UTF-8 encoded and was read as Windows-1252 (Western European). Please check umlauts and special characters.',
     warnDocxTrackedChanges:
       'Note: the Word document contains tracked changes. It is compared as if all changes were accepted; deleted text is not included.',
     errImage: 'Image files are not supported because text recognition (OCR) is not available. Please use a PDF with a text layer, Word (.docx) or text.',

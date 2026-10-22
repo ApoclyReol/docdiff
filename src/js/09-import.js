@@ -50,12 +50,20 @@ function clearImportNotice() {
 
 async function extractPdfText(arrayBuffer) {
   await ensurePdfJsWorker();
-  const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
+  // PDF.js errors are English and technical ("No password given", "Invalid PDF structure"):
+  // map them to clear, translated messages. A page that cannot be read fails the whole file
+  // rather than silently dropping its text from the comparison.
   const pages = [];
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const textContent = await page.getTextContent();
-    pages.push(buildPdfPageLines(textContent.items, page.view));
+  try {
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      pages.push(buildPdfPageLines(textContent.items, page.view));
+    }
+  } catch (err) {
+    if (err instanceof ImportError) throw err;
+    throw new ImportError(err && err.name === 'PasswordException' ? 'errPdfPassword' : 'errPdfCorrupt');
   }
   const { text, emptyPages } = assemblePdfText(pages);
   if (pages.length === 0 || emptyPages.length === pages.length) {
@@ -423,7 +431,13 @@ async function extractDocxText(arrayBuffer) {
     warnings.push(t('warnDocxTrackedChanges'));
   }
 
-  const htmlResult = await window.mammoth.convertToHtml({ arrayBuffer }, { transformDocument });
+  let htmlResult;
+  try {
+    htmlResult = await window.mammoth.convertToHtml({ arrayBuffer }, { transformDocument });
+  } catch (err) {
+    // Mammoth's errors are English and technical ("Corrupted zip: can't find end of central directory").
+    throw new ImportError('errDocxCorrupt');
+  }
   const doc = new DOMParser().parseFromString(htmlResult.value || '', 'text/html');
   // A line break inside a paragraph (Shift+Enter) separates words: "Hauptstraße 1" + break +
   // "12345 Berlin" must not become "Hauptstraße 112345 Berlin".
@@ -542,21 +556,43 @@ function extractHtmlText(html) {
   return out.join('\n\n');
 }
 
-function decodeTextFile(bytes) {
+// Decodes a text file. UTF-8 and UTF-16 (with BOM, or detected from the zero-byte pattern) are
+// read as such. A file with a text extension that is not valid UTF-8 but contains no binary
+// control bytes is read as Windows-1252 (the "ANSI" encoding of German Windows text files)
+// with a warning instead of being rejected. Returns { text, warnings }.
+function decodeTextFile(bytes, ext = '') {
+  const decode = (encoding, data) => new TextDecoder(encoding).decode(data);
   if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
-    return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+    return { text: decode('utf-16le', bytes.subarray(2)), warnings: [] };
   }
   if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
-    return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+    return { text: decode('utf-16be', bytes.subarray(2)), warnings: [] };
+  }
+  // UTF-16 without BOM: ASCII-range characters leave a zero byte in every other position.
+  const sample = bytes.subarray(0, Math.min(bytes.length, 4096));
+  if (sample.length >= 4 && sample.length % 2 === 0) {
+    let zeroEven = 0;
+    let zeroOdd = 0;
+    for (let i = 0; i < sample.length; i++) {
+      if (sample[i] === 0) i % 2 ? zeroOdd++ : zeroEven++;
+    }
+    const half = sample.length / 2;
+    if (zeroOdd > half * 0.3 && zeroEven === 0) return { text: decode('utf-16le', bytes), warnings: [] };
+    if (zeroEven > half * 0.3 && zeroOdd === 0) return { text: decode('utf-16be', bytes), warnings: [] };
   }
   let text;
   try {
     text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   } catch (err) {
-    throw new ImportError('errNotText');
+    const isTextName = TEXT_EXTENSIONS.includes(ext) || HTML_EXTENSIONS.includes(ext);
+    // Binary data almost always contains NUL and other C0 control bytes; text never does.
+    if (!isTextName || /[\u0000-\u0008\u000E-\u001A\u001C-\u001F]/.test(decode('latin1', sample))) {
+      throw new ImportError('errNotText');
+    }
+    return { text: decode('windows-1252', bytes), warnings: [t('warnTextLegacyEncoding')] };
   }
   if (text.includes('\u0000')) throw new ImportError('errNotText');
-  return text.replace(/^﻿/, '');
+  return { text: text.replace(/^﻿/, ''), warnings: [] };
 }
 
 /* ── File intake ───────────────────────────────────────────────────────── */
@@ -569,9 +605,17 @@ const HTML_EXTENSIONS = ['html', 'htm', 'xhtml'];
 function sniffFileKind(bytes, ext) {
   const startsWith = sig => sig.every((b, i) => bytes[i] === b);
   const head = String.fromCharCode(...bytes.subarray(0, 1024));
-  if (head.includes('%PDF-')) return 'pdf';
+  // PDF readers accept the header anywhere in the first 1024 bytes; a text file that merely
+  // mentions "%PDF-" in its first lines is still text.
+  const pdfAt = head.indexOf('%PDF-');
+  if (pdfAt === 0 || (pdfAt > 0 && !TEXT_EXTENSIONS.includes(ext) && !HTML_EXTENSIONS.includes(ext))) return 'pdf';
   if (startsWith([0x50, 0x4b, 0x03, 0x04])) {
-    if (['docx', 'docm', 'dotx', 'dotm'].includes(ext) || head.includes('word/')) return 'docx';
+    // The entry list (central directory) sits at the end of the archive; a Word file has
+    // word/document.xml, whatever the file is called.
+    const tail = new TextDecoder('latin1').decode(bytes.subarray(Math.max(0, bytes.length - 65536)));
+    if (['docx', 'docm', 'dotx', 'dotm'].includes(ext) || head.includes('word/') || tail.includes('word/document')) {
+      return 'docx';
+    }
     throw new ImportError('errUnsupportedType');
   }
   if (startsWith([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])) throw new ImportError('errLegacyDoc');
@@ -614,12 +658,12 @@ async function readDocumentFile(file) {
     result = await extractDocxText(buffer);
     result.format = 'DOCX';
   } else {
-    const text = decodeTextFile(bytes);
+    const { text, warnings } = decodeTextFile(bytes, ext);
     const looksLikeHtml = /^\s*(?:<!doctype html|<html[\s>])/i.test(text.slice(0, 2048));
     if (kind === 'html' || looksLikeHtml) {
-      result = { text: extractHtmlText(text), warnings: [], format: 'HTML' };
+      result = { text: extractHtmlText(text), warnings, format: 'HTML' };
     } else {
-      result = { text: sanitizeExternalText(text), warnings: [], format: ext ? ext.toUpperCase() : 'TEXT' };
+      result = { text: sanitizeExternalText(text), warnings, format: ext ? ext.toUpperCase() : 'TEXT' };
     }
   }
   if (!docTextToPlainText(result.text).trim()) throw new ImportError('errEmptyFile');
