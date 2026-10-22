@@ -54,7 +54,7 @@ Doc Diff is built so that any data protection officer or security auditor can ve
 1. **Browser-Enforced Network Lock (`connect-src 'none'`):**
    The document embeds a strict Content Security Policy directly in `<head>`:
    ```html
-   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
+   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: blob:; manifest-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
    ```
    The browser engine itself blocks any outbound network request (`fetch`, `XMLHttpRequest`, `WebSocket`, `navigator.sendBeacon`, form submissions, or external image/script loads).
 2. **Zero External Dependencies or CDNs:**

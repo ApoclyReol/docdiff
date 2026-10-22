@@ -7,7 +7,7 @@ Doc Diff is designed for comparing confidential legal contracts, tenders, and fi
 1. **Enforced Content Security Policy (`connect-src 'none'`):**
    The HTML document embeds a strict Content Security Policy in `<head>`:
    ```html
-   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
+   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: blob:; manifest-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
    ```
    The browser engine itself blocks any outbound network connection (`fetch`, `XMLHttpRequest`, `WebSocket`, `navigator.sendBeacon`, form submissions, or external image/script requests).
 2. **Zero External Dependencies at Runtime:**

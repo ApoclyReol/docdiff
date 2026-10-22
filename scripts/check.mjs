@@ -101,6 +101,16 @@ for (const lang of ['de', 'en']) {
 }
 assert.deepEqual(deKeys, enKeys, 'German and English i18n keys must match 1:1');
 
+// The CSP quoted in the docs must match the one that actually ships
+const shippedCsp = siteHtml.match(/<meta http-equiv="Content-Security-Policy" content="([^"]*)"/)[1];
+for (const doc of ['README.md', 'SECURITY.md']) {
+  const quoted = fs.readFileSync(path.join(root, doc), 'utf8').match(/<meta http-equiv="Content-Security-Policy" content="([^"]*)"/);
+  assert.ok(quoted && quoted[1] === shippedCsp, `${doc} must quote the shipped Content-Security-Policy verbatim`);
+}
+
+// PDF.js must never compile fonts via eval / new Function (CVE-2024-4367 hardening)
+assert.ok(appJsCode.includes('isEvalSupported: false'), 'PDF.js getDocument() must pass isEvalSupported: false');
+
 // 5. Verify site legal and domain files for docdiff.app
 for (const siteFile of ['CNAME', 'og-image.png', 'impressum.html', 'datenschutz.html', 'legal.css', 'robots.txt', 'sitemap.xml', '.nojekyll']) {
   const p = path.join(root, 'site', siteFile);
