@@ -66,7 +66,7 @@ It was written with German contracts in mind (`§ 1`, `(1)`, `1.1` clause number
 - **Formatting is not compared.** Bold, fonts, tables and layout are ignored; only the text is compared. Table cells come through as text in reading order, which can be hard to follow.
 - **Multi-column PDF layouts** are read line by line and can come out in the wrong order.
 - **Moves are only detected when the moved paragraph is identical.** A paragraph that was moved and edited shows as one deletion and one insertion.
-- **Large documents take time.** See [Performance](#performance).
+- **Very large documents take a few seconds.** See [Performance](#performance).
 - It is not a legal review tool. It shows differences in the text; whether they matter is up to you.
 
 ## Privacy
@@ -90,7 +90,15 @@ What this does not cover, to be precise:
 
 ## Performance
 
-PERFORMANCE_PLACEHOLDER
+The comparison runs in a background worker, so the page stays usable while it works. Rough numbers measured in Chromium on a laptop-class machine (your results will differ):
+
+| Input | Time to result |
+| :-- | :-- |
+| Two versions of a 10-page contract | well under a second |
+| 2,000 paragraphs per side (about 80 pages) | about 0.5 s |
+| Two 1,000-page PDFs | about 4 s (mostly reading the PDFs) |
+
+Reading PDFs is the slowest part. Very long single paragraphs (hundreds of thousands of characters) are compared with a bounded algorithm that can show a larger block as replaced instead of word by word.
 
 ## Keyboard
 
