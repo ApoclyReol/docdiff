@@ -5197,6 +5197,12 @@ function truncateFileName(name, other, max, second = false) {
     const room = max - 1 - tail.length;
     return (room >= 4 ? chars.slice(0, room).join('') : '') + '…' + tail.join('');
   }
+  // Tight space: the start of the distinguishing part plus the extension ("…1_Vor….docx").
+  const extTail = (/\.[A-Za-z0-9]{1,5}$/.exec(tail.join('')) || [''])[0];
+  if (d > 4 && tail.length > extTail.length + 2 && max >= extTail.length + 5) {
+    const stem = tail.slice(0, tail.length - extTail.length);
+    return '…' + stem.slice(0, max - 2 - extTail.length).join('') + '…' + extTail;
+  }
   // No shared start (or the distinguishing part is too long): keep the start and the end with
   // the extension.
   const ext = (/\.[A-Za-z0-9]{1,5}$/.exec(chars.join('')) || [''])[0];
@@ -5209,7 +5215,7 @@ function truncateFileName(name, other, max, second = false) {
 function updateFileLabels() {
   const left = state.leftName || t('noFileLeft');
   const right = state.rightName || t('noFileRight');
-  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 15;
+  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 12;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
   filesLeft.textContent = truncateFileName(left, right, max);
