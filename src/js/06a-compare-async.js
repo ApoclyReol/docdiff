@@ -190,8 +190,11 @@ function runComparison(options = {}) {
     })
     .then(result => {
       if (!result || seq !== compareSeq) return; // superseded by a newer comparison
+      // The first comparison is announced by applyComparisonResult(); re-comparisons
+      // (header/footer filter, undo of a large change, …) are announced here.
+      const wasComparing = document.body.classList.contains('is-comparing');
       applyComparisonResult(request, result);
-      showCompareDone(seq);
+      showCompareDone(seq, wasComparing);
     });
 }
 
@@ -207,7 +210,9 @@ function getCompareStatusEl() {
   el.setAttribute('role', 'status');
   el.setAttribute('aria-live', 'polite');
   el.setAttribute('aria-atomic', 'true');
-  el.innerHTML = '<span class="compare-status-spinner" aria-hidden="true"></span><span class="compare-status-text"></span>';
+  // Only the text is announced; the percentage changes often and is visual only.
+  el.innerHTML =
+    '<span class="compare-status-spinner" aria-hidden="true"></span><span class="compare-status-text"></span><span class="compare-status-pct" aria-hidden="true"></span>';
   document.body.appendChild(el);
   compareStatus.el = el;
   return el;
@@ -218,9 +223,9 @@ function showCompareStatus(seq, value) {
   const el = getCompareStatusEl();
   clearTimeout(compareStatus.hideTimer);
   const pct = Math.max(0, Math.min(100, Math.round((value || 0) * 100)));
-  const text = pct > 0 ? t('compareProgress').replace('{pct}', String(pct)) : t('compareBusy');
   const textEl = el.querySelector('.compare-status-text');
-  if (textEl.textContent !== text) textEl.textContent = text;
+  if (textEl.textContent !== t('compareBusy')) textEl.textContent = t('compareBusy');
+  el.querySelector('.compare-status-pct').textContent = pct > 0 ? `${pct} %` : '';
   el.classList.remove('is-done');
   document.body.classList.add('is-diff-busy');
   if (compareStatus.seq !== seq) {
@@ -233,18 +238,18 @@ function showCompareStatus(seq, value) {
   }
 }
 
-function showCompareDone(seq) {
-  if (seq !== compareSeq || !compareStatus.el) {
+function showCompareDone(seq, announceResult) {
+  if (seq !== compareSeq || !compareStatus.el || !announceResult) {
     hideCompareStatus();
     return;
   }
   const el = compareStatus.el;
   clearTimeout(compareStatus.showTimer);
   document.body.classList.remove('is-diff-busy');
-  el.querySelector('.compare-status-text').textContent = t('compareDone').replace(
-    '{n}',
-    String(state.changeRows.length)
-  );
+  el.querySelector('.compare-status-pct').textContent = '';
+  const n = state.changeRows.length;
+  el.querySelector('.compare-status-text').textContent =
+    n === 0 ? t('announceIdentical') : n === 1 ? t('announceComparedOne') : formatMsg('announceCompared', { n });
   el.classList.add('is-done');
   compareStatus.hideTimer = setTimeout(() => {
     el.classList.remove('is-visible', 'is-done');

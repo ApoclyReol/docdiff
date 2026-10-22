@@ -271,114 +271,45 @@ function renderMarkerOnlyHtml(row, side, query, allowMarkerGrid = true) {
   return `${markerHtml} ${escapeAndHighlightText(body, query)}`;
 }
 
-function renderGhostSheet() {
-  return `
-    <div class="ghost-sheet" data-empty-state aria-hidden="true">
-      <div class="ghost-block">
-        <div class="ghost-line h"></div>
-      </div>
-      <div class="ghost-block">
-        <div class="ghost-line" style="width:94%"></div>
-        <div class="ghost-line" style="width:88%"></div>
-        <div class="ghost-line" style="width:62%"></div>
-      </div>
-      <div class="ghost-block">
-        <div class="ghost-line" style="width:91%"></div>
-        <div class="ghost-line" style="width:76%"></div>
-      </div>
-      <div class="ghost-block">
-        <div class="ghost-line h" style="width:48%"></div>
-      </div>
-      <div class="ghost-block">
-        <div class="ghost-line" style="width:96%"></div>
-        <div class="ghost-line" style="width:84%"></div>
-        <div class="ghost-line" style="width:54%"></div>
-      </div>
-    </div>
-  `;
-}
+// The landing page markup is static (src/template.html); this only reflects which
+// versions are already loaded in its two slots.
+function updateLandingSlots(left, right) {
+  [
+    { side: 'left', info: left, name: state.leftName, fmt: state.leftFormat, titleKey: 'slotLeftTitle' },
+    { side: 'right', info: right, name: state.rightName, fmt: state.rightFormat, titleKey: 'slotRightTitle' },
+  ].forEach(({ side, info, name, fmt, titleKey }) => {
+    const slot = document.getElementById(`lp-slot-${side}`);
+    if (!slot) return;
+    const loaded = info.blocks > 0;
+    const otherLoaded = side === 'left' ? right.blocks > 0 : left.blocks > 0;
+    slot.classList.toggle('is-loaded', loaded);
+    slot.classList.toggle('is-next-step', !loaded && (side === 'left' || otherLoaded));
 
-function renderLaunchpadHtml(leftCount, rightCount) {
-  const leftLoaded = leftCount > 0;
-  const rightLoaded = rightCount > 0;
-  const leftSlotClass = leftLoaded ? 'is-loaded' : 'is-next-step';
-  const rightSlotClass = rightLoaded ? 'is-loaded' : leftLoaded ? 'is-next-step' : '';
-
-  const leftTitle = leftLoaded ? state.leftName || 'Vorher' : t('lpLeftTitle');
-  const leftHint = leftLoaded ? `${t('lpLoaded')} · ${leftCount} ${t('unitPara')}` : t('lpLeftHint');
-  const leftBtnClass = !leftLoaded ? 'btn btn-primary' : 'btn';
-  const leftBtnLabel = leftLoaded ? t('lpChangeFile') : t('chooseFileLeft');
-
-  const rightTitle = rightLoaded ? state.rightName || 'Nachher' : t('lpRightTitle');
-  const rightHint = rightLoaded ? `${t('lpLoaded')} · ${rightCount} ${t('unitPara')}` : t('lpRightHint');
-  const rightBtnClass = leftLoaded && !rightLoaded ? 'btn btn-primary' : 'btn';
-  const rightBtnLabel = rightLoaded ? t('lpChangeFile') : t('chooseFileRight');
-
-  const uploadSvg = '<svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
-  const sepSvg = '<svg class="icon lp-sep" style="width:12px;height:12px;" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>';
-
-  return `
-    <div class="launchpad-card">
-      <div class="launchpad-head">
-        <h1 class="launchpad-title">${escapeHtml(t('lpTitle'))}</h1>
-        <p class="launchpad-sub">${escapeHtml(t('lpSub'))}</p>
-      </div>
-
-      <div class="launchpad-grid">
-        <div class="launchpad-slot ${leftSlotClass}" id="lp-slot-left" data-side="left">
-          <div class="lp-slot-top">
-            <span class="col-role-pill col-role-old">${escapeHtml(t('colLeft'))}</span>
-          </div>
-          <div class="lp-slot-title">${escapeHtml(leftTitle)}</div>
-          <div class="lp-slot-hint">${escapeHtml(leftHint)}</div>
-          <button type="button" class="${leftBtnClass}" id="btn-empty-upload-left">
-            ${uploadSvg}
-            <span>${escapeHtml(leftBtnLabel)}</span>
-          </button>
-        </div>
-
-        <div class="launchpad-slot ${rightSlotClass}" id="lp-slot-right" data-side="right">
-          <div class="lp-slot-top">
-            <span class="col-role-pill col-role-new">${escapeHtml(t('colRight'))}</span>
-          </div>
-          <div class="lp-slot-title">${escapeHtml(rightTitle)}</div>
-          <div class="lp-slot-hint">${escapeHtml(rightHint)}</div>
-          <button type="button" class="${rightBtnClass}" id="btn-empty-upload-right">
-            ${uploadSvg}
-            <span>${escapeHtml(rightBtnLabel)}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="launchpad-secondary">
-        <button type="button" class="btn btn-open-paste">
-          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          <span>${escapeHtml(t('pasteText'))}</span>
-        </button>
-        <button type="button" class="btn btn-load-sample">
-          <svg class="icon" style="width:13px;height:13px;" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <span>${escapeHtml(t('loadSample'))}</span>
-        </button>
-      </div>
-
-      <div class="launchpad-footer">
-        <div class="launchpad-steps">
-          <span class="lp-step"><span class="lp-step-num">1</span><span>${escapeHtml(t('lpStep1'))}</span></span>
-          ${sepSvg}
-          <span class="lp-step"><span class="lp-step-num">2</span><span>${escapeHtml(t('lpStep2'))}</span></span>
-          ${sepSvg}
-          <span class="lp-step"><span class="lp-step-num">3</span><span>${escapeHtml(t('lpStep3'))}</span></span>
-        </div>
-        <div class="launchpad-trust">
-          <span>${escapeHtml(t('lpTrust'))}</span>
-          <span>·</span>
-          <button type="button" class="lp-link btn-open-privacy">${escapeHtml(t('footerPrivacy'))}</button>
-          <span>·</span>
-          <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" class="lp-link">GitHub</a>
-        </div>
-      </div>
-    </div>
-  `;
+    const titleEl = document.getElementById(`lp-${side}-title`);
+    const hintEl = document.getElementById(`lp-${side}-hint`);
+    const ctaEl = document.getElementById(`lp-${side}-cta`);
+    const clearBtn = document.getElementById(`lp-clear-${side}`);
+    if (loaded) {
+      const parts = [t(titleKey)];
+      if (fmt && fmt !== 'DEMO') parts.push(fmt);
+      if (info.pages > 1) parts.push(`${info.pages} ${t('pageShort')}`);
+      parts.push(`${info.blocks} ${t('unitPara')}`);
+      titleEl.textContent = name || t(titleKey);
+      titleEl.removeAttribute('data-i18n');
+      hintEl.textContent = `${t('lpLoaded')} · ${parts.join(' · ')}`;
+      hintEl.removeAttribute('data-i18n');
+      ctaEl.removeAttribute('data-i18n');
+      ctaEl.textContent = t('lpChangeFile');
+    } else {
+      titleEl.setAttribute('data-i18n', titleKey);
+      titleEl.textContent = t(titleKey);
+      hintEl.setAttribute('data-i18n', 'slotHint');
+      hintEl.textContent = t('slotHint');
+      ctaEl.setAttribute('data-i18n', 'slotChoose');
+      ctaEl.textContent = t('slotChoose');
+    }
+    if (clearBtn) clearBtn.hidden = !loaded;
+  });
 }
 
 function updateMobileBarState() {
@@ -417,7 +348,8 @@ function updateMobileBarState() {
 function updateColumnMeta(side, blocksCount, pagesCount = 0) {
   const metaEl = document.getElementById(side === 'left' ? 'meta-left' : 'meta-right');
   const clearBtn = document.getElementById(side === 'left' ? 'btn-clear-left' : 'btn-clear-right');
-  const fmt = side === 'left' ? state.leftFormat : state.rightFormat;
+  const rawFmt = side === 'left' ? state.leftFormat : state.rightFormat;
+  const fmt = rawFmt === 'DEMO' ? t('demoLabel') : rawFmt;
 
   if (blocksCount > 0) {
     const pageStr = pagesCount > 0 ? `${pagesCount} ${t('pageShort')} · ` : '';

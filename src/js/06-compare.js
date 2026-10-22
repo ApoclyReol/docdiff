@@ -15,84 +15,66 @@ function applyComparisonResult(request, result, opts = {}) {
   updateColumnMeta('right', rightBlocks.length, rightPages);
 
   const bothLoaded = leftBlocks.length > 0 && rightBlocks.length > 0;
+  const wasComparing = document.body.classList.contains('is-comparing');
+  const emptyLaunchpad = document.getElementById('empty-launchpad');
+  // Focus sat on something that is about to disappear (landing page or comparison chrome)?
+  const active = document.activeElement;
+  const focusWasLost = !active || active === document.body;
+  const focusInLanding = Boolean(emptyLaunchpad && active && emptyLaunchpad.contains(active));
+  const focusInCompareChrome = Boolean(active && active.closest && active.closest('.compare-only'));
+
   document.body.classList.toggle('has-docs', leftBlocks.length > 0 || rightBlocks.length > 0);
   document.body.classList.toggle('is-comparing', bothLoaded);
+  document.body.classList.toggle('legend-dismissed', state.legendDismissed);
   const badgeEditable = document.getElementById('badge-editable');
   if (badgeEditable) {
     badgeEditable.classList.toggle('is-visible', bothLoaded);
   }
-
-  const emptyLaunchpad = document.getElementById('empty-launchpad');
 
   if (!bothLoaded) {
     cancelPaneRender();
     resetRowLayoutRegistry();
     state.alignedRows = [];
     state.changeRows = [];
-    document.getElementById('count-all').textContent = '0';
-    document.getElementById('count-ins').textContent = '0';
-    document.getElementById('count-del').textContent = '0';
+    updateHeaderCounts(0, 0, 0);
     updateMobileBarState();
     updateUndoRedoButtons();
 
-    if (leftBlocks.length === 0) {
-      setSafeContainerHtml(sheetLeft, renderGhostSheet());
-    } else {
-      setSafeContainerHtml(
-        sheetLeft,
-        `<div class="doc-page-card"><div class="doc-page-body">${leftBlocks
-          .map(
-            b =>
-              `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${getClauseTypeClasses(
-                b
-              )}">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
-          )
-          .join('')}</div></div>`
-      );
-    }
-
-    if (rightBlocks.length === 0) {
-      setSafeContainerHtml(sheetRight, renderGhostSheet());
-    } else {
-      setSafeContainerHtml(
-        sheetRight,
-        `<div class="doc-page-card"><div class="doc-page-body">${rightBlocks
-          .map(
-            b =>
-              `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${getClauseTypeClasses(
-                b
-              )}">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
-          )
-          .join('')}</div></div>`
-      );
-    }
-
-    setSafeContainerHtml(sheetUnified, renderGhostSheet());
-    if (emptyLaunchpad) {
-      setSafeContainerHtml(emptyLaunchpad, renderLaunchpadHtml(leftBlocks.length, rightBlocks.length));
-    }
+    // Panes stay hidden until both versions exist; the landing slots show what is loaded.
+    setSafeContainerHtml(sheetLeft, '');
+    setSafeContainerHtml(sheetRight, '');
+    setSafeContainerHtml(sheetUnified, '');
+    updateLandingSlots(
+      { blocks: leftBlocks.length, pages: leftPages },
+      { blocks: rightBlocks.length, pages: rightPages }
+    );
 
     bindEmptyStateButtons();
     renderSidebarList(bothLoaded);
     minimapTrack.innerHTML = '';
     connectorSvg.innerHTML = '';
-    return;
-  }
 
-  if (emptyLaunchpad) {
-    emptyLaunchpad.innerHTML = '';
+    if (wasComparing && (focusWasLost || focusInCompareChrome)) {
+      const heading = document.getElementById('landing-title');
+      if (emptyLaunchpad) emptyLaunchpad.scrollTop = 0;
+      if (heading) heading.focus({ preventScroll: true });
+    }
+    return;
   }
 
   state.alignedRows = result.alignedRows;
   state.changeRows = state.alignedRows.filter(r => r.type !== 'equal');
 
-  const modCount = state.alignedRows.filter(r => r.type === 'modified').length;
-  const insCount = state.alignedRows.filter(r => r.type === 'inserted').length;
-  const delCount = state.alignedRows.filter(r => r.type === 'deleted').length;
+  const counts = getChangeCounts();
+  updateHeaderCounts(counts.mod, counts.ins, counts.del);
 
-  document.getElementById('count-all').textContent = String(modCount + insCount + delCount);
-  document.getElementById('count-ins').textContent = String(insCount + modCount);
-  document.getElementById('count-del').textContent = String(delCount + modCount);
+  const compareHeading = document.getElementById('compare-heading');
+  if (compareHeading) {
+    compareHeading.textContent = formatMsg('compareHeading', {
+      left: state.leftName || t('colLeft'),
+      right: state.rightName || t('colRight'),
+    });
+  }
 
   // Edits, reverts, undo and redo usually change a single row: patch it in place instead of
   // re-rendering all three panes. Clauses of the active row get `is-active` while rendering.
@@ -110,21 +92,88 @@ function applyComparisonResult(request, result, opts = {}) {
   }
 
   scheduleGutterDraw();
+
+  if (!wasComparing) {
+    const total = state.changeRows.length;
+    announce(
+      total === 0
+        ? t('announceIdentical')
+        : total === 1
+        ? t('announceComparedOne')
+        : formatMsg('announceCompared', { n: total })
+    );
+    // The landing page (and whatever had focus in it) just disappeared: hand focus to the
+    // document so keyboard users continue with Tab or J / K from a sensible place.
+    if (focusWasLost || focusInLanding) {
+      const pane = state.viewMode === 'inline' ? paneUnified : paneRight;
+      requestAnimationFrame(() => pane.focus({ preventScroll: true }));
+    }
+  }
 }
 
+// Single source for the header counts and the sidebar filter counts.
+function getChangeCounts() {
+  const counts = { mod: 0, ins: 0, del: 0 };
+  for (const r of state.changeRows) {
+    if (r.type === 'modified') counts.mod++;
+    else if (r.type === 'inserted') counts.ins++;
+    else if (r.type === 'deleted') counts.del++;
+  }
+  return counts;
+}
+
+// The header shows the same three numbers as the sidebar filters (a modified paragraph
+// counts once, as "modified" – not once as added and once as removed).
+function updateHeaderCounts(modCount, insCount, delCount) {
+  const total = modCount + insCount + delCount;
+  document.getElementById('count-all').textContent = String(total);
+  document.getElementById('i18n-changes-label').textContent = changesWord(total);
+  document.getElementById('count-mod').textContent = String(modCount);
+  document.getElementById('count-ins').textContent = String(insCount);
+  document.getElementById('count-del').textContent = String(delCount);
+  const summary = document.getElementById('stat-summary');
+  if (summary) {
+    summary.querySelector('.stat-mod').classList.toggle('is-zero', modCount === 0);
+    summary.querySelector('.stat-ins').classList.toggle('is-zero', insCount === 0);
+    summary.querySelector('.stat-del').classList.toggle('is-zero', delCount === 0);
+  }
+}
+
+function loadSampleComparison() {
+  const sample = SAMPLES[state.lang] || SAMPLES.de;
+  state.leftName = t('sampleLeftName');
+  state.leftFormat = 'DEMO';
+  state.leftText = sample.v1;
+  state.rightName = t('sampleRightName');
+  state.rightFormat = 'DEMO';
+  state.rightText = sample.v2;
+  resetEditHistory();
+  runComparison();
+}
+
+function clearLandingSide(side) {
+  if (side === 'left') {
+    state.leftText = '';
+    state.leftName = '';
+    state.leftFormat = '';
+    document.getElementById('file-input-left').value = '';
+  } else {
+    state.rightText = '';
+    state.rightName = '';
+    state.rightFormat = '';
+    state.undoStack = [];
+    state.redoStack = [];
+    document.getElementById('file-input-right').value = '';
+  }
+  runComparison();
+  const btn = document.getElementById(`btn-empty-upload-${side}`);
+  if (btn) btn.focus();
+}
+
+let landingBound = false;
 function bindEmptyStateButtons() {
-  document.querySelectorAll('#btn-empty-upload-left').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      document.getElementById('file-input-left').click();
-    });
-  });
-  document.querySelectorAll('#btn-empty-upload-right').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      document.getElementById('file-input-right').click();
-    });
-  });
+  if (landingBound) return;
+  landingBound = true;
 
   const slotLeft = document.getElementById('lp-slot-left');
   const slotRight = document.getElementById('lp-slot-right');
@@ -133,7 +182,11 @@ function bindEmptyStateButtons() {
     { el: slotRight, side: 'right', inputId: 'file-input-right' },
   ].forEach(({ el, side, inputId }) => {
     if (!el) return;
-    el.addEventListener('click', () => document.getElementById(inputId).click());
+    document
+      .getElementById(`btn-empty-upload-${side}`)
+      .addEventListener('click', () => document.getElementById(inputId).click());
+    const clearBtn = document.getElementById(`lp-clear-${side}`);
+    if (clearBtn) clearBtn.addEventListener('click', () => clearLandingSide(side));
     el.addEventListener('dragover', e => {
       e.preventDefault();
       e.stopPropagation();
@@ -174,17 +227,7 @@ function bindEmptyStateButtons() {
   });
 
   document.querySelectorAll('.btn-load-sample').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const sample = SAMPLES[state.lang] || SAMPLES.de;
-      state.leftName = t('sampleLeftName');
-      state.leftFormat = 'DEMO';
-      state.leftText = sample.v1;
-      state.rightName = t('sampleRightName');
-      state.rightFormat = 'DEMO';
-      state.rightText = sample.v2;
-      resetEditHistory();
-      runComparison();
-    });
+    btn.addEventListener('click', loadSampleComparison);
   });
 }
 
@@ -226,7 +269,7 @@ function renderPageCardHeaderHtml(pageNum, totalPages, rowsInPage) {
       : '';
   const changeCount = rowsInPage.filter(r => r.type !== 'equal').length;
   const pillLabel =
-    changeCount > 0 ? `${changeCount} ${escapeHtml(t('changesLabel'))}` : escapeHtml(t('pageUnchanged'));
+    changeCount > 0 ? `${changeCount} ${escapeHtml(changesWord(changeCount))}` : escapeHtml(t('pageUnchanged'));
 
   return `
     <header class="doc-page-header" aria-label="${escapeHtml(t('pageLabel'))} ${pageNum}">
@@ -281,7 +324,10 @@ const PANE_RENDER_CHUNK_MS = 14;
 
 function renderDocumentPanes() {
   cancelPaneRender();
+  cancelSearchHighlightJob();
   resetRowLayoutRegistry();
+  const panes = [paneLeft, paneRight, paneUnified];
+  const prevScroll = panes.map(p => p.scrollTop);
 
   const pageGroups = new Map();
   state.alignedRows.forEach((row, idx) => {
@@ -302,6 +348,20 @@ function renderDocumentPanes() {
   };
   paneRenderJob = job;
   renderPaneChunk(job, PANE_RENDER_FIRST_PAGES, 0);
+
+  // Re-render of a document the user had scrolled into (search over a single document,
+  // header/footer toggle, undo of a large change): render up to the previous position right
+  // away so the view does not jump to the top.
+  const activePane = state.viewMode === 'inline' ? paneUnified : paneRight;
+  const target = prevScroll[panes.indexOf(activePane)];
+  if (target > 0) {
+    while (paneRenderJob === job && activePane.scrollHeight < target + 2 * activePane.clientHeight) {
+      renderPaneChunk(job, 1, PANE_RENDER_CHUNK_MS);
+    }
+    panes.forEach((p, i) => {
+      if (prevScroll[i]) p.scrollTop = prevScroll[i];
+    });
+  }
   schedulePaneRenderChunk(job);
 }
 
@@ -488,51 +548,63 @@ function extractDeltaPairs(wordDiffs) {
 
 function renderSidebarDeltaHtml(row, query) {
   if (row.type === 'deleted') {
-    return `<div class="nav-item-snippet"><del class="tok-del">${escapeAndHighlightText(
+    return `<span class="nav-item-snippet"><del class="tok-del">${escapeAndHighlightText(
       truncateClean(row.leftBlock.text, 92),
       query
-    )}</del></div>`;
+    )}</del></span>`;
   }
   if (row.type === 'inserted') {
-    return `<div class="nav-item-snippet"><ins class="tok-ins">${escapeAndHighlightText(
+    return `<span class="nav-item-snippet"><ins class="tok-ins">${escapeAndHighlightText(
       truncateClean(row.rightBlock.text, 92),
       query
-    )}</ins></div>`;
+    )}</ins></span>`;
   }
   const pairs = extractDeltaPairs(row.wordDiffs || []);
   if (pairs.length === 0) {
-    return `<div class="nav-item-snippet">${renderUnifiedBlockHtml(row, query)}</div>`;
+    return `<span class="nav-item-snippet">${renderUnifiedBlockHtml(row, query)}</span>`;
   }
   const maxPairs = 3;
   const visible = pairs.slice(0, maxPairs);
   const rowsHtml = visible
     .map(pair => {
       if (pair.del && pair.ins) {
-        return `<div class="nav-delta-row"><del class="tok-del">${escapeAndHighlightText(
+        return `<span class="nav-delta-row"><del class="tok-del">${escapeAndHighlightText(
           truncateClean(pair.del, 34),
           query
         )}</del><span class="nav-delta-arrow" aria-hidden="true">→</span><ins class="tok-ins">${escapeAndHighlightText(
           truncateClean(pair.ins, 34),
           query
-        )}</ins></div>`;
+        )}</ins></span>`;
       }
       if (pair.ins) {
-        return `<div class="nav-delta-row"><ins class="tok-ins">+ ${escapeAndHighlightText(
+        return `<span class="nav-delta-row"><ins class="tok-ins">+ ${escapeAndHighlightText(
           truncateClean(pair.ins, 46),
           query
-        )}</ins></div>`;
+        )}</ins></span>`;
       }
-      return `<div class="nav-delta-row"><del class="tok-del">− ${escapeAndHighlightText(
+      return `<span class="nav-delta-row"><del class="tok-del">− ${escapeAndHighlightText(
         truncateClean(pair.del, 46),
         query
-      )}</del></div>`;
+      )}</del></span>`;
     })
     .join('');
   const moreHtml =
     pairs.length > maxPairs
-      ? `<div class="nav-delta-more">+${pairs.length - maxPairs} ${escapeHtml(t('moreDeltas'))}</div>`
+      ? `<span class="nav-delta-more">+${pairs.length - maxPairs} ${escapeHtml(t('moreDeltas'))}</span>`
       : '';
-  return `<div class="nav-item-deltas">${rowsHtml}${moreHtml}</div>`;
+  return `<span class="nav-item-deltas">${rowsHtml}${moreHtml}</span>`;
+}
+
+function getChangeTypeLabel(row) {
+  if (row.moved) return t('typeMoved');
+  return row.type === 'modified' ? t('statMod') : row.type === 'inserted' ? t('statIns') : t('statDel');
+}
+
+// Clause reference for display, without the bullet glyph used internally for list items.
+function getDisplayRef(row) {
+  const block = row.rightBlock || row.leftBlock;
+  const ref = block && block.refCode ? String(block.refCode) : '';
+  return ref.replace(/\s*[•‣▪◦]\s*$/, '').trim();
 }
 
 function getFilteredChangeRows() {
@@ -564,9 +636,7 @@ function updateSidebarHeaderState() {
     }
   }
 
-  const modCount = state.changeRows.filter(r => r.type === 'modified').length;
-  const insCount = state.changeRows.filter(r => r.type === 'inserted').length;
-  const delCount = state.changeRows.filter(r => r.type === 'deleted').length;
+  const { mod: modCount, ins: insCount, del: delCount } = getChangeCounts();
 
   const cAll = document.getElementById('filter-count-all');
   const cMod = document.getElementById('filter-count-mod');
@@ -581,7 +651,7 @@ function updateSidebarHeaderState() {
     const f = btn.getAttribute('data-sidebar-filter');
     const isActive = f === state.sidebarFilter;
     btn.classList.toggle('is-active', isActive);
-    btn.setAttribute('aria-selected', String(isActive));
+    btn.setAttribute('aria-pressed', String(isActive));
     const countForTab =
       f === 'all' ? total : f === 'modified' ? modCount : f === 'inserted' ? insCount : delCount;
     btn.classList.toggle('is-zero', countForTab === 0);
@@ -625,8 +695,8 @@ function renderSidebarList(bothLoaded) {
     return;
   }
 
-  const editSvg = '<svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
-  const revertSvg = '<svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+  const editSvg = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  const revertSvg = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
 
   setSafeContainerHtml(
     sidebarList,
@@ -636,34 +706,27 @@ function renderSidebarList(bothLoaded) {
         const cls =
           (row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del') + (row.moved ? ' moved' : '');
         const isActive = row.id === state.activeRowId;
-        const typeLabel = row.moved
-          ? t('typeMoved')
-          : row.type === 'modified'
-          ? t('typeMod')
-          : row.type === 'inserted'
-          ? t('typeIns')
-          : t('typeDel');
-        const refCode = row.rightBlock ? row.rightBlock.refCode : row.leftBlock.refCode;
+        const typeLabel = getChangeTypeLabel(row);
+        const refCode = getDisplayRef(row);
         const pageNum = row.pageNum || 1;
         const deltaHtml = renderSidebarDeltaHtml(row, state.searchQuery);
+        const editLabel = row.rightBlock ? t('editBtn') : t('editInsertBtn');
 
         return `
-          <div class="nav-item ${cls}${isActive ? ' is-active' : ''}" data-row-id="${row.id}" tabindex="0" role="button">
-            <div class="nav-item-head">
-              <div class="nav-item-loc">
+          <div class="nav-item ${cls}${isActive ? ' is-active' : ''}" data-row-id="${row.id}">
+            <button type="button" class="nav-item-main">
+              <span class="nav-item-head">
                 <span class="nav-item-idx">${globalIdx}</span>
                 <span class="nav-item-page">${escapeHtml(t('pageShort'))} ${pageNum}</span>
-                <span class="nav-item-ref">${escapeHtml(refCode)}</span>
-              </div>
-              <div class="nav-item-right">
-                <div class="nav-item-actions">
-                  <button type="button" class="nav-item-act-btn" data-edit-row="${row.id}" aria-label="${escapeHtml(t('editBtn'))}">${editSvg}</button>
-                  <button type="button" class="nav-item-act-btn is-revert" data-revert-row="${row.id}" aria-label="${escapeHtml(t('revertBtn'))}">${revertSvg}</button>
-                </div>
-                <span class="nav-item-badge ${cls}">${escapeHtml(typeLabel)}</span>
-              </div>
-            </div>
-            ${deltaHtml}
+                ${refCode ? `<span class="nav-item-ref">${escapeHtml(refCode)}</span>` : ''}
+                <span class="sr-only">– ${escapeHtml(typeLabel)}:</span>
+              </span>
+              ${deltaHtml}
+            </button>
+            <span class="nav-item-actions">
+              <button type="button" class="nav-item-act-btn" data-edit-row="${row.id}" aria-label="${escapeHtml(`${editLabel} (${globalIdx})`)}" data-tooltip="${escapeHtml(editLabel)}">${editSvg}</button>
+              <button type="button" class="nav-item-act-btn is-revert" data-revert-row="${row.id}" aria-label="${escapeHtml(`${t('revertBtn')} (${globalIdx})`)}" data-tooltip="${escapeHtml(t('revertBtn'))}">${revertSvg}</button>
+            </span>
           </div>
         `;
       })
