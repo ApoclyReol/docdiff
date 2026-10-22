@@ -334,6 +334,7 @@ function serializeReviewEntries(reviews) {
       if (e.status === 'rejected') {
         for (const k of ['leftText', 'rightText', 'leftAnchor', 'prevAnchor', 'refCode']) out[k] = String(e[k] || '');
         out.pageNum = Number.isInteger(e.pageNum) && e.pageNum > 0 ? e.pageNum : 1;
+        if (e.hf) out.hf = true; // a header/footer line (listed after the body changes)
       }
       return out;
     });
@@ -483,6 +484,10 @@ function expectReviewEntries(value) {
       entry.refCode = expectString(raw.refCode, 1000);
       if (!Number.isInteger(raw.pageNum) || raw.pageNum < 1 || raw.pageNum > 1e6) throw new SessionFileError('sessionErrorInvalid');
       entry.pageNum = raw.pageNum;
+      if (raw.hf !== undefined) {
+        if (raw.hf !== true) throw new SessionFileError('sessionErrorInvalid');
+        entry.hf = true;
+      }
     }
     Object.defineProperty(out, key, { value: entry, enumerable: true, writable: true, configurable: true });
   }
@@ -600,6 +605,7 @@ async function applySessionData(session) {
   state.activeRowId = null;
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
+  state.statusFilter = 'all';
   state.searchQuery = '';
   state.ignoreHeadersFooters = session.view.ignoreHeadersFooters;
   state.pageBreaks = session.view.pageBreaks;

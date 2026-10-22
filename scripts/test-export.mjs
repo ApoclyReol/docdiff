@@ -300,7 +300,11 @@ checks += 2;
     vm.runInContext('state.reviews = {};', context);
     api.__compareFull(sample.v1, sample.v2);
     const date = new Date('2026-10-22T12:00:00Z');
-    const total = state.listItems.length;
+    // Exports count every occurrence (the list merges identical header/footer changes).
+    const total = api.getExportItems().length;
+    assert.equal(total, state.changeRows.length, `${lang}: one export item per change row`);
+    assert.ok(state.listItems.length < total, `${lang}: repeated header/footer changes are one list item`);
+    assert.ok(state.listItems.some(i => i.members && i.members.length > 1), `${lang}: merged header/footer item`);
 
     // Nothing reviewed: identical to an export without review semantics.
     const meta = { date, title: 't', lines: [], note: 'n' };
@@ -313,7 +317,7 @@ checks += 2;
     // Review a mix: accept and reject changes of several types.
     for (const [action, type, n] of plan) api.__review(action, type, n);
     const counts = api.getExportCounts();
-    assert.equal(state.listItems.length, total, `${lang}: rejected changes stay in the list`);
+    assert.equal(api.getExportItems().length, total, `${lang}: rejected changes stay in the list`);
     assert.equal(counts.total, total, `${lang}: totals unchanged`);
     assert.equal(counts.accepted, 4, `${lang}: four accepted`);
     assert.equal(counts.rejected, 3, `${lang}: three rejected`);

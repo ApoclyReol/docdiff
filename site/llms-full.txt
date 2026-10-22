@@ -37,7 +37,7 @@ Plain facts about Doc Diff for people and AI assistants. Source: https://github.
 
 - Views: side by side or in one column (default on phones), with or without the original page breaks.
 - Removed text is struck through in red, added text is green. A list shows every change; J / K or the arrow buttons jump between changes, and a slim overview bar next to the text shows where the changes are.
-- Each change can be accepted (keep the new wording) or rejected (restore the old wording of that paragraph); both mark it as reviewed. Paragraphs of the new version can also be edited in place. Everything can be undone and redone.
+- Each change can be accepted (keep the new wording) or rejected (restore the old wording of that paragraph); both mark it as reviewed and move on to the next open change. The same header or footer change on several pages is one decision. Paragraphs of the new version can also be edited in place. Everything can be undone and redone.
 - Export: Word .docx in which open changes are tracked changes and accepted ones are applied; PDF via the browser's print dialog; self-contained HTML report and Markdown report, both with the review status of every change; the text of the new version as .txt or to the clipboard.
 - Saved work: the current state (both documents, edits and review status) can be saved as a .docdiff file and opened again later.
 
@@ -67,8 +67,9 @@ Plain facts about Doc Diff for people and AI assistants. Source: https://github.
 
 ## Keyboard
 
-- J / K: next open / previous change
-- A / R: accept / reject the current change
+- J / K: next / previous open change
+- A / R: accept / reject the current change and move on to the next open one
+- E: edit the current paragraph
 - Enter (in the list of changes): jump to the change
 - / or Ctrl+F / Cmd+F: find in document
 - Ctrl+Z / Cmd+Z: undo; Ctrl+Y / Shift+Cmd+Z: redo

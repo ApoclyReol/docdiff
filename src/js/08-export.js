@@ -89,7 +89,14 @@ function getExportItems() {
     state.listItems.length &&
     state.listItems.every(i => state.alignedRows.includes(i.row))
   ) {
-    return state.listItems;
+    // Exports follow the document: every occurrence of a merged header/footer change, in
+    // document order (the list shows those after the body changes).
+    const pos = new Map(state.alignedRows.map((r, i) => [r.id, i]));
+    return state.listItems
+      .flatMap(item => (item.members ? item.members : [item]))
+      .map(item => ({ ...item, members: undefined }))
+      .sort((a, b) => pos.get(a.rowId) - pos.get(b.rowId) || (a.sub || 0) - (b.sub || 0))
+      .map((item, i) => ({ ...item, index: i + 1 }));
   }
   return state.changeRows.map((row, i) => ({
     id: row.id,
@@ -662,7 +669,7 @@ function buildPrintViewHtml(date = new Date()) {
       </div>
       <div class="pv-meta">
         <span>${escapeHtml(formatExportCountsLine(counts))}</span>
-        ${getExportReviewLine(counts) ? `<span>${escapeHtml(getExportReviewLine(counts))}</span>` : ''}
+        <span>${escapeHtml(getExportReviewLine(counts) || formatMsg('listProgress', { k: 0, n: counts.total }))}</span>
         <span>${escapeHtml(getExportScopeText())}</span>
         <span>${escapeHtml(t('exportLabelHf'))}: ${escapeHtml(getExportHfText())}</span>
       </div>

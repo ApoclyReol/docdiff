@@ -36,7 +36,7 @@ function drawRuler() {
   const total = state.alignedRows.length || 1;
   const activeItem = getActiveItem();
   const html = [];
-  for (const item of state.listItems) {
+  for (const item of state.listItems.flatMap(it => (it.members ? it.members.map(m => ({ ...m, id: it.id, index: it.index, members: it.members })) : [it]))) {
     const el = getRowElements(item.rowId)[key];
     let top;
     let h = 3;
@@ -50,7 +50,8 @@ function drawRuler() {
       top = ((item.row.rowNumber - 1) / total) * H; // not rendered yet
     }
     if (item.ghost && item.type === 'inserted') top += h;
-    const cls = `rm rm-${item.type === 'modified' ? 'mod' : item.type === 'inserted' ? 'ins' : 'del'} is-${item.status}${item === activeItem ? ' is-active' : ''}`;
+    const isActive = activeItem && (item === activeItem || item.id === activeItem.id);
+    const cls = `rm rm-${item.type === 'modified' ? 'mod' : item.type === 'inserted' ? 'ins' : 'del'} is-${item.status}${isActive ? ' is-active' : ''}`;
     html.push(
       `<div class="${cls}" style="top:${Math.min(H - 3, top).toFixed(1)}px;height:${Math.min(h, 40).toFixed(1)}px" data-row-id="${item.rowId}" data-item-id="${item.id}" data-tooltip="${escapeHtml(rulerLabel(item))}"></div>`
     );
@@ -325,8 +326,11 @@ function resetEditHistory() {
   // A row id of the previous document would select an unrelated row in the new one.
   state.activeRowId = null;
   state.hoveredRowId = null;
+  // A new pair of documents: the next comparison is announced like a first one.
+  newDocumentsPending = true;
   updateUndoRedoButtons();
 }
+var newDocumentsPending = false; // `var`: set before the first comparison
 
 function makeHistorySnapshot() {
   return { text: state.rightText, reviews: cloneReviews() };
@@ -450,6 +454,41 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
   return out.join('\n\n');
 }
 
+// The new version with several paragraphs replaced at once (rows that have a right block),
+// e.g. the same header/footer line on every page.
+function rebuildRightTextReplacingRows(replacements) {
+  const allBlocks = state.rightAllBlocks || [];
+  const hasExplicit = allBlocks.some(b => b.hasExplicitPage);
+  const targets = [];
+  for (const [rowId, text] of replacements) {
+    const row = state.alignedRows.find(r => r.id === rowId);
+    if (!row || !row.rightBlock) continue;
+    const lines = [];
+    for (const line of sanitizeExternalText(text || '').split(/\n+/)) {
+      if (!line.trim()) continue;
+      lines.push(
+        serializeBlockLine({
+          text: line.trim(),
+          kind: row.rightBlock.kind,
+          indent: row.rightBlock.indent,
+          isHeaderFooter: Boolean(row.rightBlock.isHeaderFooter),
+        })
+      );
+    }
+    targets.push({ block: row.rightBlock, lines });
+  }
+  const out = [];
+  let lastPage = null;
+  for (const b of allBlocks) {
+    const pageNum = b.pageNum || 1;
+    if (hasExplicit && pageNum !== lastPage) out.push(pageMarkerLine(pageNum));
+    lastPage = pageNum;
+    const hit = targets.find(x => sameBlock(b, x.block));
+    out.push(...(hit ? hit.lines : [serializeBlockLine(b)]));
+  }
+  return out.join('\n\n');
+}
+
 // Row blocks are the very objects in state.rightAllBlocks (also after the worker's structured
 // clone); the position check is a fallback.
 function sameBlock(a, b) {
@@ -463,8 +502,8 @@ function revertRowToOriginal(targetRowId) {
   if (!state.alignedRows.length) return;
   const targetRow = state.alignedRows.find(r => r.id === targetRowId);
   if (!targetRow || !isShownComparisonCurrent()) return;
-  const item = state.listItems.find(i => i.rowId === targetRowId && !i.ghost);
-  if (item) rejectItem(item, { silent: true });
+  const item = state.listItems.find(i => itemHasRow(i, targetRowId) && !i.ghost);
+  if (item) rejectItem(item, { stay: true });
 }
 
 function startInlineClauseEdit(clauseEl, rowId) {
@@ -545,11 +584,13 @@ function startInlineClauseEdit(clauseEl, rowId) {
       closeUnchanged(keepFocus && !stale);
       return;
     }
+    // Editing a reviewed paragraph makes it an open change again: say so.
+    const wasReviewed = row.reviewStatus === 'accepted' || Boolean(row.ghostNote);
     pushUndoSnapshot();
     state.rightText = rebuildRightTextFromRows(rowId, newText);
     if (keepFocus) requestRowFocus(rowId, openerInSidebar);
     runComparison();
-    showUndoToast('toastEdited');
+    showUndoToast(wasReviewed ? 'toastEditedReopened' : 'toastEdited');
   };
 
   const cancel = () => {
@@ -616,11 +657,19 @@ function toggleHfGroup(id, collapse) {
     const actionBtn = e.target.closest('[data-review-action]');
     if (actionBtn) {
       e.stopPropagation();
-      // "Undo" in the pill of a change that is not the current one: make it current first.
-      const pill = actionBtn.closest('[data-pill-item]');
-      if (pill) {
-        const item = state.listItems.find(it => it.id === pill.getAttribute('data-pill-item'));
-        if (item) selectAndScrollToRow(item.rowId, false, false, { itemId: item.id, flash: false });
+      // "Rückgängig" in the status line of a reviewed paragraph: make that change current first.
+      const statusLine = actionBtn.closest('[data-status-row]');
+      if (statusLine) {
+        const rowId = statusLine.getAttribute('data-status-row');
+        const row = state.alignedRows.find(r => r.id === rowId);
+        const wantGhost = Boolean(row && row.ghostNote && row.reviewStatus !== 'accepted');
+        const item = state.listItems.find(it => itemHasRow(it, rowId) && it.status !== 'open' && Boolean(it.ghost) === wantGhost);
+        if (!item) return;
+        selectAndScrollToRow(rowId, false, false, { itemId: item.id, flash: false });
+        requestRowFocus(rowId, false);
+        if (reopenItem(item)) requestRowFocus(state.activeRowId, false);
+        applyPendingRowFocusIfIdle();
+        return;
       }
       runReviewAction(actionBtn.getAttribute('data-review-action'), false);
       return;
@@ -674,6 +723,22 @@ sidebarList.addEventListener('focusin', e => {
 const sidebarFilterBar = document.getElementById('sidebar-filter-bar');
 function setListFilter(f, focus) {
   state.sidebarFilter = f;
+  applyListFilters();
+  if (focus) {
+    const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);
+    if (tab) tab.focus();
+  }
+}
+// Status ("Offen" / "Geprüft") is a separate toggle on top of the kind of change.
+function setStatusFilter(s) {
+  state.statusFilter = state.statusFilter === s ? 'all' : s;
+  applyListFilters();
+}
+document.getElementById('status-filter-bar').addEventListener('click', e => {
+  const btn = e.target.closest('[data-status-filter]');
+  if (btn) setStatusFilter(btn.getAttribute('data-status-filter'));
+});
+function applyListFilters() {
   renderSidebarList(state.alignedRows.length > 0);
   // The stepper follows the filter: a current change outside it gives way to the first one in it.
   const visible = getFilteredListItems();
@@ -682,10 +747,6 @@ function setListFilter(f, focus) {
     selectAndScrollToRow(visible[0].rowId, true, true, { itemId: visible[0].id, flash: false });
   }
   updateStepper();
-  if (focus) {
-    const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);
-    if (tab) tab.focus();
-  }
 }
 sidebarFilterBar.addEventListener('click', e => {
   const btn = e.target.closest('[data-sidebar-filter]');

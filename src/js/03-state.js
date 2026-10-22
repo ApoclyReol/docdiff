@@ -46,7 +46,8 @@ const state = {
   ignoreHeadersFooters: true,
   filteredHfCount: 0,
   rightAllBlocks: [],
-  sidebarFilter: 'all',
+  sidebarFilter: 'all', // kind: all | modified | inserted | deleted
+  statusFilter: 'all', // all | open | reviewed
   sidebarOpen: true,
   searchQuery: '',
   isProgrammaticScroll: false,
@@ -132,8 +133,13 @@ function applyTranslationsToStaticDom() {
   document.title = t('metaTitle');
   applyDataI18n();
   const btnLang = document.getElementById('btn-lang');
-  btnLang.textContent = state.lang.toUpperCase();
-  setTooltip(btnLang, t('langTitle'), `${state.lang.toUpperCase()} – ${t('langTitle')}`);
+  // Named by the language it switches to, in that language.
+  const target = state.lang === 'de' ? 'en' : 'de';
+  btnLang.textContent = t('langTarget');
+  btnLang.setAttribute('lang', target);
+  setTooltip(btnLang, t('langTitle'));
+  const menuLang = document.querySelector('#menu-lang [data-i18n="langMenu"]');
+  if (menuLang) menuLang.setAttribute('lang', target);
   setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
   setTooltip(document.getElementById('btn-prev'), t('prevTitle'), t('prevLabel'));
   setTooltip(document.getElementById('btn-next'), t('nextTitle'), t('nextLabel'));
@@ -143,8 +149,6 @@ function applyTranslationsToStaticDom() {
   setTooltip(document.getElementById('btn-search-close'), t('searchClose'));
   setTooltip(document.getElementById('btn-more'), t('moreLabel'));
   document.getElementById('search-input').placeholder = t('searchPlaceholder');
-  document.getElementById('kbd-undo').textContent = undoKeyLabel();
-  document.getElementById('kbd-redo').textContent = redoKeyLabel();
   document.getElementById('textarea-left').placeholder = t('modalLeftPh');
   document.getElementById('textarea-right').placeholder = t('modalRightPh');
   document.getElementById('i18n-help-body').innerHTML = formatMsg('helpBodyHtml', {
@@ -155,33 +159,27 @@ function applyTranslationsToStaticDom() {
   updateFileLabels();
 }
 
-// Middle truncation keeps both the start and the version suffix of a file name visible:
-// "Rahmenvertrag_IT_…_v2.docx".
-function truncateMiddle(name, max) {
-  const chars = Array.from(String(name || ''));
-  if (chars.length <= max) return chars.join('');
-  const keepEnd = Math.ceil((max - 1) * 0.45);
-  const keepStart = max - 1 - keepEnd;
-  return chars.slice(0, keepStart).join('') + '…' + chars.slice(chars.length - keepEnd).join('');
-}
-
-// Two names that share a long start ("Vertrag_v1_…", "Vertrag_v2_…") keep the part that
-// tells them apart: "…v1_Vorher.docx".
-function truncateFileName(name, other, max) {
+// One rule for every shortened file name: keep the part that tells the two files apart and
+// the extension, cut in the middle. The second name of a pair drops the start both share:
+// "werkvertrag_v…1.pdf → …2.pdf".
+function truncateFileName(name, other, max, second = false) {
   const chars = Array.from(String(name || ''));
   if (chars.length <= max) return chars.join('');
   const o = Array.from(String(other || ''));
   let d = 0;
   while (d < chars.length && d < o.length && chars[d] === o[d]) d++;
-  // Start the distinguishing part at a word boundary ("…v1_Vorher", not "…1_Vorher").
-  while (d > 0 && !/[\s_.\-]/.test(chars[d - 1])) d--;
-  if (d > 4 && d < chars.length && chars.length - d + 1 <= max) {
-    const tail = chars.slice(d);
+  const tail = chars.slice(d);
+  if (d > 4 && tail.length && tail.length + 1 <= max) {
+    if (second) return '…' + tail.join('');
     const room = max - 1 - tail.length;
-    const head = room >= 6 ? chars.slice(0, room) : [];
-    return head.join('') + '…' + tail.join('');
+    return (room >= 4 ? chars.slice(0, room).join('') : '') + '…' + tail.join('');
   }
-  return truncateMiddle(name, max);
+  // No shared start (or the distinguishing part is too long): keep the start and the end with
+  // the extension.
+  const ext = (/\.[A-Za-z0-9]{1,5}$/.exec(chars.join('')) || [''])[0];
+  const keepEnd = Math.max(ext.length + 3, Math.ceil((max - 1) * 0.45));
+  const keepStart = Math.max(1, max - 1 - keepEnd);
+  return chars.slice(0, keepStart).join('') + '…' + chars.slice(chars.length - keepEnd).join('');
 }
 
 // File names in the top bar button, its popover and the pane captions.
@@ -191,13 +189,12 @@ function updateFileLabels() {
   const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 15;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
-  // Narrow screens: a shared extension carries no information ("…v1_Vorher → …v2_Nachher").
-  const ext = n => (/\.[A-Za-z0-9]{1,5}$/.exec(n) || [''])[0];
-  const dropExt = max <= 16 && ext(left) && ext(left).toLowerCase() === ext(right).toLowerCase();
-  const shownLeft = dropExt ? left.slice(0, -ext(left).length) : left;
-  const shownRight = dropExt ? right.slice(0, -ext(right).length) : right;
-  filesLeft.textContent = truncateFileName(shownLeft, shownRight, max);
-  filesRight.textContent = truncateFileName(shownRight, shownLeft, max);
+  filesLeft.textContent = truncateFileName(left, right, max);
+  filesRight.textContent = truncateFileName(right, left, max, true);
+  // Pane names for screen readers: "Alte Fassung: Vertrag_v1.docx".
+  document.getElementById('pane-left').setAttribute('aria-label', `${t('colLeft')}: ${left}`);
+  document.getElementById('pane-right').setAttribute('aria-label', `${t('colRight')}: ${right}`);
+  document.getElementById('pane-unified').setAttribute('aria-label', `${t('paneUnifiedLabel')}: ${left} → ${right}`);
   document.getElementById('files-label').textContent = formatMsg('filesBtnLabel', { left, right });
   document.getElementById('fp-name-left').textContent = left;
   document.getElementById('fp-name-right').textContent = right;
