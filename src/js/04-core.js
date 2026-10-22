@@ -75,6 +75,12 @@ function isPageNumberLabel(line) {
   );
 }
 
+// A page number label without a word like "Seite"/"Page" ("3/9", "3 von 9", "- 3 -"): the same
+// shapes occur as content (shares, table cells), so they need more evidence (see parseIntoBlocks).
+function isBarePageNumberLabel(line) {
+  return isPageNumberLabel(line) && !/^\s*(?:Seite|Page|Blatt|S\.|p\.)/i.test(line);
+}
+
 // Text-only header/footer candidate test (used for pasted text without page geometry).
 // Pure page labels qualify on their own; longer running lines ("Vertraulich · Seite 2 von 9")
 // are only treated as header/footer by parseIntoBlocks when they repeat within the document.
@@ -166,8 +172,15 @@ function reconcileHeaderFooterBlocks(leftBlocks, rightBlocks) {
         b.hfVisible = true;
       }
     };
-    unhide(hfL, keysR);
-    unhide(hfR, keysL);
+    // A version without any page structure and without header/footer lines (DOCX, pasted text)
+    // has nothing to compare a PDF's running headers against: they stay hidden instead of being
+    // reported as inserted/deleted text on a DOCX-vs-PDF comparison.
+    const paginated = blocks => blocks.some(b => b.hasExplicitPage);
+    const comparable = paginated(leftBlocks) === paginated(rightBlocks) || (hfL.length > 0 && hfR.length > 0);
+    if (comparable) {
+      unhide(hfL, keysR);
+      unhide(hfR, keysL);
+    }
   }
   return [...hfL, ...hfR].filter(b => !b.hfVisible).length;
 }
@@ -315,6 +328,12 @@ function joinWrappedLine(prev, next) {
 // Fraction of the page height at the top and bottom that may hold running headers/footers.
 const PDF_MARGIN_BAND = 0.12;
 
+// List bullets drawn with symbol fonts come out of PDF.js as private-use code points
+// (Symbol U+F0B7, OpenSymbol U+F095, Wingdings ▪ ➢ ❖ ● ■). At the start of a line they are
+// shown as "•" so the line is recognised as a bullet item, as in the DOCX version. Other
+// symbol glyphs (e.g. checked / unchecked boxes) are left untouched.
+const PDF_SYMBOL_BULLET = /^[\uF0B7\uF095\uF0A7\uF0D8\uF076\uF06C\uF06E]\s*(?=\S)/;
+
 /**
  * Groups PDF.js text items of one page into lines.
  * Spaces are inserted from geometry (gap between the end of one item and the start of the
@@ -366,7 +385,7 @@ function buildPdfPageLines(items, pageView) {
 
   const out = lines
     .map(l => ({
-      text: l.text.replace(/\s+/g, ' ').trim(),
+      text: l.text.replace(/\s+/g, ' ').trim().replace(PDF_SYMBOL_BULLET, '• '),
       y: l.y,
       yPct: (l.y - yMin) / height,
       fontSize: l.fontSize,
@@ -393,8 +412,10 @@ function buildPdfPageLines(items, pageView) {
   return out;
 }
 
+// Numbering such as "4." or "3.2" must be followed by whitespace; amounts ("145.000,00",
+// "1.000 Stück") and dates ("12.03.2026") at the start of a wrapped line are not numbering.
 const PDF_STRUCTURAL_START =
-  /^(§\s*\d+|\(\d+\)|\d+\.\d+|\d+\.|[•‣▪◦–*-]\s|\([a-z]\)|[a-z]\)|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i;
+  /^(§\s*\d+|\(\d+\)|(?!\d{1,3}(?:\.\d{3})+(?:,\d+)?\s|\d{1,2}\.\d{1,2}\.\d{2,4}\b)\d+\.(?:\d+\.)*\d*\s|[•‣▪◦–*-]\s|\([a-z]\)|[a-z]\)|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i;
 
 // Does `next` (first body line of a page) continue the paragraph `prev` from the previous page?
 function continuesAcrossPage(prev, next) {
@@ -460,11 +481,31 @@ function assemblePdfText(pages) {
 
 /* ── Parsing ───────────────────────────────────────────────────────────── */
 
+const LATIN_LIGATURES = { '\uFB00': 'ff', '\uFB01': 'fi', '\uFB02': 'fl', '\uFB03': 'ffi', '\uFB04': 'ffl', '\uFB05': 'st', '\uFB06': 'st' };
+
+/**
+ * Text normalisation applied to both documents before they are compared, so that differences
+ * a reader cannot see are not reported as changes:
+ *  - Unicode NFC: "Größe" with a precomposed "ö" equals "Größe" (decomposed, common in PDFs
+ *    and text from macOS); canonically equivalent strings are the same text by definition;
+ *  - Latin ligatures from PDFs ("ﬁ" -> "fi");
+ *  - no-break, narrow no-break and other fixed-width spaces -> plain space;
+ *  - invisible characters removed: soft hyphen, zero-width space, word joiner, BOM;
+ *  - CR / CRLF and Unicode line/paragraph separators -> "\n".
+ * Visible characters are never changed (no NFKC: "m²" stays "m²", "½" stays "½").
+ * Line-end soft hyphens in PDFs are resolved earlier (joinWrappedLine), before this runs.
+ */
+function normalizeComparableText(text) {
+  return text
+    .replace(/\r\n?|[\u2028\u2029\u0085]/g, '\n')
+    .normalize('NFC')
+    .replace(/[\uFB00-\uFB06]/g, ch => LATIN_LIGATURES[ch])
+    .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+    .replace(/[\u00AD\u200B\u2060\uFEFF]/g, '');
+}
+
 function parseIntoBlocks(rawText) {
-  const normalized = String(rawText || '')
-    .replace(/\r\n/g, '\n')
-    .replace(/ /g, ' ')
-    .trim();
+  const normalized = normalizeComparableText(String(rawText || '')).trim();
   if (!normalized) return [];
 
   const rawLines = normalized.split(/\n+/);
@@ -503,6 +544,27 @@ function parseIntoBlocks(rawText) {
     }
   }
 
+  // Bare number labels ("2/3", "3 von 9", "- 4 -") are page numbers in a paginated document
+  // (PDF). In pasted text or DOCX they are only page numbers when they form a running
+  // sequence (2+ labels of the same shape with increasing numbers); otherwise they are
+  // content, e.g. a table cell "2/3", and must be compared like any other line.
+  const barePageLabelKeys = new Set();
+  if (!hasExplicitPageMarkers) {
+    const firstNums = new Map();
+    for (const e of entries) {
+      if (e.hfMarked || !isBarePageNumberLabel(e.line)) continue;
+      const key = normalizeHfRepeatKey(e.line);
+      if (!firstNums.has(key)) firstNums.set(key, []);
+      firstNums.get(key).push(parseInt(e.line.match(/\d+/)[0], 10));
+    }
+    for (const [key, nums] of firstNums) {
+      if (nums.length >= 2 && nums.every((n, i) => i === 0 || n > nums[i - 1])) barePageLabelKeys.add(key);
+    }
+  }
+  const isPageLabel = line =>
+    isPageNumberLabel(line) &&
+    (hasExplicitPageMarkers || !isBarePageNumberLabel(line) || barePageLabelKeys.has(normalizeHfRepeatKey(line)));
+
   const blocks = [];
   let currentSectionRef = '';
   let seenContentBlock = false;
@@ -511,8 +573,10 @@ function parseIntoBlocks(rawText) {
     let line = entry.line;
     const isHeaderFooter =
       entry.hfMarked ||
-      isPageNumberLabel(line) ||
-      (isLikelyHeaderOrFooterLine(line) && (repeatCounts.get(normalizeHfRepeatKey(line)) || 0) >= 2);
+      isPageLabel(line) ||
+      (isLikelyHeaderOrFooterLine(line) &&
+        (!isBarePageNumberLabel(line) || isPageLabel(line)) &&
+        (repeatCounts.get(normalizeHfRepeatKey(line)) || 0) >= 2);
 
     const kind = classifyBlockKind(line, !seenContentBlock && !isHeaderFooter, isHeaderFooter);
     if (!isHeaderFooter) {
@@ -818,6 +882,28 @@ function getDiffLibrary() {
   return null;
 }
 
+// Upper bound for the work of one word diff (Myers: tokens × edit length). Without it two long,
+// largely rewritten paragraphs take quadratic time (two 10,000-word paragraphs: ~45 s; a 1 MB
+// paragraph: hours). Normal paragraphs are far below the bound and always get the exact diff.
+const WORD_DIFF_MAX_WORK = 1.5e7;
+
+// Coarse but exact fallback: common leading and trailing words unchanged, the rest replaced.
+function coarseWordDiff(oldText, newText) {
+  const a = oldText.split(/(\s+)/);
+  const b = newText.split(/(\s+)/);
+  let pre = 0;
+  while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre++;
+  let suf = 0;
+  while (suf < a.length - pre && suf < b.length - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++;
+  const parts = [
+    { value: a.slice(0, pre).join('') },
+    { value: a.slice(pre, a.length - suf).join(''), removed: true },
+    { value: b.slice(pre, b.length - suf).join(''), added: true },
+    { value: a.slice(a.length - suf).join('') },
+  ];
+  return parts.filter(p => p.value.length > 0);
+}
+
 function computeCleanWordDiff(oldText, newText) {
   const diffLib = getDiffLibrary();
   if (!diffLib) {
@@ -827,7 +913,11 @@ function computeCleanWordDiff(oldText, newText) {
     ];
   }
 
-  const raw = diffLib.diffWordsWithSpace(oldText, newText);
+  // diffWordsWithSpace yields about two tokens (word + whitespace) per word.
+  const tokens = 2 * ((oldText.match(/\S+/g) || []).length + (newText.match(/\S+/g) || []).length) + 2;
+  const maxEditLength = Math.max(30, Math.floor(WORD_DIFF_MAX_WORK / tokens));
+  const raw = diffLib.diffWordsWithSpace(oldText, newText, { maxEditLength });
+  if (!raw) return coarseWordDiff(oldText, newText);
 
   // An unchanged number sandwiched between two changes is shown as replaced as well, so
   // "1.000 EUR" -> "2.000 USD" reads as one change instead of three fragments.
