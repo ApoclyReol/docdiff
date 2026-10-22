@@ -141,8 +141,7 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
   state.searchQuery = '';
-  state.undoStack = [];
-  state.redoStack = [];
+  resetEditHistory();
   searchInput.value = '';
   fileInputLeft.value = '';
   fileInputRight.value = '';
@@ -157,6 +156,7 @@ document.getElementById('btn-lang').addEventListener('click', () => {
     state.leftText = sample.v1;
     state.rightName = t('sampleRightName');
     state.rightText = sample.v2;
+    resetEditHistory();
   }
   applyTranslationsToStaticDom();
   runComparison();
@@ -221,6 +221,7 @@ document.getElementById('btn-swap-docs').addEventListener('click', () => {
   [state.leftText, state.rightText] = [state.rightText, state.leftText];
   [state.leftName, state.rightName] = [state.rightName, state.leftName];
   [state.leftFormat, state.rightFormat] = [state.rightFormat, state.leftFormat];
+  resetEditHistory();
   runComparison();
 });
 
@@ -237,9 +238,17 @@ const pasteModal = document.getElementById('paste-modal');
 const textareaLeft = document.getElementById('textarea-left');
 const textareaRight = document.getElementById('textarea-right');
 
+// The dialog shows plain text only: page breaks and header/footer metadata of loaded
+// documents are removed for display. If a side is applied unchanged, the loaded document
+// (with its metadata) is kept; edited or new text is sanitized, so typed text can never be
+// interpreted as metadata.
+const pasteModalShown = { left: '', right: '' };
+
 function openPasteModal() {
-  textareaLeft.value = state.leftText;
-  textareaRight.value = state.rightText;
+  pasteModalShown.left = docTextToPlainText(state.leftText);
+  pasteModalShown.right = docTextToPlainText(state.rightText);
+  textareaLeft.value = pasteModalShown.left;
+  textareaRight.value = pasteModalShown.right;
   pasteModal.showModal();
 }
 
@@ -247,8 +256,19 @@ document.getElementById('btn-paste-modal').addEventListener('click', openPasteMo
 document.getElementById('btn-close-modal').addEventListener('click', () => pasteModal.close());
 document.getElementById('btn-cancel-modal').addEventListener('click', () => pasteModal.close());
 document.getElementById('btn-apply-modal').addEventListener('click', () => {
-  state.leftText = textareaLeft.value;
-  state.rightText = textareaRight.value;
+  const leftChanged = textareaLeft.value !== pasteModalShown.left;
+  const rightChanged = textareaRight.value !== pasteModalShown.right;
+  if (leftChanged) {
+    state.leftText = sanitizeExternalText(textareaLeft.value);
+    state.leftName = '';
+    state.leftFormat = '';
+  }
+  if (rightChanged) {
+    state.rightText = sanitizeExternalText(textareaRight.value);
+    state.rightName = '';
+    state.rightFormat = '';
+  }
+  if (leftChanged || rightChanged) resetEditHistory();
   if (state.leftText.trim() && !state.leftName) {
     state.leftName = t('manualLeft');
     state.leftFormat = 'TEXT';
@@ -273,6 +293,7 @@ document.getElementById('btn-help-sample').addEventListener('click', () => {
   state.rightName = t('sampleRightName');
   state.rightFormat = 'DEMO';
   state.rightText = sample.v2;
+  resetEditHistory();
   helpModal.close();
   runComparison();
 });

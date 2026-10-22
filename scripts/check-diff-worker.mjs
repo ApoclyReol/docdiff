@@ -187,7 +187,7 @@ for (const [name, leftText, rightText] of [
   const base = { leftText: sample.v1, rightText: sample.v2, ignoreHeadersFooters: true, labels };
   main.__req = base;
   const prev = { request: base, result: vm.runInContext('computeComparison(__req)', main) };
-  const modified = prev.result.alignedRows.find(r => r.type === 'modified');
+  const modified = prev.result.alignedRows.find(r => r.type === 'modified' && !r.rightBlock.isHeaderFooter);
   const edits = [
     ['edit', sample.v2.replace(modified.rightBlock.text, modified.rightBlock.text + ' Ergänzt.')],
     ['revert', sample.v2.replace(modified.rightBlock.text, modified.leftBlock.text)],

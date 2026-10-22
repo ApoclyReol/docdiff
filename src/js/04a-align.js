@@ -175,23 +175,23 @@ function alignBlocksBanded(midLeft, midRight, maxCells, onCells) {
   return pairs;
 }
 
-// Patience-style anchors: blocks whose text occurs exactly once on each side, reduced to the
+// Patience-style anchors: blocks whose text (ignoring renumbering) occurs exactly once on each side, reduced to the
 // longest chain that is increasing on both sides. Returns [[leftIdx, rightIdx], ...].
 function findUniqueBlockAnchors(midLeft, midRight) {
   const leftCount = new Map();
   for (let i = 0; i < midLeft.length; i++) {
-    const key = midLeft[i].text;
+    const key = blockAlignKey(midLeft[i]);
     leftCount.set(key, leftCount.has(key) ? -1 : i);
   }
   const rightIndex = new Map();
   for (let j = 0; j < midRight.length; j++) {
-    const key = midRight[j].text;
+    const key = blockAlignKey(midRight[j]);
     rightIndex.set(key, rightIndex.has(key) ? -1 : j);
   }
 
   const candidates = [];
   for (let i = 0; i < midLeft.length; i++) {
-    const key = midLeft[i].text;
+    const key = blockAlignKey(midLeft[i]);
     if (leftCount.get(key) !== i) continue;
     const j = rightIndex.get(key);
     if (j === undefined || j < 0) continue;
@@ -278,28 +278,19 @@ function alignMiddleBlocks(midLeft, midRight, onProgress) {
   return pairs;
 }
 
-// Full comparison pipeline: parse both texts, filter headers/footers, align. Pure and
-// structured-clone friendly; this is what the worker runs and what the sync fallback runs.
+// Full comparison pipeline: parse both texts, reconcile and filter headers/footers, align.
+// Pure and structured-clone friendly; this is what the worker runs and what the synchronous
+// fallback runs on the main thread.
 function computeComparison(request, onProgress) {
   const report = typeof onProgress === 'function' ? onProgress : null;
-  const allLeftBlocks = parseIntoBlocks(request.leftText || '');
-  const allRightBlocks = parseIntoBlocks(request.rightText || '');
+  const prepared = prepareComparisonBlocks(
+    request.leftText || '',
+    request.rightText || '',
+    request.ignoreHeadersFooters
+  );
   if (report) report(0.05);
 
-  const hfLeft = allLeftBlocks.filter(b => b.isHeaderFooter).length;
-  const hfRight = allRightBlocks.filter(b => b.isHeaderFooter).length;
-  const filteredHfCount = Math.max(hfLeft, hfRight);
-
-  const leftBlocks = request.ignoreHeadersFooters
-    ? allLeftBlocks.filter(b => !b.isHeaderFooter)
-    : allLeftBlocks;
-  const rightBlocks = request.ignoreHeadersFooters
-    ? allRightBlocks.filter(b => !b.isHeaderFooter)
-    : allRightBlocks;
-
-  const leftPages = leftBlocks.reduce((mx, b) => Math.max(mx, b.pageNum || 1), 0);
-  const rightPages = rightBlocks.reduce((mx, b) => Math.max(mx, b.pageNum || 1), 0);
-
+  const { allLeftBlocks, allRightBlocks, leftBlocks, rightBlocks } = prepared;
   let alignedRows = [];
   if (leftBlocks.length > 0 && rightBlocks.length > 0) {
     alignedRows = alignDocumentBlocks(
@@ -310,43 +301,52 @@ function computeComparison(request, onProgress) {
   }
   if (report) report(1);
 
-  // Tokenized word lists are only needed for alignment; dropping them keeps the result small
-  // when it is posted from the worker to the page.
   for (const b of allLeftBlocks) stripAlignmentFeatures(b);
   for (const b of allRightBlocks) stripAlignmentFeatures(b);
 
   return {
+    allLeftBlocks,
+    allRightBlocks,
     leftBlocks,
     rightBlocks,
-    allRightBlocks,
-    filteredHfCount,
-    leftPages,
-    rightPages,
+    filteredHfCount: prepared.hfCount,
+    leftPages: countPages(leftBlocks),
+    rightPages: countPages(rightBlocks),
     alignedRows,
   };
 }
 
-function stripAlignmentFeatures(block) {
-  delete block.words;
-  delete block.wordSet;
+function countPages(blocks) {
+  return blocks.reduce((mx, b) => Math.max(mx, b.pageNum || 1), 0);
 }
 
-const INCREMENTAL_BLOCK_KEYS = [
-  'index',
-  'pageNum',
-  'hasExplicitPage',
-  'refCode',
-  'sectionRef',
-  'kind',
-  'isHeading',
-  'isHeaderFooter',
-];
+// Tokenized word lists are only needed for alignment; dropping them keeps the result small
+// when it is posted from the worker to the page.
+const ALIGNMENT_ONLY_BLOCK_KEYS = ['words', 'wordSet', 'wordCounts'];
 
-// Fast path for edits, reverts, undo and redo: when the left text and options are unchanged
-// and the new right text differs from the previous one in exactly one block (same block
-// count, every other block identical including page and section numbering), the previous
-// alignment is kept and only that row is re-diffed. Returns null when a full re-alignment
-// is required.
+function stripAlignmentFeatures(block) {
+  for (const key of ALIGNMENT_ONLY_BLOCK_KEYS) delete block[key];
+}
+
+function blocksEquivalent(a, b, ignoreText) {
+  for (const key of Object.keys(a)) {
+    if (ALIGNMENT_ONLY_BLOCK_KEYS.includes(key)) continue;
+    if (ignoreText && (key === 'text' || key === 'alignKey' || key === 'refCode' || key === 'kind' ||
+      key === 'isHeading' || key === 'numberingMarker' || key === 'indent')) {
+      continue;
+    }
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+const MOVE_KEYS = ['moved', 'movedToRowId', 'movedFromRowId'];
+
+// Fast path for edits, reverts, undo and redo: when the left text and the options are unchanged
+// and the new right text differs from the previous one in exactly one block (same block count;
+// every other block identical, including page, section and header/footer metadata), the previous
+// alignment is kept and only that row is re-diffed. Returns { result, changedRowIds } or null
+// when a full re-alignment is required.
 function computeIncrementalComparison(prev, request) {
   if (!prev || !prev.request || !prev.result) return null;
   const pr = prev.request;
@@ -358,71 +358,95 @@ function computeIncrementalComparison(prev, request) {
     return null;
   }
   const old = prev.result;
-  if (!old.alignedRows.length) return null;
+  if (!old.alignedRows.length || !old.allLeftBlocks) return null;
 
-  const allRightBlocks = parseIntoBlocks(request.rightText || '');
-  if (allRightBlocks.length !== old.allRightBlocks.length) return null;
-
+  const prepared = prepareComparisonBlocks(
+    request.leftText || '',
+    request.rightText || '',
+    request.ignoreHeadersFooters
+  );
+  const { allLeftBlocks, allRightBlocks } = prepared;
+  if (
+    allLeftBlocks.length !== old.allLeftBlocks.length ||
+    allRightBlocks.length !== old.allRightBlocks.length ||
+    prepared.hfCount !== old.filteredHfCount
+  ) {
+    return null;
+  }
+  // Header/footer reconciliation looks at both documents, so the left side must be re-checked.
+  for (let i = 0; i < allLeftBlocks.length; i++) {
+    if (!blocksEquivalent(old.allLeftBlocks[i], allLeftBlocks[i], false)) return null;
+  }
   let changedIdx = -1;
   for (let i = 0; i < allRightBlocks.length; i++) {
     const a = old.allRightBlocks[i];
     const b = allRightBlocks[i];
     if (a.text === b.text) {
-      for (const key of INCREMENTAL_BLOCK_KEYS) if (a[key] !== b[key]) return null;
+      if (!blocksEquivalent(a, b, false)) return null;
       continue;
     }
-    if (changedIdx !== -1) return null;
-    if (a.pageNum !== b.pageNum || a.isHeaderFooter !== b.isHeaderFooter || a.sectionRef !== b.sectionRef) {
-      return null;
-    }
+    if (changedIdx !== -1 || !blocksEquivalent(a, b, true)) return null;
     changedIdx = i;
   }
 
   const blockMap = new Map();
+  for (let i = 0; i < allLeftBlocks.length; i++) blockMap.set(old.allLeftBlocks[i], allLeftBlocks[i]);
   for (let i = 0; i < allRightBlocks.length; i++) blockMap.set(old.allRightBlocks[i], allRightBlocks[i]);
+  const leftBlocks = old.leftBlocks.map(b => blockMap.get(b));
   const rightBlocks = old.rightBlocks.map(b => blockMap.get(b));
-  if (rightBlocks.some(b => !b)) return null;
+  if (leftBlocks.some(b => !b) || rightBlocks.some(b => !b)) return null;
 
+  const changedBlock = changedIdx === -1 ? null : allRightBlocks[changedIdx];
   let changedRowId = null;
   const alignedRows = old.alignedRows.map((row, idx) => {
-    if (!row.rightBlock) return row;
-    const newRight = blockMap.get(row.rightBlock);
-    if (!newRight) return row;
-    if (changedIdx === -1 || newRight !== allRightBlocks[changedIdx]) {
-      return Object.assign({}, row, { rightBlock: newRight });
+    const left = row.leftBlock ? blockMap.get(row.leftBlock) : null;
+    const right = row.rightBlock ? blockMap.get(row.rightBlock) : null;
+    if (changedBlock && right === changedBlock) {
+      changedRowId = row.id;
+      return buildAlignedRow({ left, right }, idx, row.pageNum);
     }
-    changedRowId = row.id;
-    return buildAlignedRow({ left: row.leftBlock, right: newRight }, idx, row.pageNum);
+    const copy = Object.assign({}, row, { leftBlock: left, rightBlock: right });
+    for (const key of MOVE_KEYS) delete copy[key];
+    return copy;
   });
 
-  if (changedIdx !== -1) {
+  if (changedBlock) {
     const changedRow = alignedRows.find(r => r.id === changedRowId);
-    if (!changedRow) return null; // the edited block is a filtered header/footer
-    // Keep the old pairing only if the DP would still consider the two blocks a match.
-    if (changedRow.leftBlock && changedRow.type !== 'equal') {
-      const leftCopy = Object.assign({}, changedRow.leftBlock, tokenizeWordsForBlock(changedRow.leftBlock));
-      const rightCopy = Object.assign({}, changedRow.rightBlock, tokenizeWordsForBlock(changedRow.rightBlock));
-      if (computeBlockSimilarity(leftCopy, rightCopy) < 0.28) return null;
+    if (!changedRow) return null; // the edited block is a hidden header/footer
+    // Keep the old pairing only if the alignment would still consider the blocks a match.
+    if (
+      changedRow.leftBlock &&
+      changedRow.type === 'modified' &&
+      computeBlockSimilarity(changedRow.leftBlock, changedRow.rightBlock) < 0.28
+    ) {
+      return null;
     }
   }
 
+  markMovedRows(alignedRows);
+  const changedRowIds = [];
+  for (let i = 0; i < alignedRows.length; i++) {
+    const row = alignedRows[i];
+    const before = old.alignedRows[i];
+    if (row.id === changedRowId || MOVE_KEYS.some(key => row[key] !== before[key])) {
+      changedRowIds.push(row.id);
+    }
+  }
+
+  for (const b of allLeftBlocks) stripAlignmentFeatures(b);
   for (const b of allRightBlocks) stripAlignmentFeatures(b);
 
   return {
-    changedRowId,
+    changedRowIds,
     result: {
-      leftBlocks: old.leftBlocks,
-      rightBlocks,
+      allLeftBlocks,
       allRightBlocks,
-      filteredHfCount: old.filteredHfCount,
-      leftPages: old.leftPages,
-      rightPages: rightBlocks.reduce((mx, b) => Math.max(mx, b.pageNum || 1), 0),
+      leftBlocks,
+      rightBlocks,
+      filteredHfCount: prepared.hfCount,
+      leftPages: countPages(leftBlocks),
+      rightPages: countPages(rightBlocks),
       alignedRows,
     },
   };
-}
-
-function tokenizeWordsForBlock(block) {
-  const { words, set } = tokenizeWords(block.text);
-  return { words, wordSet: set };
 }

@@ -5,7 +5,8 @@ function renderMinimap() {
     state.changeRows
       .map(row => {
         const pct = ((row.rowNumber - 1) / totalRows) * 100;
-        const cls = row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del';
+        const cls =
+          (row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del') + (row.moved ? ' moved' : '');
         return `<div class="minimap-tick ${cls}" style="top: ${pct}%" data-row-id="${row.id}"></div>`;
       })
       .join('')
@@ -180,6 +181,15 @@ function updateUndoRedoButtons() {
   if (btnRedo) btnRedo.disabled = state.redoStack.length === 0;
 }
 
+// Undo/redo history belongs to the currently loaded pair of documents. Call this whenever
+// a document is replaced (upload, paste dialog, swap, sample, clear), so Undo can never
+// bring back text from a different document under the new file name.
+function resetEditHistory() {
+  state.undoStack = [];
+  state.redoStack = [];
+  updateUndoRedoButtons();
+}
+
 function pushUndoSnapshot() {
   state.undoStack.push(state.rightText);
   if (state.undoStack.length > 50) state.undoStack.shift();
@@ -206,10 +216,10 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
   const hfByPage = new Map();
   if (state.ignoreHeadersFooters && state.rightAllBlocks) {
     for (const b of state.rightAllBlocks) {
-      if (b.isHeaderFooter) {
+      if (isHiddenHeaderFooter(b)) {
         const p = b.pageNum || 1;
         if (!hfByPage.has(p)) hfByPage.set(p, []);
-        hfByPage.get(p).push(`[[HF]] ${b.text}`);
+        hfByPage.get(p).push(serializeBlockLine(b));
       }
     }
   }
@@ -219,17 +229,28 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
     const p = r.pageNum || 1;
     if (!pagesMap.has(p)) pagesMap.set(p, []);
     if (r.id === targetRowId) {
-      if (replacementText) pagesMap.get(p).push(replacementText);
+      // Typed text is sanitized so it can never carry page/header-footer metadata;
+      // the edited block keeps its own structural metadata (indent, header/footer).
+      const template = r.rightBlock || r.leftBlock;
+      for (const line of sanitizeExternalText(replacementText || '').split(/\n+/)) {
+        if (!line.trim()) continue;
+        pagesMap.get(p).push(
+          serializeBlockLine({
+            text: line.trim(),
+            kind: template ? template.kind : 'p',
+            indent: template ? template.indent : 0,
+          })
+        );
+      }
     } else if (r.rightBlock) {
-      const prefix = r.rightBlock.isHeaderFooter ? '[[HF]] ' : '';
-      pagesMap.get(p).push(`${prefix}${r.rightBlock.text}`);
+      pagesMap.get(p).push(serializeBlockLine(r.rightBlock));
     }
   }
 
   const outLines = [];
   for (const [pageNum, contentLines] of pagesMap.entries()) {
     if (hasExplicit) {
-      outLines.push(`=== [SEITE ${pageNum}] ===`);
+      outLines.push(pageMarkerLine(pageNum));
     }
     const hfs = hfByPage.get(pageNum) || [];
     if (hfs.length > 0) outLines.push(hfs[0]);

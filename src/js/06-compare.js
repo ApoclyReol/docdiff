@@ -1,5 +1,5 @@
 // Applies a comparison result (from the worker, the sync fallback or the incremental fast path)
-// to the state and the DOM. `opts.changedRowId` marks an incremental single-row update.
+// to the state and the DOM. `opts.changedRowIds` marks an incremental update of a few rows.
 // runComparison() itself lives in 06a-compare-async.js.
 function applyComparisonResult(request, result, opts = {}) {
   lastComparison = { request, result };
@@ -96,7 +96,7 @@ function applyComparisonResult(request, result, opts = {}) {
 
   // Edits, reverts, undo and redo usually change a single row: patch it in place instead of
   // re-rendering all three panes. Clauses of the active row get `is-active` while rendering.
-  if (!(opts.changedRowId !== undefined && patchRenderedRow(opts.changedRowId))) {
+  if (!(opts.changedRowIds && patchRenderedRows(opts.changedRowIds))) {
     renderDocumentPanes();
   }
   renderSidebarList(true);
@@ -182,9 +182,18 @@ function bindEmptyStateButtons() {
       state.rightName = t('sampleRightName');
       state.rightFormat = 'DEMO';
       state.rightText = sample.v2;
+      resetEditHistory();
       runComparison();
     });
   });
+}
+
+// Moved blocks keep type 'deleted' (old position) / 'inserted' (new position); this note
+// labels them so they are not read as a removal plus an unrelated addition.
+function renderMovedNoteHtml(row) {
+  if (!row.moved) return '';
+  const label = row.type === 'deleted' ? t('movedFromHere') : t('movedToHere');
+  return `<span class="moved-note">${escapeHtml(label)}</span>`;
 }
 
 // Rendered for every clause of the right and unified panes, so it is kept lean: icons are CSS
@@ -244,19 +253,21 @@ function renderRowAnchorsHtml(row, idx, q) {
   const deferClass = idx > 18 ? ' deferred-block' : '';
   const activeClass = row.id === state.activeRowId ? ' is-active' : '';
   const extra = deferClass + activeClass;
+  const movedClass = row.moved ? ' is-moved' : '';
+  const movedNote = renderMovedNoteHtml(row);
   const rightActionsHtml = renderRightActionsHtml(row);
   const anchorOpen = `<div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">`;
 
   const left = row.leftBlock
-    ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'left')} ${getClauseTypeClasses(row.leftBlock)}${extra}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div></div>`
+    ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'left')} ${getClauseTypeClasses(row.leftBlock)}${movedClass}${extra}" data-row-id="${row.id}">${movedNote}${renderLeftBlockHtml(row, q)}</div></div>`
     : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}"></div></div>`;
 
   const right = row.rightBlock
-    ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'right')} ${getClauseTypeClasses(row.rightBlock)}${extra}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}${rightActionsHtml}</div></div>`
+    ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'right')} ${getClauseTypeClasses(row.rightBlock)}${movedClass}${extra}" data-row-id="${row.id}">${movedNote}${renderRightBlockHtml(row, q)}${rightActionsHtml}</div></div>`
     : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}">${rightActionsHtml}</div></div>`;
 
   const primaryBlock = row.rightBlock || row.leftBlock;
-  const unified = `${anchorOpen}<div class="clause ${getRowStateClass(row, 'unified')} ${getClauseTypeClasses(primaryBlock)}${extra}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div></div>`;
+  const unified = `${anchorOpen}<div class="clause ${getRowStateClass(row, 'unified')} ${getClauseTypeClasses(primaryBlock)}${movedClass}${extra}" data-row-id="${row.id}">${movedNote}${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div></div>`;
 
   return { left, right, unified };
 }
@@ -379,23 +390,31 @@ function rerenderRowInPlace(row) {
   return true;
 }
 
-// Incremental update after an edit / revert / undo that changed a single row (same row ids).
-function patchRenderedRow(changedRowId) {
+// Incremental update after an edit / revert / undo (same row ids, a few rows changed).
+// Returns false if the DOM does not hold the previous rendering, so a full render is needed.
+function patchRenderedRows(changedRowIds) {
   flushPaneRender();
-  if (changedRowId === null) return true;
-  const row = state.alignedRows.find(r => r.id === changedRowId);
-  if (!row || !rerenderRowInPlace(row)) return false;
+  const rows = changedRowIds.map(id => state.alignedRows.find(r => r.id === id));
+  if (rows.some(row => !row || !getRowElements(row.id).l)) return false;
 
-  const pageRows = state.alignedRows.filter(r => (r.pageNum || 1) === (row.pageNum || 1));
   const totalPages = sheetLeft.children.length || 1;
-  const headerHtml = renderPageCardHeaderHtml(row.pageNum || 1, totalPages, pageRows);
-  const els = getRowElements(row.id);
-  for (const el of [els.l, els.r, els.u]) {
-    const header = el.closest('.doc-page-card')?.querySelector(':scope > .doc-page-header');
-    if (!header) continue;
-    const tpl = document.createElement('template');
-    tpl.innerHTML = headerHtml.trim();
-    header.replaceWith(tpl.content.firstElementChild);
+  const pagesDone = new Set();
+  for (const row of rows) {
+    if (!rerenderRowInPlace(row)) return false;
+    const pageNum = row.pageNum || 1;
+    if (pagesDone.has(pageNum)) continue;
+    pagesDone.add(pageNum);
+    const pageRows = state.alignedRows.filter(r => (r.pageNum || 1) === pageNum);
+    const headerHtml = renderPageCardHeaderHtml(pageNum, totalPages, pageRows).trim();
+    const els = getRowElements(row.id);
+    for (const el of [els.l, els.r, els.u]) {
+      const card = el && el.closest('.doc-page-card');
+      const header = card && card.querySelector(':scope > .doc-page-header');
+      if (!header) continue;
+      const tpl = document.createElement('template');
+      tpl.innerHTML = headerHtml;
+      header.replaceWith(tpl.content.firstElementChild);
+    }
   }
   return true;
 }
@@ -614,10 +633,16 @@ function renderSidebarList(bothLoaded) {
     filtered
       .map(row => {
         const globalIdx = state.changeRows.indexOf(row) + 1;
-        const cls = row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del';
+        const cls =
+          (row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del') + (row.moved ? ' moved' : '');
         const isActive = row.id === state.activeRowId;
-        const typeLabel =
-          row.type === 'modified' ? t('typeMod') : row.type === 'inserted' ? t('typeIns') : t('typeDel');
+        const typeLabel = row.moved
+          ? t('typeMoved')
+          : row.type === 'modified'
+          ? t('typeMod')
+          : row.type === 'inserted'
+          ? t('typeIns')
+          : t('typeDel');
         const refCode = row.rightBlock ? row.rightBlock.refCode : row.leftBlock.refCode;
         const pageNum = row.pageNum || 1;
         const deltaHtml = renderSidebarDeltaHtml(row, state.searchQuery);

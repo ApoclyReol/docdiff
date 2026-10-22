@@ -168,7 +168,7 @@ function runComparison(options = {}) {
   if (incremental) {
     cancelDiffWorkerJob();
     hideCompareStatus();
-    applyComparisonResult(request, incremental.result, { changedRowId: incremental.changedRowId });
+    applyComparisonResult(request, incremental.result, { changedRowIds: incremental.changedRowIds });
     return Promise.resolve();
   }
 
