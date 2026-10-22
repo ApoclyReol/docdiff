@@ -37,8 +37,8 @@ It was written with German contracts in mind (`§ 1`, `(1)`, `1.1` clause number
 
 1. Open [docdiff.app](https://docdiff.app), or download [`DocDiff.html`](https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html) and open it from disk.
 2. Choose the old version and the new version (file picker, drag and drop, or paste text). There is a built-in example if you just want to look around.
-3. Go through the changes: removed text is struck through in red, added text is green. `J` / `K` or the arrows jump from change to change; the list on the right shows each change in short form.
-4. Optionally edit paragraphs of the new version, or take over the old wording for a paragraph, and export the result.
+3. Go through the changes: removed text is struck through in red, added text is green. `J` / `K` or the arrows in the top bar jump from change to change; the list on the right shows each change in short form.
+4. Accept or reject each change (`A` / `R`), optionally edit paragraphs of the new version, and export the result.
 
 ## What it does
 
@@ -46,19 +46,18 @@ It was written with German contracts in mind (`§ 1`, `(1)`, `1.1` clause number
 - **Paragraph alignment, then word diff:** paragraphs of both versions are matched first, then the words inside each matched pair are compared. Inserted and deleted paragraphs show up as such.
 - **Faithful output:** unchanged plus removed parts always reproduce the old text exactly, unchanged plus added parts the new text. Tests enforce this.
 - **Less noise:**
-  - Running headers, footers and page numbers that repeat on at least half of the pages are hidden (toggle "Ohne Kopf-/Fußzeile"). If a header or footer actually differs between versions, it is shown.
+  - Running headers, footers and page numbers that repeat on at least half of the pages are hidden (View › "Hide headers & footers"). If a header or footer actually differs between versions, it is shown.
   - Renumbering alone (`(1)` → `(2)`, `§ 4` → `§ 5`) is shown in a muted style and not counted as a change.
   - Paragraphs that moved unchanged are labelled "Moved" at both positions.
   - Hyphenated line breaks in PDFs are joined.
-- **Views:** original pages, side by side, or one column (default on phones).
-- **Editing:** edit a paragraph of the new version in place, or revert it to the old wording, with undo/redo.
+- **Views:** side by side or one column (default on phones), with or without the original page breaks. An overview bar next to the text shows where the changes are.
+- **Review:** accept a change (keep the new wording) or reject it (restore the old wording of that paragraph); both mark it as reviewed and can be undone. Paragraphs of the new version can also be edited in place.
 - **Export:**
-  - Word `.docx` with every difference as a tracked change, so you can accept or reject changes in Word or LibreOffice
+  - Word `.docx` in which open changes are tracked changes (accept or reject them in Word or LibreOffice) and changes accepted in Doc Diff are already applied
   - PDF via the browser's print dialog
-  - HTML report (self-contained, read-only)
-  - Markdown
+  - HTML report (self-contained, read-only) and Markdown, both with the review status of every change
   - the final text as `.txt` or to the clipboard
-- **Session file:** you can save the current state (both documents plus your edits) as a `.docdiff` file and open it again later. The browser asks before you leave the page with unsaved edits.
+- **Saved work:** you can save the current state (both documents, your edits and the review status) as a `.docdiff` file and open it again later. The browser asks before you leave the page with unsaved work.
 
 ## What it does not do
 
@@ -97,15 +96,15 @@ PERFORMANCE_PLACEHOLDER
 
 | Key | Action |
 | :-- | :-- |
-| `J` / `K` | Next / previous change |
-| `/` | Search |
-| `C` | Show only changes |
-| `H` | Hide or show headers and footers |
-| `Ctrl+Z` / `Cmd+Z` | Undo an edit |
+| `J` / `K` | Next open / previous change |
+| `A` / `R` | Accept / reject the current change |
+| `Enter` | In the list of changes: jump to the change |
+| `/`, `Ctrl+F` / `Cmd+F` | Find in document |
+| `Ctrl+Z` / `Cmd+Z` | Undo |
 | `Ctrl+Y`, `Shift+Cmd+Z` | Redo |
-| `Esc` | Close menus and dialogs |
+| `Esc` | Close menus, search and dialogs |
 
-Single-key shortcuts only work while a comparison is shown and not while typing. They can be switched off in the help dialog.
+Single-key shortcuts only work while the document or the list of changes has focus, never while typing. They can be switched off in the help dialog.
 
 ## Building from source
 

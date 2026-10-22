@@ -40,7 +40,7 @@
   --radius-xl: 0.75rem;
 
   --topbar-h: 52px;
-  --list-w: 320px;
+  --list-w: 336px;
   --ruler-w: 14px;
 
   --background: 0 0% 97.5%;
@@ -1817,7 +1817,12 @@ ins.tok-ins.tok-marker {
   transition: width 160ms ease-out;
 }
 .first-hint-text {
-  text-wrap: balance;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+.hint-pair {
+  white-space: nowrap;
 }
 .first-hint {
   display: flex;
@@ -1849,21 +1854,21 @@ body.legend-dismissed .first-hint {
 }
 .list-filters {
   display: flex;
-  gap: 0;
-  margin: 8px -6px 0;
+  gap: 2px;
+  margin: 8px -4px 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .list-filter {
   flex-shrink: 0;
   height: 38px;
-  padding: 0 6px;
+  padding: 0 4px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
   color: hsl(var(--muted-foreground));
   font: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;

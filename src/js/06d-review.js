@@ -88,10 +88,19 @@ function rebuildReviewIndex() {
       sub = entry.prevAnchor ? 0.5 : -0.5;
     } else {
       target = rowByLeftAnchor.get(entry.leftAnchor);
-      // Only while the old wording is really back (an edit afterwards makes it a new change).
-      if (!target || target.type !== 'equal') continue;
-      order = rows.indexOf(target);
-      if (!target.ghostNote) target.ghostNote = 'rejected';
+      if (target) {
+        // Only while the old wording is really back (an edit afterwards makes it a new change).
+        if (target.type !== 'equal') continue;
+        order = rows.indexOf(target);
+        if (!target.ghostNote) target.ghostNote = 'rejected';
+      } else {
+        // The restored line is no longer shown (an identical header/footer line is hidden):
+        // keep the item where it was, after the paragraph above it.
+        target = entry.prevAnchor ? rowByLeftAnchor.get(entry.prevAnchor) : rows[0];
+        if (!target) continue;
+        order = rows.indexOf(target);
+        sub = entry.prevAnchor ? 0.5 : -0.5;
+      }
     }
     items.push({
       id: `ghost-${key.length}-${hashString(key)}`,
@@ -262,18 +271,7 @@ function getReviewBar() {
   reviewBar.setAttribute('role', 'toolbar');
   reviewBar.addEventListener('mousedown', e => e.stopPropagation());
   // Roving focus inside the action row: one tab stop, arrow keys move between the buttons.
-  reviewBar.addEventListener('keydown', e => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
-    const buttons = Array.from(reviewBar.querySelectorAll('button'));
-    const i = buttons.indexOf(document.activeElement);
-    if (i < 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const next =
-      e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
-    buttons.forEach((b, k) => (b.tabIndex = k === next ? 0 : -1));
-    buttons[next].focus();
-  });
+  reviewBar.addEventListener('keydown', e => handleRovingKeys(e, reviewBar));
   return reviewBar;
 }
 
@@ -289,11 +287,11 @@ const ICON_UNDO = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><pat
 // Buttons for one item (shared by the document action row and the active list card).
 function reviewActionsHtml(item, row, context) {
   const btn = (action, icon, label, title, cls = '') =>
-    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" data-tooltip="${escapeHtml(title)}"${context === 'doc' ? ' tabindex="-1"' : ''}>${icon}<span class="ra-label">${escapeHtml(label)}</span></button>`;
+    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" data-tooltip="${escapeHtml(title)}" tabindex="-1">${icon}<span class="ra-label">${escapeHtml(label)}</span></button>`;
   const edit = btn('edit', ICON_EDIT, t('editBtn'), t('editTitle'), 'ra-edit');
-  if (!item) return edit;
+  if (!item) return rovingFirst(edit);
   if (item.status === 'open') {
-    return (
+    return rovingFirst(
       btn('accept', ICON_CHECK, t('acceptBtn'), t('acceptTitle'), 'ra-accept') +
       btn('reject', ICON_X, t('rejectBtn'), t('rejectTitle'), 'ra-reject') +
       edit
@@ -303,7 +301,26 @@ function reviewActionsHtml(item, row, context) {
     item.status === 'accepted'
       ? `<span class="ra-status is-accepted">${ICON_CHECK}${escapeHtml(t('acceptedNote'))}</span>`
       : `<span class="ra-status is-rejected">${ICON_X}${escapeHtml(t('rejectedNote'))}</span>`;
-  return note + btn('reopen', ICON_UNDO, t('reopenBtn'), t('reopenTitle'), 'ra-reopen') + (item.status === 'accepted' ? edit : '');
+  return note + rovingFirst(btn('reopen', ICON_UNDO, t('reopenBtn'), t('reopenTitle'), 'ra-reopen') + (item.status === 'accepted' ? edit : ''));
+}
+
+// A group of action buttons is one tab stop; the arrow keys move inside it.
+function rovingFirst(html) {
+  return html.replace(' tabindex="-1"', ' tabindex="0"');
+}
+
+function handleRovingKeys(e, container) {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return false;
+  const buttons = Array.from(container.querySelectorAll('button'));
+  const i = buttons.indexOf(document.activeElement);
+  if (i < 0) return false;
+  e.preventDefault();
+  e.stopPropagation();
+  const next =
+    e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+  buttons.forEach((b, k) => (b.tabIndex = k === next ? 0 : -1));
+  buttons[next].focus();
+  return true;
 }
 
 function placeReviewBar() {

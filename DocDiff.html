@@ -215,7 +215,7 @@
   --radius-xl: 0.75rem;
 
   --topbar-h: 52px;
-  --list-w: 320px;
+  --list-w: 336px;
   --ruler-w: 14px;
 
   --background: 0 0% 97.5%;
@@ -1992,7 +1992,12 @@ ins.tok-ins.tok-marker {
   transition: width 160ms ease-out;
 }
 .first-hint-text {
-  text-wrap: balance;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+.hint-pair {
+  white-space: nowrap;
 }
 .first-hint {
   display: flex;
@@ -2024,21 +2029,21 @@ body.legend-dismissed .first-hint {
 }
 .list-filters {
   display: flex;
-  gap: 0;
-  margin: 8px -6px 0;
+  gap: 2px;
+  margin: 8px -4px 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .list-filter {
   flex-shrink: 0;
   height: 38px;
-  padding: 0 6px;
+  padding: 0 4px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
   color: hsl(var(--muted-foreground));
   font: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -3315,7 +3320,7 @@ body.is-diff-busy .doc-sheet {
           <span class="tb-label" data-i18n="viewMenu">Ansicht</span>
           <svg class="icon tb-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
         </button>
-        <div class="menu" id="view-menu" role="menu" aria-labelledby="btn-view-menu" hidden>
+        <div class="menu menu-right" id="view-menu" role="menu" aria-labelledby="btn-view-menu" hidden>
           <div class="menu-group" role="group" aria-labelledby="vm-layout">
             <span class="menu-label" id="vm-layout" data-i18n="viewLayoutLabel">Darstellung</span>
             <button type="button" class="menu-item" role="menuitemradio" aria-checked="true" id="btn-mode-split"><span class="mi-check" aria-hidden="true"></span><span data-i18n="modeSplit">Nebeneinander</span></button>
@@ -3553,7 +3558,7 @@ body.is-diff-busy .doc-sheet {
       </div>
     </div>
 
-    <aside class="sidebar-panel compare-only" id="sidebar" aria-labelledby="list-title">
+    <div class="sidebar-panel compare-only" id="sidebar" role="region" aria-labelledby="list-title">
       <div class="list-head">
         <div class="sheet-grabber" aria-hidden="true"></div>
         <div class="list-title-row">
@@ -3565,7 +3570,7 @@ body.is-diff-busy .doc-sheet {
           <span class="progress-text" id="list-progress"></span>
         </div>
         <p class="first-hint" id="first-hint">
-          <span class="first-hint-text"><del class="tok-del" data-i18n="legendDelSample">durchgestrichen</del> <span data-i18n="legendDel">= entfernt</span> · <ins class="tok-ins" data-i18n="legendInsSample">grün</ins> <span data-i18n="legendIns">= hinzugefügt</span></span>
+          <span class="first-hint-text"><span class="hint-pair"><del class="tok-del" data-i18n="legendDelSample">durchgestrichen</del> <span data-i18n="legendDel">= entfernt</span></span> <span class="hint-pair"><ins class="tok-ins" data-i18n="legendInsSample">grün</ins> <span data-i18n="legendIns">= hinzugefügt</span></span></span>
           <button type="button" class="hint-close" id="btn-legend-close" aria-label="Hinweis ausblenden" data-i18n-label="legendClose">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
@@ -3579,7 +3584,7 @@ body.is-diff-busy .doc-sheet {
         </div>
       </div>
       <div class="sidebar-list" id="sidebar-list" role="tabpanel" aria-labelledby="tab-all"></div>
-    </aside>
+    </div>
   </main>
 
   <!-- ── 3. PHONE BOTTOM BAR (thumb zone) ─────────────────────────────────────────────── -->
@@ -4956,9 +4961,12 @@ function truncateFileName(name, other, max) {
   const o = Array.from(String(other || ''));
   let d = 0;
   while (d < chars.length && d < o.length && chars[d] === o[d]) d++;
+  // Start the distinguishing part at a word boundary ("…v1_Vorher", not "…1_Vorher").
+  while (d > 0 && !/[\s_.\-]/.test(chars[d - 1])) d--;
   if (d > 4 && d < chars.length && chars.length - d + 1 <= max) {
     const tail = chars.slice(d);
-    const head = chars.slice(0, max - 1 - tail.length);
+    const room = max - 1 - tail.length;
+    const head = room >= 6 ? chars.slice(0, room) : [];
     return head.join('') + '…' + tail.join('');
   }
   return truncateMiddle(name, max);
@@ -4968,11 +4976,16 @@ function truncateFileName(name, other, max) {
 function updateFileLabels() {
   const left = state.leftName || t('noFileLeft');
   const right = state.rightName || t('noFileRight');
-  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : window.innerWidth > PHONE_MAX ? 16 : 15;
+  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 15;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
-  filesLeft.textContent = truncateFileName(left, right, max);
-  filesRight.textContent = truncateFileName(right, left, max);
+  // Narrow screens: a shared extension carries no information ("…v1_Vorher → …v2_Nachher").
+  const ext = n => (/\.[A-Za-z0-9]{1,5}$/.exec(n) || [''])[0];
+  const dropExt = max <= 16 && ext(left) && ext(left).toLowerCase() === ext(right).toLowerCase();
+  const shownLeft = dropExt ? left.slice(0, -ext(left).length) : left;
+  const shownRight = dropExt ? right.slice(0, -ext(right).length) : right;
+  filesLeft.textContent = truncateFileName(shownLeft, shownRight, max);
+  filesRight.textContent = truncateFileName(shownRight, shownLeft, max);
   document.getElementById('files-label').textContent = formatMsg('filesBtnLabel', { left, right });
   document.getElementById('fp-name-left').textContent = left;
   document.getElementById('fp-name-right').textContent = right;
@@ -6945,7 +6958,8 @@ function applyComparisonResult(request, result, opts = {}) {
   const emptyLaunchpad = document.getElementById('empty-launchpad');
   // Focus sat on something that is about to disappear (landing page or comparison chrome)?
   const active = document.activeElement;
-  const focusWasLost = !active || active === document.body;
+  // (A control in a dialog that just closed, or in a closed menu, counts as lost focus too.)
+  const focusWasLost = !active || active === document.body || !active.getClientRects().length;
   const focusInLanding = Boolean(emptyLaunchpad && active && emptyLaunchpad.contains(active));
   const focusInCompareChrome = Boolean(active && active.closest && active.closest('.compare-only'));
   // Focus inside a document pane or the change list is lost when they are re-rendered.
@@ -7635,7 +7649,7 @@ function renderSidebarList(bothLoaded) {
             : '';
         const head = [ref, `${t('pageShort')} ${page}`].filter(Boolean).join(' · ');
         const actions = isActive
-          ? `<div class="nav-item-actions" role="group" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
+          ? `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
           : '';
         return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}</span></span>${renderSidebarDeltaHtml(item)}</button>${actions}</div>`;
       })
@@ -8509,10 +8523,19 @@ function rebuildReviewIndex() {
       sub = entry.prevAnchor ? 0.5 : -0.5;
     } else {
       target = rowByLeftAnchor.get(entry.leftAnchor);
-      // Only while the old wording is really back (an edit afterwards makes it a new change).
-      if (!target || target.type !== 'equal') continue;
-      order = rows.indexOf(target);
-      if (!target.ghostNote) target.ghostNote = 'rejected';
+      if (target) {
+        // Only while the old wording is really back (an edit afterwards makes it a new change).
+        if (target.type !== 'equal') continue;
+        order = rows.indexOf(target);
+        if (!target.ghostNote) target.ghostNote = 'rejected';
+      } else {
+        // The restored line is no longer shown (an identical header/footer line is hidden):
+        // keep the item where it was, after the paragraph above it.
+        target = entry.prevAnchor ? rowByLeftAnchor.get(entry.prevAnchor) : rows[0];
+        if (!target) continue;
+        order = rows.indexOf(target);
+        sub = entry.prevAnchor ? 0.5 : -0.5;
+      }
     }
     items.push({
       id: `ghost-${key.length}-${hashString(key)}`,
@@ -8683,18 +8706,7 @@ function getReviewBar() {
   reviewBar.setAttribute('role', 'toolbar');
   reviewBar.addEventListener('mousedown', e => e.stopPropagation());
   // Roving focus inside the action row: one tab stop, arrow keys move between the buttons.
-  reviewBar.addEventListener('keydown', e => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
-    const buttons = Array.from(reviewBar.querySelectorAll('button'));
-    const i = buttons.indexOf(document.activeElement);
-    if (i < 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const next =
-      e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
-    buttons.forEach((b, k) => (b.tabIndex = k === next ? 0 : -1));
-    buttons[next].focus();
-  });
+  reviewBar.addEventListener('keydown', e => handleRovingKeys(e, reviewBar));
   return reviewBar;
 }
 
@@ -8710,11 +8722,11 @@ const ICON_UNDO = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><pat
 // Buttons for one item (shared by the document action row and the active list card).
 function reviewActionsHtml(item, row, context) {
   const btn = (action, icon, label, title, cls = '') =>
-    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" data-tooltip="${escapeHtml(title)}"${context === 'doc' ? ' tabindex="-1"' : ''}>${icon}<span class="ra-label">${escapeHtml(label)}</span></button>`;
+    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" data-tooltip="${escapeHtml(title)}" tabindex="-1">${icon}<span class="ra-label">${escapeHtml(label)}</span></button>`;
   const edit = btn('edit', ICON_EDIT, t('editBtn'), t('editTitle'), 'ra-edit');
-  if (!item) return edit;
+  if (!item) return rovingFirst(edit);
   if (item.status === 'open') {
-    return (
+    return rovingFirst(
       btn('accept', ICON_CHECK, t('acceptBtn'), t('acceptTitle'), 'ra-accept') +
       btn('reject', ICON_X, t('rejectBtn'), t('rejectTitle'), 'ra-reject') +
       edit
@@ -8724,7 +8736,26 @@ function reviewActionsHtml(item, row, context) {
     item.status === 'accepted'
       ? `<span class="ra-status is-accepted">${ICON_CHECK}${escapeHtml(t('acceptedNote'))}</span>`
       : `<span class="ra-status is-rejected">${ICON_X}${escapeHtml(t('rejectedNote'))}</span>`;
-  return note + btn('reopen', ICON_UNDO, t('reopenBtn'), t('reopenTitle'), 'ra-reopen') + (item.status === 'accepted' ? edit : '');
+  return note + rovingFirst(btn('reopen', ICON_UNDO, t('reopenBtn'), t('reopenTitle'), 'ra-reopen') + (item.status === 'accepted' ? edit : ''));
+}
+
+// A group of action buttons is one tab stop; the arrow keys move inside it.
+function rovingFirst(html) {
+  return html.replace(' tabindex="-1"', ' tabindex="0"');
+}
+
+function handleRovingKeys(e, container) {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return false;
+  const buttons = Array.from(container.querySelectorAll('button'));
+  const i = buttons.indexOf(document.activeElement);
+  if (i < 0) return false;
+  e.preventDefault();
+  e.stopPropagation();
+  const next =
+    e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+  buttons.forEach((b, k) => (b.tabIndex = k === next ? 0 : -1));
+  buttons[next].focus();
+  return true;
 }
 
 function placeReviewBar() {
@@ -9046,7 +9077,7 @@ function updateListActiveCard(itemId) {
   if (!card.querySelector('.nav-item-actions')) {
     card.insertAdjacentHTML(
       'beforeend',
-      `<div class="nav-item-actions" role="group" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
+      `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
     );
   }
   if (!focusInList) {
@@ -9435,6 +9466,11 @@ function toggleHfGroup(id, collapse) {
 
 // The list: one tab stop; arrow keys move between the cards (selection follows focus).
 sidebarList.addEventListener('keydown', e => {
+  const actions = e.target.closest('.nav-item-actions');
+  if (actions) {
+    handleRovingKeys(e, actions);
+    return;
+  }
   const main = e.target.closest('.nav-item-main');
   if (!main) return;
   const all = Array.from(sidebarList.querySelectorAll('.nav-item-main'));
@@ -9463,6 +9499,12 @@ const sidebarFilterBar = document.getElementById('sidebar-filter-bar');
 function setListFilter(f, focus) {
   state.sidebarFilter = f;
   renderSidebarList(state.alignedRows.length > 0);
+  // The stepper follows the filter: a current change outside it gives way to the first one in it.
+  const visible = getFilteredListItems();
+  const active = getActiveItem();
+  if (visible.length && (!active || !visible.includes(active))) {
+    selectAndScrollToRow(visible[0].rowId, true, true, { itemId: visible[0].id, flash: false });
+  }
   updateStepper();
   if (focus) {
     const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);
@@ -11949,7 +11991,7 @@ function applyLayoutTier(initial) {
   closeListSheet(false);
   const sidebar = document.getElementById('sidebar');
   if (tier === 'desktop') {
-    sidebar.removeAttribute('role');
+    sidebar.setAttribute('role', 'region');
     sidebar.removeAttribute('aria-modal');
   } else {
     sidebar.setAttribute('role', 'dialog');
@@ -12584,8 +12626,25 @@ let sessionDialogReturnFocus = null;
 function finishSessionDialog(result) {
   const resolve = sessionDialogResolve;
   sessionDialogResolve = null;
-  if (sessionDialog.open) sessionDialog.close();
+  if (sessionDialog.open) {
+    sessionDialog.close();
+    restoreSessionDialogFocus();
+  }
   if (resolve) resolve(result);
+}
+
+// Back to where the dialog was opened from (the menu button for an action in a menu).
+function restoreSessionDialogFocus() {
+  const target = sessionDialogReturnFocus;
+  const active = document.activeElement;
+  if (
+    target &&
+    target.isConnected &&
+    target.getClientRects().length &&
+    (!active || active === document.body || !active.getClientRects().length)
+  ) {
+    target.focus();
+  }
 }
 
 // Resolves with 'confirm', 'discard' or 'cancel'.
@@ -12622,13 +12681,15 @@ sessionDialogDiscard.addEventListener('click', () => finishSessionDialog('discar
 // Esc or any other way of closing counts as "cancel". The close event is
 // dispatched asynchronously, so a late one from a previous dialog must not
 // cancel a dialog that has been reopened in the meantime.
+// Esc is "cancel", handled here so that focus returns right away (not only once the
+// asynchronous close event arrives).
+sessionDialog.addEventListener('cancel', e => {
+  e.preventDefault();
+  finishSessionDialog('cancel');
+});
 sessionDialog.addEventListener('close', () => {
   if (!sessionDialog.open) finishSessionDialog('cancel');
-  const target = sessionDialogReturnFocus;
-  const active = document.activeElement;
-  if (target && target.isConnected && target.getClientRects().length && (!active || active === document.body || !active.getClientRects().length)) {
-    target.focus();
-  }
+  restoreSessionDialogFocus();
 });
 
 // Unsaved work in front of an action that would discard it: [Abbrechen] (default focus),

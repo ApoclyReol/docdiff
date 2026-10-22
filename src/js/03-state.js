@@ -173,9 +173,12 @@ function truncateFileName(name, other, max) {
   const o = Array.from(String(other || ''));
   let d = 0;
   while (d < chars.length && d < o.length && chars[d] === o[d]) d++;
+  // Start the distinguishing part at a word boundary ("…v1_Vorher", not "…1_Vorher").
+  while (d > 0 && !/[\s_.\-]/.test(chars[d - 1])) d--;
   if (d > 4 && d < chars.length && chars.length - d + 1 <= max) {
     const tail = chars.slice(d);
-    const head = chars.slice(0, max - 1 - tail.length);
+    const room = max - 1 - tail.length;
+    const head = room >= 6 ? chars.slice(0, room) : [];
     return head.join('') + '…' + tail.join('');
   }
   return truncateMiddle(name, max);
@@ -185,11 +188,16 @@ function truncateFileName(name, other, max) {
 function updateFileLabels() {
   const left = state.leftName || t('noFileLeft');
   const right = state.rightName || t('noFileRight');
-  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : window.innerWidth > PHONE_MAX ? 16 : 15;
+  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 15;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
-  filesLeft.textContent = truncateFileName(left, right, max);
-  filesRight.textContent = truncateFileName(right, left, max);
+  // Narrow screens: a shared extension carries no information ("…v1_Vorher → …v2_Nachher").
+  const ext = n => (/\.[A-Za-z0-9]{1,5}$/.exec(n) || [''])[0];
+  const dropExt = max <= 16 && ext(left) && ext(left).toLowerCase() === ext(right).toLowerCase();
+  const shownLeft = dropExt ? left.slice(0, -ext(left).length) : left;
+  const shownRight = dropExt ? right.slice(0, -ext(right).length) : right;
+  filesLeft.textContent = truncateFileName(shownLeft, shownRight, max);
+  filesRight.textContent = truncateFileName(shownRight, shownLeft, max);
   document.getElementById('files-label').textContent = formatMsg('filesBtnLabel', { left, right });
   document.getElementById('fp-name-left').textContent = left;
   document.getElementById('fp-name-right').textContent = right;

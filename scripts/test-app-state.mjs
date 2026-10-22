@@ -186,4 +186,142 @@ let groups = 0;
   groups++;
 }
 
+// 7. Review status: kept per change across re-comparisons, part of every undo / redo step, and a
+//    rejected change stays in the list. Undo of a review-only step needs no re-comparison.
+{
+  const review = read('06d-review.js');
+  const ctx = { console };
+  ctx.self = ctx;
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(root, 'vendor/libs/diff.min.js'), 'utf8'), ctx);
+  vm.runInContext('var t = key => key; var formatMsg = k => k; function getDisplayRef(row) { const b = row.rightBlock || row.leftBlock; return (b && b.refCode) || ""; }', ctx);
+  for (const f of ['02-samples.js', '04-core.js', '04a-align.js']) vm.runInContext(read(f), ctx, { filename: f });
+  vm.runInContext(review, ctx, { filename: '06d-review.js' });
+  vm.runInContext(
+    `${['rebuildRightTextFromRows', 'sameBlock', 'makeHistorySnapshot', 'restoreHistorySnapshot', 'pushUndoSnapshot', 'performUndo', 'performRedo']
+      .map(n => extractFunction(interactions, n))
+      .join('\n')}
+     var state = { reviews: {}, undoStack: [], redoStack: [], listItems: [], alignedRows: [] };
+     var comparisons = 0, refreshes = 0;
+     function updateUndoRedoButtons() {}
+     function refreshReviewState() { refreshes++; rebuildReviewIndex(); }
+     function runComparison() {
+       comparisons++;
+       const r = computeComparison({ leftText: state.leftText, rightText: state.rightText, ignoreHeadersFooters: true, labels: { typeHf: 'HF' } });
+       state.alignedRows = r.alignedRows; state.rightAllBlocks = r.allRightBlocks;
+       rebuildReviewIndex();
+     }
+     function statuses() { return state.listItems.map(i => i.status[0]).join(''); }
+     function accept(n) {
+       const item = state.listItems.filter(i => i.status === 'open')[n];
+       pushUndoSnapshot();
+       state.reviews[item.row.reviewKey] = { status: 'accepted', type: item.type };
+       rebuildReviewIndex();
+       return item.row.reviewKey;
+     }
+     function reject(n) {
+       const row = state.listItems.filter(i => i.status === 'open')[n].row;
+       const a = computeRowAnchors(state.alignedRows);
+       pushUndoSnapshot();
+       state.reviews[row.reviewKey] = { status: 'rejected', type: row.type, leftText: row.leftBlock ? row.leftBlock.text : '', rightText: row.rightBlock ? row.rightBlock.text : '', leftAnchor: a.left.get(row.id) || '', prevAnchor: a.prev.get(row.id) || '', pageNum: 1, refCode: '' };
+       state.rightText = rebuildRightTextFromRows(row.id, row.leftBlock ? row.leftBlock.text : '');
+       runComparison();
+     }`,
+    ctx
+  );
+  const run = code => vm.runInContext(code, ctx);
+  for (const lang of ['de', 'en']) {
+    run(`comparisons = 0; refreshes = 0; state.leftText = SAMPLES.${lang}.v1; state.rightText = SAMPLES.${lang}.v2; state.reviews = {}; state.undoStack = []; state.redoStack = []; runComparison();`);
+    const total = run('state.listItems.length');
+    const fresh = run('statuses()');
+    assert.ok(/^o+$/.test(fresh), `${lang}: everything open at first`);
+    run('accept(0)');
+    const afterAccept = run('statuses()');
+    assert.equal(run('comparisons'), 1, `${lang}: accepting does not re-compare`);
+    run('reject(1)');
+    const afterReject = run('statuses()');
+    assert.equal(run('state.listItems.length'), total, `${lang}: a rejected change stays in the list`);
+    assert.equal((afterReject.match(/r/g) || []).length, 1, `${lang}: one rejected`);
+    assert.equal((afterReject.match(/a/g) || []).length, 1, `${lang}: one accepted`);
+    const rejectedText = run('state.rightText');
+    // Undo the rejection: text and status come back together.
+    run('performUndo()');
+    assert.equal(run('statuses()'), afterAccept, `${lang}: undo restores the review status of a rejection`);
+    assert.equal(run('state.rightText'), run(`SAMPLES.${lang}.v2`), `${lang}: undo restores the text`);
+    // Undo the acceptance: a review-only step, no re-comparison.
+    const before = run('comparisons');
+    run('performUndo()');
+    assert.equal(run('statuses()'), fresh, `${lang}: undo of an acceptance`);
+    assert.equal(run('comparisons'), before, `${lang}: review-only undo does not re-compare`);
+    assert.equal(run('refreshes') > 0, true, `${lang}: review-only undo refreshes the view`);
+    run('performRedo(); performRedo();');
+    assert.equal(run('statuses()'), afterReject, `${lang}: redo restores both reviews`);
+    assert.equal(run('state.rightText'), rejectedText, `${lang}: redo restores the rejected text`);
+    // An accepted change keeps its status when another paragraph is edited.
+    const key = run('Object.keys(state.reviews).find(k => state.reviews[k].status === "accepted")');
+    run(`(() => { const row = state.alignedRows.filter(r => r.type === 'equal' && r.rightBlock && !r.rightBlock.isHeaderFooter).slice(-1)[0];
+      pushUndoSnapshot(); state.rightText = rebuildRightTextFromRows(row.id, row.rightBlock.text + ' Zusatz.'); runComparison(); })()`);
+    assert.ok(run(`state.listItems.some(i => i.status === 'accepted' && i.row.reviewKey === ${JSON.stringify(key)})`), `${lang}: acceptance survives an edit elsewhere`);
+    assert.ok(run('state.listItems.length') > total, `${lang}: the edit is a new change`);
+  }
+  groups++;
+}
+
+// 8. Saved work: version 2 carries the review status; version 1 files still open.
+{
+  const session = read('11-session.js');
+  const ctx = {};
+  vm.createContext(ctx);
+  const consts = session.split('\n').filter(l => /^const (SESSION_|REVIEW_TYPES).*;$/.test(l)).join('\n');
+  const start = session.indexOf('class SessionFileError');
+  const end = session.indexOf('async function readSessionFile');
+  vm.runInContext(`const REVIEW_KEY_MAX = 200000;\n${consts}\n${session.slice(start, end)}\nthis.validate = validateSessionData;`, ctx);
+  const base = {
+    format: 'docdiff-session', appVersion: '1.5.0', savedAt: '2026-10-22T00:00:00Z',
+    documents: { left: { name: 'a', format: 'TXT', text: 'A' }, right: { name: 'b', format: 'TXT', originalText: 'B', text: 'B2' } },
+  };
+  const v1 = { ...base, version: 1, view: { mode: 'pages', onlyChanges: false, ignoreHeadersFooters: true }, history: { undo: ['B'], redo: [] } };
+  const accepted = { key: 'M|A#1|B', status: 'accepted', type: 'modified' };
+  const rejected = { key: 'D|X#1', status: 'rejected', type: 'deleted', leftText: 'X', rightText: '', leftAnchor: 'X#1', prevAnchor: 'A#1', pageNum: 2, refCode: '§ 1' };
+  const v2 = {
+    ...base, version: 2,
+    view: { mode: 'inline', pageBreaks: false, onlyChanges: true, ignoreHeadersFooters: false },
+    reviews: [accepted, rejected],
+    history: { undo: [{ text: 'B', reviews: [accepted] }], redo: [] },
+  };
+  // Parsed inside the context, like a real file (plain objects of that realm).
+  const ok = raw => vm.runInContext('validate(JSON.parse(src))', Object.assign(ctx, { src: JSON.stringify(raw) }));
+  const bad = (raw, key = 'sessionErrorInvalid') => {
+    try {
+      ok(raw);
+    } catch (err) {
+      assert.equal(err.messageKey, key, JSON.stringify(raw).slice(0, 80));
+      return;
+    }
+    assert.fail(`accepted: ${JSON.stringify(raw).slice(0, 120)}`);
+  };
+  const r1 = ok(v1);
+  assert.deepEqual(JSON.parse(JSON.stringify(r1.view)), { mode: 'split', pageBreaks: true, onlyChanges: false, ignoreHeadersFooters: true }, 'v1 "pages" = side by side with page breaks');
+  assert.deepEqual(JSON.parse(JSON.stringify(r1.history.undo)), [{ text: 'B', reviews: {} }], 'v1 history: text only');
+  assert.deepEqual(JSON.parse(JSON.stringify(r1.reviews)), {}, 'v1: nothing reviewed');
+  assert.equal(ok({ ...v1, view: { ...v1.view, mode: 'split' } }).view.pageBreaks, false, 'v1 "split" = no page breaks');
+  const r2 = ok(v2);
+  assert.deepEqual(Object.keys(r2.reviews), [accepted.key, rejected.key], 'v2 review status');
+  assert.equal(r2.reviews[rejected.key].pageNum, 2);
+  assert.equal(r2.history.undo[0].reviews[accepted.key].status, 'accepted', 'v2 history carries review status');
+  assert.equal(r2.view.mode, 'inline');
+  bad({ ...v2, version: 3 }, 'sessionErrorVersion');
+  bad({ ...v2, view: { ...v2.view, mode: 'pages' } });
+  bad({ ...v2, history: { undo: ['B'], redo: [] } });
+  bad({ ...v1, history: { undo: [{ text: 'B', reviews: [] }], redo: [] } });
+  bad({ ...v2, reviews: [{ ...accepted, status: 'maybe' }] });
+  bad({ ...v2, reviews: [{ ...accepted, type: 'equal' }] });
+  bad({ ...v2, reviews: [{ ...accepted, key: '__proto__' }] });
+  bad({ ...v2, reviews: [{ ...rejected, pageNum: 0 }] });
+  bad({ ...v2, reviews: [{ ...rejected, leftText: 5 }] });
+  bad({ ...v2, reviews: 'x' });
+  assert.equal(({}).status, undefined, 'no prototype pollution');
+  groups++;
+}
+
 console.log(`✓ App state guard tests passed (${groups} groups).`);

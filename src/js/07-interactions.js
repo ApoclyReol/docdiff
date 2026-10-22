@@ -267,7 +267,7 @@ function updateListActiveCard(itemId) {
   if (!card.querySelector('.nav-item-actions')) {
     card.insertAdjacentHTML(
       'beforeend',
-      `<div class="nav-item-actions" role="group" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
+      `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
     );
   }
   if (!focusInList) {
@@ -656,6 +656,11 @@ function toggleHfGroup(id, collapse) {
 
 // The list: one tab stop; arrow keys move between the cards (selection follows focus).
 sidebarList.addEventListener('keydown', e => {
+  const actions = e.target.closest('.nav-item-actions');
+  if (actions) {
+    handleRovingKeys(e, actions);
+    return;
+  }
   const main = e.target.closest('.nav-item-main');
   if (!main) return;
   const all = Array.from(sidebarList.querySelectorAll('.nav-item-main'));
@@ -684,6 +689,12 @@ const sidebarFilterBar = document.getElementById('sidebar-filter-bar');
 function setListFilter(f, focus) {
   state.sidebarFilter = f;
   renderSidebarList(state.alignedRows.length > 0);
+  // The stepper follows the filter: a current change outside it gives way to the first one in it.
+  const visible = getFilteredListItems();
+  const active = getActiveItem();
+  if (visible.length && (!active || !visible.includes(active))) {
+    selectAndScrollToRow(visible[0].rowId, true, true, { itemId: visible[0].id, flash: false });
+  }
   updateStepper();
   if (focus) {
     const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);

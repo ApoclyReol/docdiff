@@ -321,7 +321,7 @@ function applyLayoutTier(initial) {
   closeListSheet(false);
   const sidebar = document.getElementById('sidebar');
   if (tier === 'desktop') {
-    sidebar.removeAttribute('role');
+    sidebar.setAttribute('role', 'region');
     sidebar.removeAttribute('aria-modal');
   } else {
     sidebar.setAttribute('role', 'dialog');

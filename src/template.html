@@ -201,7 +201,7 @@ __APP_CSS__
           <span class="tb-label" data-i18n="viewMenu">Ansicht</span>
           <svg class="icon tb-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
         </button>
-        <div class="menu" id="view-menu" role="menu" aria-labelledby="btn-view-menu" hidden>
+        <div class="menu menu-right" id="view-menu" role="menu" aria-labelledby="btn-view-menu" hidden>
           <div class="menu-group" role="group" aria-labelledby="vm-layout">
             <span class="menu-label" id="vm-layout" data-i18n="viewLayoutLabel">Darstellung</span>
             <button type="button" class="menu-item" role="menuitemradio" aria-checked="true" id="btn-mode-split"><span class="mi-check" aria-hidden="true"></span><span data-i18n="modeSplit">Nebeneinander</span></button>
@@ -356,7 +356,7 @@ __APP_CSS__
             </button>
             <button type="button" class="btn btn-open-session" id="btn-lp-session">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
-              <span data-i18n="sessionOpen">Sitzung öffnen</span>
+              <span data-i18n="sessionOpen">Arbeitsstand öffnen…</span>
             </button>
           </div>
         </section>
@@ -435,7 +435,7 @@ __APP_CSS__
       </div>
     </div>
 
-    <aside class="sidebar-panel compare-only" id="sidebar" aria-labelledby="list-title">
+    <div class="sidebar-panel compare-only" id="sidebar" role="region" aria-labelledby="list-title">
       <div class="list-head">
         <div class="sheet-grabber" aria-hidden="true"></div>
         <div class="list-title-row">
@@ -447,7 +447,7 @@ __APP_CSS__
           <span class="progress-text" id="list-progress"></span>
         </div>
         <p class="first-hint" id="first-hint">
-          <span class="first-hint-text"><del class="tok-del" data-i18n="legendDelSample">durchgestrichen</del> <span data-i18n="legendDel">= entfernt</span> · <ins class="tok-ins" data-i18n="legendInsSample">grün</ins> <span data-i18n="legendIns">= hinzugefügt</span></span>
+          <span class="first-hint-text"><span class="hint-pair"><del class="tok-del" data-i18n="legendDelSample">durchgestrichen</del> <span data-i18n="legendDel">= entfernt</span></span> <span class="hint-pair"><ins class="tok-ins" data-i18n="legendInsSample">grün</ins> <span data-i18n="legendIns">= hinzugefügt</span></span></span>
           <button type="button" class="hint-close" id="btn-legend-close" aria-label="Hinweis ausblenden" data-i18n-label="legendClose">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
@@ -461,7 +461,7 @@ __APP_CSS__
         </div>
       </div>
       <div class="sidebar-list" id="sidebar-list" role="tabpanel" aria-labelledby="tab-all"></div>
-    </aside>
+    </div>
   </main>
 
   <!-- ── 3. PHONE BOTTOM BAR (thumb zone) ─────────────────────────────────────────────── -->

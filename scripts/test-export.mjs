@@ -19,6 +19,7 @@ const sources = [
   'src/js/04a-align.js',
   'src/js/05-render.js',
   'src/js/06-compare.js',
+  'src/js/06d-review.js',
   'src/js/08-export-docx.js',
   'src/js/08-export.js',
 ];
@@ -26,8 +27,8 @@ const sources = [
 const harness = `
 const state = {
   lang: 'de', leftName: '', rightName: '', leftText: '', rightText: '',
-  alignedRows: [], changeRows: [], onlyChanges: false, ignoreHeadersFooters: true,
-  filteredHfCount: 0, viewMode: 'split',
+  alignedRows: [], changeRows: [], listItems: [], reviews: {}, onlyChanges: false, ignoreHeadersFooters: true,
+  filteredHfCount: 0, viewMode: 'split', rightAllBlocks: [],
 };
 function t(key) { return I18N[state.lang][key] || I18N.de[key] || key; }
 function compare(leftText, rightText, opts = {}) {
@@ -41,6 +42,8 @@ function compare(leftText, rightText, opts = {}) {
   state.rightText = rightText;
   state.alignedRows = alignDocumentBlocks(lf, rf);
   state.changeRows = state.alignedRows.filter(row => row.type !== 'equal');
+  state.reviews = {};
+  rebuildReviewIndex();
 }
 `;
 
@@ -56,7 +59,7 @@ context.globalThis = context;
 vm.createContext(context);
 vm.runInContext(read('vendor/libs/diff.min.js'), context, { filename: 'diff.min.js' });
 vm.runInContext(
-  sources.map(read).join('\n') + harness + '\nglobalThis.__state = state; globalThis.__compare = compare; globalThis.SAMPLES = SAMPLES;',
+  sources.map(read).join('\n') + harness + '\nglobalThis.__state = state; globalThis.__compare = compare; globalThis.SAMPLES = SAMPLES; globalThis.tf = tf;',
   context,
   { filename: 'export-bundle.js' }
 );
@@ -113,6 +116,8 @@ function resolveRevisions(documentXml, mode) {
 }
 
 const normalizeSpace = s => s.replace(/\s+/g, ' ').trim();
+/** Title + "DocDiffMeta" paragraphs before the document body. */
+const metaParagraphCount = documentXml => 1 + (documentXml.match(/<w:pStyle w:val="DocDiffMeta"\/>/g) || []).length;
 let checks = 0;
 
 /* ── File names ───────────────────────────────────────────────────────────── */
@@ -161,7 +166,8 @@ for (const lang of ['de', 'en']) {
     assert.match(doc, /<w:pStyle w:val="Heading2"\/>/);
     const ids = [...doc.matchAll(/<w:(?:ins|del) w:id="(\d+)"/g)].map(m => m[1]);
     assert.equal(new Set(ids).size, ids.length, `${label}: revision ids are unique`);
-    const metaParagraphs = 1 + 5 + 1;
+    const metaParagraphs = metaParagraphCount(doc);
+    assert.equal(metaParagraphs, 1 + 5 + 1, `${label}: title, five facts, note (nothing reviewed)`);
     const accepted = resolveRevisions(doc, 'accept').slice(metaParagraphs).map(normalizeSpace);
     const rejected = resolveRevisions(doc, 'reject').slice(metaParagraphs).map(normalizeSpace);
     // Arrays created inside the vm realm have a different prototype; copy them for deepEqual.
@@ -238,5 +244,124 @@ const zipped = readZip(api.buildZipArchive([{ name: 'ä/ö.txt', data: 'Grüße'
 assert.equal(zipped.get('ä/ö.txt'), 'Grüße');
 assert.equal(api.crc32(new TextEncoder().encode('123456789')), 0xcbf43926, 'CRC-32 check value');
 checks += 2;
+
+/* ── Review status: Word semantics of accepted / rejected / open changes ─────
+ * Accept all (in Word) must give the current new version; Reject all must give the old version
+ * with the changes accepted in Doc Diff applied (rejected ones are already reverted in the text).
+ * Before anything is reviewed the export is unchanged. */
+{
+  const interactions = read('src/js/07-interactions.js');
+  const extract = name => {
+    const start = interactions.indexOf(`function ${name}(`);
+    let depth = 0;
+    for (let i = interactions.indexOf('{', start); i < interactions.length; i++) {
+      if (interactions[i] === '{') depth++;
+      else if (interactions[i] === '}' && --depth === 0) return interactions.slice(start, i + 1);
+    }
+    throw new Error(name);
+  };
+  vm.runInContext(
+    `${extract('rebuildRightTextFromRows')}
+     ${extract('sameBlock')}
+     globalThis.__compareFull = function (leftText, rightText) {
+       const r = computeComparison({ leftText, rightText, ignoreHeadersFooters: true, labels: { typeHf: 'HF' } });
+       Object.assign(state, { leftText, rightText, alignedRows: r.alignedRows, rightAllBlocks: r.allRightBlocks, filteredHfCount: r.filteredHfCount });
+       state.changeRows = state.alignedRows.filter(row => row.type !== 'equal');
+       rebuildReviewIndex();
+     };
+     globalThis.__review = function (action, type, n) {
+       const open = state.listItems.filter(i => i.status === 'open');
+       const ofType = open.filter(i => i.type === type);
+       const pool = ofType.length ? ofType : open;
+       const row = pool[n % pool.length].row;
+       if (action === 'accept') {
+         state.reviews[row.reviewKey] = { status: 'accepted', type: row.type };
+         rebuildReviewIndex();
+         return;
+       }
+       const anchors = computeRowAnchors(state.alignedRows);
+       state.reviews[row.reviewKey] = {
+         status: 'rejected', type: row.type,
+         leftText: row.leftBlock ? row.leftBlock.text : '', rightText: row.rightBlock ? row.rightBlock.text : '',
+         leftAnchor: anchors.left.get(row.id) || '', prevAnchor: anchors.prev.get(row.id) || '', pageNum: row.pageNum || 1, refCode: '',
+       };
+       __compareFull(state.leftText, rebuildRightTextFromRows(row.id, row.leftBlock ? row.leftBlock.text : ''));
+     };`,
+    context
+  );
+  // Every type is accepted in one plan and rejected in the other.
+  const plans = [
+    [['accept', 'modified', 0], ['reject', 'modified', 1], ['accept', 'inserted', 0], ['reject', 'deleted', 0], ['accept', 'modified', 4], ['reject', 'inserted', 0], ['accept', 'modified', 2]],
+    [['accept', 'deleted', 0], ['reject', 'modified', 3], ['accept', 'inserted', 0], ['reject', 'inserted', 0], ['accept', 'modified', 5], ['reject', 'modified', 0], ['accept', 'modified', 1]],
+  ];
+  for (const [lang, plan] of [['de', plans[0]], ['en', plans[0]], ['de', plans[1]], ['en', plans[1]]]) {
+    state.lang = lang;
+    const sample = api.SAMPLES[lang];
+    vm.runInContext('state.reviews = {};', context);
+    api.__compareFull(sample.v1, sample.v2);
+    const date = new Date('2026-10-22T12:00:00Z');
+    const total = state.listItems.length;
+
+    // Nothing reviewed: identical to an export without review semantics.
+    const meta = { date, title: 't', lines: [], note: 'n' };
+    assert.equal(
+      api.buildDocxDocumentXml(state.alignedRows, { ...meta, reviewStatusOf: row => row.reviewStatus || '' }),
+      api.buildDocxDocumentXml(state.alignedRows, meta),
+      `${lang}: unreviewed export is unchanged`
+    );
+
+    // Review a mix: accept and reject changes of several types.
+    for (const [action, type, n] of plan) api.__review(action, type, n);
+    const counts = api.getExportCounts();
+    assert.equal(state.listItems.length, total, `${lang}: rejected changes stay in the list`);
+    assert.equal(counts.total, total, `${lang}: totals unchanged`);
+    assert.equal(counts.accepted, 4, `${lang}: four accepted`);
+    assert.equal(counts.rejected, 3, `${lang}: three rejected`);
+    const reviewedTypes = new Set(state.listItems.filter(i => i.status !== 'open').map(i => i.type));
+    assert.equal(reviewedTypes.size, 3, `${lang}: reviews cover every change type (${[...reviewedTypes]})`);
+
+    const files = readZip(api.buildDocxRedline(date));
+    const doc = files.get('word/document.xml');
+    const metaCount = metaParagraphCount(doc);
+    assert.equal(metaCount, 1 + 6 + 1, `${lang}: review line among the facts`);
+    assert.ok(doc.includes(api.escapeXml(api.tf('exportReviewFmt', { k: 7, n: total, a: 4, r: 3 }))), `${lang}: review summary in the Word file`);
+    const acceptAll = resolveRevisions(doc, 'accept').slice(metaCount).map(normalizeSpace);
+    const rejectAll = resolveRevisions(doc, 'reject').slice(metaCount).map(normalizeSpace);
+    const rows = [...state.alignedRows];
+    const expectAccept = rows.filter(r => r.rightBlock).map(r => normalizeSpace(r.rightBlock.text));
+    const expectReject = [];
+    for (const r of rows) {
+      if (r.type === 'equal' || r.reviewStatus === 'accepted') {
+        if (r.rightBlock) expectReject.push(normalizeSpace(r.rightBlock.text));
+      } else if (r.leftBlock) {
+        expectReject.push(normalizeSpace(r.leftBlock.text));
+      }
+    }
+    assert.deepEqual(acceptAll, [...expectAccept], `${lang}: Accept all = current new version`);
+    assert.deepEqual(rejectAll, [...expectReject], `${lang}: Reject all = old version with the accepted changes applied`);
+    // Accepted changes carry no revision marks; open ones still do.
+    const revisions = (doc.match(/<w:(?:ins|del) w:id=/g) || []).length;
+    const reviewsBefore = JSON.stringify(state.reviews);
+    const textBefore = state.rightText;
+    api.__compareFull(sample.v1, sample.v2);
+    vm.runInContext('state.reviews = {}; rebuildReviewIndex();', context);
+    const fresh = readZip(api.buildDocxRedline(date)).get('word/document.xml');
+    assert.ok(revisions > 0 && revisions < (fresh.match(/<w:(?:ins|del) w:id=/g) || []).length, `${lang}: fewer tracked changes after reviewing`);
+    vm.runInContext(`state.reviews = ${reviewsBefore};`, context);
+    api.__compareFull(sample.v1, textBefore);
+
+    // Reports show each change's status.
+    const html = api.buildExportHtmlReport(date);
+    assert.equal((html.match(/<td class="status accepted">/g) || []).length, 4, `${lang}: html accepted rows`);
+    assert.equal((html.match(/<td class="status rejected">/g) || []).length, 3, `${lang}: html rejected rows`);
+    assert.equal((html.match(/<td class="status open">/g) || []).length, total - 7, `${lang}: html open rows`);
+    const md = api.buildExportMarkdown(date);
+    const statusCells = [...md.matchAll(/^\| \d+ \|.*\| ([^|]+) \| [^|]*\|$/gm)].map(m => m[1].trim());
+    assert.equal(statusCells.length, total, `${lang}: markdown lists every change`);
+    assert.equal(statusCells.filter(x => x === api.t('statusAccepted')).length, 4, `${lang}: markdown accepted`);
+    assert.equal(statusCells.filter(x => x === api.t('statusRejected')).length, 3, `${lang}: markdown rejected`);
+    checks += 12;
+  }
+}
 
 console.log(`✓ Export builder tests passed (${checks} check groups).`);

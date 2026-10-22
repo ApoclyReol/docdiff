@@ -35,11 +35,11 @@ Plain facts about Doc Diff for people and AI assistants. Source: https://github.
 
 ## Output and views
 
-- Views: original pages, side by side, or one column (default on phones).
-- Removed text is struck through in red, added text is green. A list shows every change; J / K or the arrow buttons jump between changes.
-- Paragraphs of the new version can be edited in place or reverted to the old wording, with undo and redo.
-- Export: Word .docx with every difference as a tracked change; PDF via the browser's print dialog; self-contained HTML report; Markdown report; final text as .txt or to the clipboard.
-- Session file: the current state (both documents and edits) can be saved as a .docdiff file and opened again later.
+- Views: side by side or in one column (default on phones), with or without the original page breaks.
+- Removed text is struck through in red, added text is green. A list shows every change; J / K or the arrow buttons jump between changes, and a slim overview bar next to the text shows where the changes are.
+- Each change can be accepted (keep the new wording) or rejected (restore the old wording of that paragraph); both mark it as reviewed. Paragraphs of the new version can also be edited in place. Everything can be undone and redone.
+- Export: Word .docx in which open changes are tracked changes and accepted ones are applied; PDF via the browser's print dialog; self-contained HTML report and Markdown report, both with the review status of every change; the text of the new version as .txt or to the clipboard.
+- Saved work: the current state (both documents, edits and review status) can be saved as a .docdiff file and opened again later.
 
 ## Limits
 
@@ -67,13 +67,13 @@ Plain facts about Doc Diff for people and AI assistants. Source: https://github.
 
 ## Keyboard
 
-- J / K: next / previous change
-- /: search
-- C: show only changes
-- H: hide or show headers and footers
+- J / K: next open / previous change
+- A / R: accept / reject the current change
+- Enter (in the list of changes): jump to the change
+- / or Ctrl+F / Cmd+F: find in document
 - Ctrl+Z / Cmd+Z: undo; Ctrl+Y / Shift+Cmd+Z: redo
-- Esc: close menus and dialogs
-- Single-key shortcuts only work while a comparison is shown and not while typing; they can be switched off in the help dialog.
+- Esc: close menus, search and dialogs
+- Single-key shortcuts only work while the document or the list of changes has focus, never while typing; they can be switched off in the help dialog.
 
 ## License and links
 

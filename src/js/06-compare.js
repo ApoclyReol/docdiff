@@ -17,7 +17,8 @@ function applyComparisonResult(request, result, opts = {}) {
   const emptyLaunchpad = document.getElementById('empty-launchpad');
   // Focus sat on something that is about to disappear (landing page or comparison chrome)?
   const active = document.activeElement;
-  const focusWasLost = !active || active === document.body;
+  // (A control in a dialog that just closed, or in a closed menu, counts as lost focus too.)
+  const focusWasLost = !active || active === document.body || !active.getClientRects().length;
   const focusInLanding = Boolean(emptyLaunchpad && active && emptyLaunchpad.contains(active));
   const focusInCompareChrome = Boolean(active && active.closest && active.closest('.compare-only'));
   // Focus inside a document pane or the change list is lost when they are re-rendered.
@@ -707,7 +708,7 @@ function renderSidebarList(bothLoaded) {
             : '';
         const head = [ref, `${t('pageShort')} ${page}`].filter(Boolean).join(' · ');
         const actions = isActive
-          ? `<div class="nav-item-actions" role="group" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
+          ? `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
           : '';
         return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}</span></span>${renderSidebarDeltaHtml(item)}</button>${actions}</div>`;
       })

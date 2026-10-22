@@ -156,8 +156,25 @@ let sessionDialogReturnFocus = null;
 function finishSessionDialog(result) {
   const resolve = sessionDialogResolve;
   sessionDialogResolve = null;
-  if (sessionDialog.open) sessionDialog.close();
+  if (sessionDialog.open) {
+    sessionDialog.close();
+    restoreSessionDialogFocus();
+  }
   if (resolve) resolve(result);
+}
+
+// Back to where the dialog was opened from (the menu button for an action in a menu).
+function restoreSessionDialogFocus() {
+  const target = sessionDialogReturnFocus;
+  const active = document.activeElement;
+  if (
+    target &&
+    target.isConnected &&
+    target.getClientRects().length &&
+    (!active || active === document.body || !active.getClientRects().length)
+  ) {
+    target.focus();
+  }
 }
 
 // Resolves with 'confirm', 'discard' or 'cancel'.
@@ -194,13 +211,15 @@ sessionDialogDiscard.addEventListener('click', () => finishSessionDialog('discar
 // Esc or any other way of closing counts as "cancel". The close event is
 // dispatched asynchronously, so a late one from a previous dialog must not
 // cancel a dialog that has been reopened in the meantime.
+// Esc is "cancel", handled here so that focus returns right away (not only once the
+// asynchronous close event arrives).
+sessionDialog.addEventListener('cancel', e => {
+  e.preventDefault();
+  finishSessionDialog('cancel');
+});
 sessionDialog.addEventListener('close', () => {
   if (!sessionDialog.open) finishSessionDialog('cancel');
-  const target = sessionDialogReturnFocus;
-  const active = document.activeElement;
-  if (target && target.isConnected && target.getClientRects().length && (!active || active === document.body || !active.getClientRects().length)) {
-    target.focus();
-  }
+  restoreSessionDialogFocus();
 });
 
 // Unsaved work in front of an action that would discard it: [Abbrechen] (default focus),
