@@ -201,21 +201,33 @@
 
 /* ── Design tokens ─────────────────────────────────────────────────────────
    Colour roles: blue only for actions, links and focus; red = removed, green = added,
-   amber edge = paragraph changed, ink ring = current change. Text roles are ≥ 7:1. */
+   thin amber edge = paragraph changed, ink edge + soft tint = current change.
+   Text roles are ≥ 7:1.
+   System: spacing on a 4 px grid (--sp-*), three radii, one hairline colour (--border),
+   two elevations (resting, floating), four text sizes for the UI and two weights (500, 600). */
 :root {
   color-scheme: light;
   --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  --text-ui-sm: 0.8125rem;      /* 13px – smallest UI text */
-  --text-ui: 0.875rem;          /* 14px – controls */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  --text-ui-sm: 0.8125rem;      /* 13px – metadata, captions, counts */
+  --text-ui: 0.875rem;          /* 14px – controls, list text */
   --text-doc: 0.96875rem;       /* 15.5px – document text, side by side */
   --text-doc-lg: 1rem;          /* 16px – document text, one column */
+  --text-title: 1.0625rem;      /* 17px – headings in the document, panel titles */
 
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  --radius-sm: 4px;             /* marks, small chips */
+  --radius-md: 8px;             /* buttons, inputs, cards, menu items */
+  --radius-lg: 12px;            /* menus, popovers, dialogs, sheets */
+  --radius-xl: var(--radius-lg);
 
   --topbar-h: 52px;
   --list-w: 336px;
@@ -257,9 +269,11 @@
   --success-ton-1: 135 60% 97.2%;
   --success-ton-2: 135 60% 94.5%;
 
-  --changed: 32 95% 40%;          /* amber edge of a changed paragraph */
+  --changed: 34 90% 46%;          /* amber edge of a changed paragraph */
   --changed-ink: 28 90% 25%;
-  --current: 215 25% 13%;         /* ring around the current change */
+  --current: 215 25% 13%;         /* edge of the current change */
+  --current-tint: 215 30% 50% / 0.07;  /* background of the current change */
+  --hover-tint: 215 20% 50% / 0.05;
 
   --warning-ton-2: 45 100% 88%;
   --search-current: 32 100% 62%;
@@ -281,7 +295,7 @@
   --ton-3: 0 0% 18%;
 
   --muted-foreground: 240 6% 76%;
-  --border: 0 0% 20%;
+  --border: 0 0% 17%;
   --input: 0 0% 42%;
   --ring: 209.8 100% 65.7%;
 
@@ -307,9 +321,11 @@
   --success-ton-1: 136 40% 8%;
   --success-ton-2: 136 50% 11%;
 
-  --changed: 38 92% 55%;
+  --changed: 38 70% 48%;
   --changed-ink: 40 95% 72%;
   --current: 0 0% 93%;
+  --current-tint: 0 0% 100% / 0.06;
+  --hover-tint: 0 0% 100% / 0.04;
 
   --warning-ton-2: 42 70% 24%;
   --search-current: 36 95% 45%;
@@ -527,7 +543,7 @@ body:not(.is-comparing) .topbar {
 }
 .app-title {
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
@@ -554,7 +570,6 @@ body:not(.is-comparing) .topbar {
   font-size: var(--text-ui);
   font-weight: 500;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px var(--control-edge);
 }
 .tb-file {
   white-space: nowrap;
@@ -635,15 +650,13 @@ body:not(.is-comparing) .topbar {
   align-items: center;
   gap: 0;
   padding: 0;
-  border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--control-edge);
 }
 .step-pos {
   min-width: 76px;
-  padding: 0 4px;
+  padding: 0 var(--sp-1);
   text-align: center;
   font-size: var(--text-ui);
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -901,7 +914,7 @@ body.is-comparing .empty-launchpad {
 .landing-title {
   max-width: 30ch;
   font-size: clamp(21.9px, 14.2px + 1.7vw, 30.4px);
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.18;
   letter-spacing: -0.028em;
   color: hsl(var(--foreground));
@@ -1057,7 +1070,7 @@ body.is-dragging-file .drop-slot-btn {
 .drop-slot-title {
   min-width: 0;
   font-size: 14.5px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
@@ -1162,7 +1175,7 @@ body.is-dragging-file .drop-slot-btn {
 }
 .landing-section h2 {
   font-size: 17px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.015em;
   color: hsl(var(--foreground));
 }
@@ -1214,7 +1227,7 @@ body.is-dragging-file .drop-slot-btn {
 }
 .scope-col h3 {
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   color: hsl(var(--foreground));
 }
 .scope-col ul {
@@ -1333,7 +1346,7 @@ body.is-dragging-file .drop-slot-btn {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--ruler-w) var(--list-w);
   grid-template-rows: minmax(0, 1fr);
   position: relative;
-  background: hsl(var(--background));
+  background: hsl(var(--card));
 }
 body.sidebar-collapsed .workspace {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--ruler-w) 0;
@@ -1362,20 +1375,20 @@ body:not(.view-inline) #pane-unified {
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  padding: 0 24px 72px;
-  background: hsl(var(--background));
+  padding: 0 var(--sp-6) var(--sp-7);
+  background: hsl(var(--card));
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--input)) transparent;
 }
 .doc-pane-left {
-  padding-right: 16px;
+  padding-right: var(--sp-4);
   scrollbar-width: none;
 }
 .doc-pane-left::-webkit-scrollbar {
   display: none;
 }
 .doc-pane-right {
-  padding-left: 16px;
+  padding-left: var(--sp-4);
   border-left: 1px solid hsl(var(--border));
 }
 .doc-pane:focus-visible,
@@ -1391,10 +1404,10 @@ body:not(.view-inline) #pane-unified {
   z-index: 6;
   max-width: 780px;
   margin: 0 auto;
-  padding: 12px 2px 10px;
-  background: hsl(var(--background));
-  font-size: 13px;
-  font-weight: 600;
+  padding: var(--sp-4) var(--sp-4) var(--sp-3) 18px;
+  background: hsl(var(--card));
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
   color: hsl(var(--muted-foreground));
   white-space: nowrap;
   overflow: hidden;
@@ -1410,8 +1423,7 @@ body:not(.view-inline) #pane-unified {
   max-width: 820px;
 }
 .cap-file {
-  font-weight: 500;
-  color: hsl(var(--foreground));
+  color: hsl(var(--muted-foreground));
 }
 
 /* Drag & drop overlay */
@@ -1442,13 +1454,12 @@ body.is-dragging-file .drop-zone-overlay,
   font-weight: 600;
 }
 
-/* ── The document: pages (cards) or one continuous sheet ───────────────── */
+/* ── The document: one surface per pane; a page break is a labelled hairline ── */
 .doc-sheet {
   max-width: 780px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 .doc-pane-left .doc-sheet {
   margin-right: 0;
@@ -1460,43 +1471,36 @@ body.is-dragging-file .drop-zone-overlay,
   max-width: 820px;
 }
 .doc-page-card {
-  background: hsl(var(--card));
-  border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 1px hsl(var(--border)), var(--elev-1);
   display: flex;
   flex-direction: column;
 }
 .doc-page-header {
-  padding: 10px 24px 0;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5) 0 var(--sp-3) 18px;
+  font-size: var(--text-ui-sm);
   color: hsl(var(--muted-foreground));
   font-variant-numeric: tabular-nums;
   user-select: none;
 }
+.doc-page-header::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: hsl(var(--border));
+}
+/* Page 1 needs no label: the pane caption already starts the document */
+.doc-page-card:first-child .doc-page-header {
+  display: none;
+}
 .doc-page-body {
-  padding: 12px 16px 24px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-/* Page breaks hidden: the cards merge into one sheet */
-body.no-page-breaks .doc-sheet {
-  gap: 0;
-  background: hsl(var(--card));
-  border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 1px hsl(var(--border)), var(--elev-1);
-  padding: 12px 0;
-}
-body.no-page-breaks .doc-page-card {
-  box-shadow: none;
-  background: transparent;
+  gap: 2px;
 }
 body.no-page-breaks .doc-page-header {
   display: none;
-}
-body.no-page-breaks .doc-page-body {
-  padding-top: 0;
-  padding-bottom: 0;
 }
 body.only-changes .diff-row-anchor[data-type="equal"]:not(.has-ghost) {
   display: none;
@@ -1524,9 +1528,10 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
 .clause {
   flex: 1;
   position: relative;
-  padding: 9px 14px 9px 16px;
-  border-left: 3px solid transparent;
-  border-radius: 0 3px 3px 0;
+  padding: var(--sp-2) 14px var(--sp-2) var(--sp-4);
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  transition: background-color 140ms ease-out, border-color 140ms ease-out;
   font-size: var(--text-doc);
   line-height: 1.65;
   color: hsl(var(--foreground));
@@ -1538,20 +1543,20 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
 }
 .clause.is-heading,
 .clause.kind-h2 {
-  font-weight: 650;
-  font-size: 1.0625rem;
+  font-weight: 600;
+  font-size: var(--text-title);
   line-height: 1.45;
-  padding-top: 16px;
-  padding-bottom: 6px;
+  padding-top: var(--sp-4);
+  padding-bottom: var(--sp-1);
   letter-spacing: -0.01em;
   text-wrap: balance;
 }
 .clause.kind-h1 {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1.1875rem;
   line-height: 1.35;
-  padding-top: 12px;
-  padding-bottom: 10px;
+  padding-top: var(--sp-3);
+  padding-bottom: var(--sp-2);
   letter-spacing: -0.015em;
   text-wrap: balance;
 }
@@ -1593,7 +1598,7 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
 
 /* Change states: red = removed, green = added, amber edge = paragraph changed */
 .clause.state-modified {
-  border-left-color: hsl(var(--changed));
+  border-left-color: hsl(var(--changed) / 0.55);
 }
 .clause.state-deleted {
   border-left-color: hsl(var(--destructive));
@@ -1621,16 +1626,18 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
   height: 1px;
   border-top: 1px dashed hsl(var(--input));
 }
-/* The current change: a 2 px ink ring (the review actions sit inside it) */
+/* The current change: a soft tint and an ink edge (the review actions sit inside it) */
 .clause.is-active {
-  box-shadow: 0 0 0 2px hsl(var(--current));
-  border-radius: 3px;
+  background-color: hsl(var(--current-tint));
+  border-left-color: hsl(var(--current));
   z-index: 2;
 }
 @keyframes clauseJumpPulse {
-  0% { box-shadow: 0 0 0 5px hsl(var(--current) / 0.35); }
-  100% { box-shadow: 0 0 0 2px hsl(var(--current)); }
+  0% { background-color: hsl(var(--current) / 0.14); }
+  100% { background-color: hsl(var(--current-tint)); }
 }
+.clause.is-active.state-deleted { background-color: hsl(var(--destructive-ton-2)); }
+.clause.is-active.state-inserted { background-color: hsl(var(--success-ton-2)); }
 .clause.is-jump-flash {
   animation: clauseJumpPulse 500ms ease-out;
 }
@@ -1698,7 +1705,7 @@ ins.tok-ins.tok-marker {
   color: hsl(var(--muted-foreground));
 }
 .diff-row-anchor.has-ghost .clause {
-  border-left: 3px dotted hsl(var(--muted-foreground) / 0.6);
+  border-left: 2px dotted hsl(var(--muted-foreground) / 0.6);
 }
 /* Moved paragraphs: neutral dashed edge, the words are not marked */
 .clause.is-moved {
@@ -1797,11 +1804,8 @@ ins.tok-ins.tok-marker {
   z-index: 4;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 2px;
-  border-radius: var(--radius-md);
-  background: hsl(var(--card));
-  box-shadow: inset 0 0 0 1px hsl(var(--border)), var(--elev-1);
+  gap: 0;
+  padding: 0;
   font-size: var(--text-ui);
   font-weight: 400;
   letter-spacing: 0;
@@ -1819,7 +1823,7 @@ ins.tok-ins.tok-marker {
   height: var(--rv-btn);
   padding: 0;
   border: 0;
-  border-radius: calc(var(--radius-md) - 2px);
+  border-radius: var(--radius-md);
   background: transparent;
   color: hsl(var(--muted-foreground));
   font: inherit;
@@ -1954,7 +1958,7 @@ ins.tok-ins.tok-marker {
 /* ── Overview ruler: markers at each change, the visible part as a window ── */
 .ruler {
   position: relative;
-  background: hsl(var(--background));
+  background: hsl(var(--card));
   border-left: 1px solid hsl(var(--border));
   cursor: pointer;
   touch-action: none;
@@ -1974,7 +1978,7 @@ ins.tok-ins.tok-marker {
   min-height: 3px;
   border-radius: 1px;
 }
-.rm-mod { background: hsl(var(--changed)); }
+.rm-mod { background: hsl(var(--changed) / 0.6); }
 .rm-ins { background: hsl(var(--success)); }
 .rm-del { background: hsl(var(--destructive)); }
 .rm.is-accepted,
@@ -1994,9 +1998,9 @@ ins.tok-ins.tok-marker {
   left: 1px;
   right: 1px;
   height: 0;
-  border-radius: 3px;
-  background: hsl(var(--foreground) / 0.07);
-  box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.6);
+  border-radius: var(--radius-sm);
+  background: hsl(var(--foreground) / 0.06);
+  box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.45);
   pointer-events: none;
 }
 .ruler.is-dragging .ruler-window {
@@ -2028,7 +2032,7 @@ ins.tok-ins.tok-marker {
 }
 .list-title {
   font-size: 16px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
@@ -2124,7 +2128,7 @@ body.legend-dismissed .first-hint {
 .status-filter[aria-pressed="true"] {
   background: hsl(var(--foreground));
   color: hsl(var(--background));
-  font-weight: 650;
+  font-weight: 600;
 }
 @media (hover: hover) {
   .status-filter[aria-pressed="false"]:hover {
@@ -2155,7 +2159,7 @@ body.legend-dismissed .first-hint {
 }
 .list-filter[aria-selected="true"] {
   color: hsl(var(--foreground));
-  font-weight: 650;
+  font-weight: 600;
   border-bottom-color: hsl(var(--foreground));
 }
 .list-filter:focus-visible {
@@ -2182,10 +2186,11 @@ body.legend-dismissed .first-hint {
 }
 .nav-item {
   position: relative;
-  border-left: 3px solid transparent;
+  border-left: 2px solid transparent;
   border-bottom: 1px solid hsl(var(--border));
+  transition: background-color 140ms ease-out;
 }
-.nav-item.mod { border-left-color: hsl(var(--changed)); }
+.nav-item.mod { border-left-color: hsl(var(--changed) / 0.55); }
 .nav-item.ins { border-left-color: hsl(var(--success)); }
 .nav-item.del { border-left-color: hsl(var(--destructive)); }
 .nav-item.moved { border-left-style: dashed; border-left-color: hsl(var(--muted-foreground) / 0.6); }
@@ -2194,8 +2199,8 @@ body.legend-dismissed .first-hint {
   border-left-color: hsl(var(--muted-foreground) / 0.35);
 }
 .nav-item.is-active {
-  background: hsl(var(--ton-1));
-  box-shadow: inset 0 0 0 2px hsl(var(--current));
+  background: hsl(var(--current-tint));
+  border-left-color: hsl(var(--current));
 }
 .nav-item-main {
   display: block;
@@ -2215,7 +2220,7 @@ body.legend-dismissed .first-hint {
 }
 @media (hover: hover) {
   .nav-item:not(.is-active):hover {
-    background: hsl(var(--ton-1));
+    background: hsl(var(--hover-tint));
   }
 }
 .nav-item-head {
@@ -2290,7 +2295,7 @@ body.legend-dismissed .first-hint {
 }
 .empty-title {
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
 }
 .empty-desc {
   margin-top: 6px;
@@ -2364,7 +2369,7 @@ body:not(.is-comparing) .toast-region {
   background: hsl(var(--background) / 0.14);
   color: hsl(var(--background));
   font: inherit;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
 }
 .toast-action[hidden] {
@@ -2436,7 +2441,7 @@ dialog.prime-dialog::backdrop {
 }
 .dialog-title {
   font-size: 17px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 .dialog-title:focus {
@@ -2519,7 +2524,7 @@ dialog.prime-dialog::backdrop {
 }
 .help-sec h3 {
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   margin-bottom: 4px;
 }
 .help-sec p {
@@ -2785,11 +2790,8 @@ body.is-diff-busy .doc-sheet {
   .doc-pane-unified {
     padding: 10px 10px calc(84px + env(safe-area-inset-bottom));
   }
-  .doc-page-body {
-    padding: 8px 6px 18px 4px;
-  }
   .doc-page-header {
-    padding: 8px 14px 0;
+    padding: var(--sp-5) 0 var(--sp-3) 14px;
   }
   .clause {
     padding: 8px 10px 8px 12px;
@@ -2843,7 +2845,8 @@ body.is-diff-busy .doc-sheet {
   }
   .bb-step {
     font-variant-numeric: tabular-nums;
-    box-shadow: inset 0 0 0 1px var(--kante-300);
+    font-weight: 500;
+    background: hsl(var(--ton-1));
   }
   .bb-export {
     padding: 0 14px;
