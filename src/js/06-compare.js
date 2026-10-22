@@ -31,7 +31,6 @@ function applyComparisonResult(request, result, opts = {}) {
 
   document.body.classList.toggle('has-docs', leftBlocks.length > 0 || rightBlocks.length > 0);
   document.body.classList.toggle('is-comparing', bothLoaded);
-  document.body.classList.toggle('legend-dismissed', state.legendDismissed);
 
   if (!bothLoaded) {
     pendingRowFocus = null;
@@ -585,29 +584,23 @@ function getItemTexts(item) {
   return { left: item.row.leftBlock ? item.row.leftBlock.text : '', right: item.row.rightBlock ? item.row.rightBlock.text : '' };
 }
 
-// A card shows each change in its sentence: up to four grey words before and after, the removed
-// words struck through and the added ones underlined (no arrows). A paragraph that is removed
-// or added as a whole reads "entfernt: …" / "hinzugefügt: …".
+// A card scans like an inbox line: the first change in its sentence (up to four grey words before
+// and after, removed words struck through, added ones underlined), at most two lines. Further
+// changes in the same paragraph are counted in the card head. A paragraph that is removed or
+// added as a whole reads "entfernt: …" / "hinzugefügt: …".
 function renderSidebarDeltaHtml(item) {
   const { left, right } = getItemTexts(item);
   if (item.type === 'deleted') {
-    return `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardRemoved'))}</span> <del class="tok-del">${escapeHtml(truncateClean(left, 92))}</del></span>`;
+    return { html: `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardRemoved'))}</span> <del class="tok-del">${escapeHtml(truncateClean(left, 140))}</del></span>`, more: 0 };
   }
   if (item.type === 'inserted') {
-    return `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardAdded'))}</span> <ins class="tok-ins">${escapeHtml(truncateClean(right, 92))}</ins></span>`;
+    return { html: `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardAdded'))}</span> <ins class="tok-ins">${escapeHtml(truncateClean(right, 140))}</ins></span>`, more: 0 };
   }
   const snippets = buildContextSnippets(getItemWordDiffs(item));
   if (snippets.length === 0) {
-    return `<span class="nav-item-snippet">${item.ghost ? escapeHtml(truncateClean(right, 92)) : renderUnifiedBlockHtml(item.row, '')}</span>`;
+    return { html: `<span class="nav-item-snippet">${item.ghost ? escapeHtml(truncateClean(right, 140)) : renderUnifiedBlockHtml(item.row, '')}</span>`, more: 0 };
   }
-  const max = 2;
-  const html = snippets
-    .slice(0, max)
-    .map(sn => `<span class="nav-delta-row">${sn}</span>`)
-    .join('');
-  const moreHtml =
-    snippets.length > max ? `<span class="nav-delta-more">+${snippets.length - max} ${escapeHtml(t('moreDeltas'))}</span>` : '';
-  return `<span class="nav-item-deltas">${html}${moreHtml}</span>`;
+  return { html: `<span class="nav-item-snippet">${snippets[0]}</span>`, more: snippets.length - 1 };
 }
 
 // The changed runs of a word diff (as in extractDeltaPairs; runs separated by at most two
@@ -720,33 +713,31 @@ function updateSidebarHeaderState() {
     : changesTitle(total);
   document.getElementById('list-progress').textContent = total ? formatMsg('listProgress', { k: review.reviewed, n: total }) : '';
   document.getElementById('progress-fill').style.width = total ? `${(review.reviewed / total) * 100}%` : '0';
-  document.querySelector('.list-progress').hidden = total === 0;
-  const set = (id, n) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = String(n);
-  };
-  set('filter-count-open', review.open);
-  set('filter-count-reviewed', review.reviewed);
-  document.querySelectorAll('[data-status-filter]').forEach(btn => {
-    btn.setAttribute('aria-pressed', String(btn.getAttribute('data-status-filter') === state.statusFilter));
-  });
-  set('filter-count-mod', counts.mod);
-  set('filter-count-ins', counts.ins);
-  set('filter-count-del', counts.del);
   const btnListCount = document.getElementById('btn-list-count');
   if (btnListCount) btnListCount.textContent = String(total);
   const btnList = document.getElementById('btn-list');
   if (btnList) btnList.setAttribute('aria-label', formatMsg('listBtnLabel', { n: total }));
 
-  const countFor = f => (f === 'all' ? total : f === 'modified' ? counts.mod : f === 'inserted' ? counts.ins : counts.del);
-  document.querySelectorAll('[data-sidebar-filter]').forEach(btn => {
-    const f = btn.getAttribute('data-sidebar-filter');
-    const isActive = f === state.sidebarFilter;
-    btn.setAttribute('aria-selected', String(isActive));
-    btn.tabIndex = isActive ? 0 : -1;
-    btn.classList.toggle('is-zero', countFor(f) === 0);
-    if (isActive) sidebarList.setAttribute('aria-labelledby', btn.id);
-  });
+  // One filter: "Alle", a review status or a kind of change, each with its count.
+  const select = document.getElementById('list-filter');
+  const value = state.statusFilter !== 'all' ? state.statusFilter : state.sidebarFilter;
+  const options = [
+    ['all', 'filterAll', total],
+    ['open', 'filterOpen', review.open],
+    ['reviewed', 'filterReviewed', review.reviewed],
+    ['modified', 'filterMod', counts.mod],
+    ['inserted', 'filterIns', counts.ins],
+    ['deleted', 'filterDel', counts.del],
+  ];
+  for (const [v, key, n] of options) {
+    const opt = select.querySelector(`option[value="${v}"]`);
+    opt.textContent = `${t(key)} (${n})`;
+    opt.disabled = n === 0 && v !== value;
+  }
+  document.getElementById('lf-group-status').label = t('filterGroupStatus');
+  document.getElementById('lf-group-kind').label = t('filterGroupKind');
+  if (select.value !== value) select.value = value;
+  select.classList.toggle('is-filtered', value !== 'all');
 }
 
 function renderSidebarList(bothLoaded) {
@@ -788,7 +779,9 @@ function renderSidebarList(bothLoaded) {
         const pages = item.members ? itemMembers(item).map(m => getItemPage(m)) : [page];
         const pageLabel = pages.length > 1 ? `${t('pageShort')} ${Math.min(...pages)}–${Math.max(...pages)}` : `${t('pageShort')} ${page}`;
         const head = item.members ? `${ref} · ${pageLabel}` : [ref, pageLabel].filter(Boolean).join(' · ');
-        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}. </span></span>${renderSidebarDeltaHtml(item)}</button></div>`;
+        const delta = renderSidebarDeltaHtml(item);
+        const moreHtml = delta.more > 0 ? `<span class="nav-more"><span aria-hidden="true">+${delta.more}</span><span class="sr-only">, ${delta.more} ${escapeHtml(t('moreDeltas'))}</span></span>` : '';
+        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${moreHtml}${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}. </span></span>${delta.html}</button></div>`;
       })
       .join('')
   );

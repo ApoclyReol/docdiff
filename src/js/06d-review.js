@@ -370,22 +370,25 @@ function refreshReviewState() {
   scheduleRulerDraw();
 }
 
-/* ── Status line of a reviewed change ───────────────────────────────────────
+/* ── Status mark of a reviewed change ───────────────────────────────────────
  *
- * Every reviewed paragraph of the new version carries a short line on top: "✓ Angenommen ·
- * Rückgängig" or "✗ Abgelehnt – alte Fassung wiederhergestellt · Rückgängig". It is part of
- * the paragraph (so selecting a paragraph never changes any height).
+ * Every reviewed paragraph of the new version carries a quiet mark in its right margin, where
+ * the review actions sit: ✓ (accepted) or ✗ (rejected), with an undo button below it that
+ * shows on the current paragraph and on hover. It is absolutely positioned in the margin every
+ * paragraph keeps free, so reviewing never moves text or changes a height.
  */
+
+const ICON_UNDO = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 
 function reviewStatusHtml(row) {
   const accepted = row.reviewStatus === 'accepted';
   if (!accepted && !row.ghostNote) return '';
   const active = row.id === state.activeRowId;
+  const note = t(accepted ? 'acceptedNote' : row.ghostNote === 'rejected' ? 'rejectedNote' : 'rejectedInsNote');
   return (
     `<span class="review-status ${accepted ? 'is-accepted' : 'is-rejected'}" data-status-row="${row.id}">` +
-    `${accepted ? ICON_CHECK : ICON_X}<span class="review-status-text">${escapeHtml(t(accepted ? 'acceptedNote' : row.ghostNote === 'rejected' ? 'rejectedNote' : 'rejectedInsNote'))}</span>` +
-    `<span class="review-status-sep" aria-hidden="true">·</span>` +
-    `<button type="button" class="ra-undo" data-review-action="reopen" data-tooltip="${escapeHtml(t('reopenTitle'))}" tabindex="${active ? 0 : -1}">${escapeHtml(t('reopenBtn'))}</button>` +
+    `<span class="rs-mark" data-tooltip="${escapeHtml(note)}">${accepted ? ICON_CHECK : ICON_X}<span class="sr-only">${escapeHtml(note)}</span></span>` +
+    `<button type="button" class="ra-undo" data-review-action="reopen" aria-label="${escapeHtml(t('reopenBtn'))}" data-tooltip="${escapeHtml(t('reopenTitle'))}" tabindex="${active ? 0 : -1}">${ICON_UNDO}</button>` +
     `</span>`
   );
 }

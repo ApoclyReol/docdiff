@@ -720,24 +720,13 @@ sidebarList.addEventListener('focusin', e => {
   for (const b of sidebarList.querySelectorAll('.nav-item-main')) b.tabIndex = b === e.target ? 0 : -1;
 });
 
-const sidebarFilterBar = document.getElementById('sidebar-filter-bar');
-function setListFilter(f, focus) {
-  state.sidebarFilter = f;
-  applyListFilters();
-  if (focus) {
-    const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);
-    if (tab) tab.focus();
-  }
-}
-// Status ("Offen" / "Geprüft") is a separate toggle on top of the kind of change.
-function setStatusFilter(s) {
-  state.statusFilter = state.statusFilter === s ? 'all' : s;
+// The list filter: a review status ("Offen", "Geprüft") or a kind of change, never both.
+function setListFilter(value) {
+  const isStatus = value === 'open' || value === 'reviewed';
+  state.statusFilter = isStatus ? value : 'all';
+  state.sidebarFilter = isStatus ? 'all' : value;
   applyListFilters();
 }
-document.getElementById('status-filter-bar').addEventListener('click', e => {
-  const btn = e.target.closest('[data-status-filter]');
-  if (btn) setStatusFilter(btn.getAttribute('data-status-filter'));
-});
 function applyListFilters() {
   renderSidebarList(state.alignedRows.length > 0);
   // The stepper follows the filter: a current change outside it gives way to the first one in it.
@@ -748,24 +737,7 @@ function applyListFilters() {
   }
   updateStepper();
 }
-sidebarFilterBar.addEventListener('click', e => {
-  const btn = e.target.closest('[data-sidebar-filter]');
-  if (btn) setListFilter(btn.getAttribute('data-sidebar-filter'), false);
-});
-// Tabs: arrow keys move between the filters.
-sidebarFilterBar.addEventListener('keydown', e => {
-  const tabs = Array.from(sidebarFilterBar.querySelectorAll('[data-sidebar-filter]'));
-  const i = tabs.indexOf(document.activeElement);
-  if (i < 0) return;
-  let n = -1;
-  if (e.key === 'ArrowRight') n = (i + 1) % tabs.length;
-  else if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
-  else if (e.key === 'Home') n = 0;
-  else if (e.key === 'End') n = tabs.length - 1;
-  if (n < 0) return;
-  e.preventDefault();
-  setListFilter(tabs[n].getAttribute('data-sidebar-filter'), true);
-});
+document.getElementById('list-filter').addEventListener('change', e => setListFilter(e.target.value));
 
 // Editing the new version: double-click a paragraph.
 [sheetRight, sheetUnified].forEach(editableSheet => {

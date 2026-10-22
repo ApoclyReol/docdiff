@@ -55,7 +55,6 @@ const state = {
   reviews: {},
   undoStack: [],
   redoStack: [],
-  legendDismissed: false,
   singleKeyShortcuts: true,
 };
 
@@ -188,6 +187,26 @@ function truncateFileName(name, other, max, second = false) {
   return chars.slice(0, keepStart).join('') + '…' + chars.slice(chars.length - keepEnd).join('');
 }
 
+// Narrow screens: only the parts that tell the two files apart, without the shared start (cut at
+// a separator) and the shared extension: "Vertrag_v1_Vorher.docx" / "Vertrag_v2_Nachher.docx"
+// become "v1_Vorher" / "v2_Nachher". Null when that does not give two short, different names.
+function compactFilePair(left, right, max) {
+  const a = Array.from(String(left || ''));
+  const b = Array.from(String(right || ''));
+  const extA = (/\.[A-Za-z0-9]{1,5}$/.exec(left) || [''])[0];
+  const extB = (/\.[A-Za-z0-9]{1,5}$/.exec(right) || [''])[0];
+  const stemA = a.slice(0, a.length - (extA === extB ? extA.length : 0));
+  const stemB = b.slice(0, b.length - (extA === extB ? extB.length : 0));
+  let d = 0;
+  while (d < stemA.length && d < stemB.length && stemA[d] === stemB[d]) d++;
+  while (d > 0 && !/[\s_\-.]/.test(stemA[d - 1])) d--;
+  const outA = stemA.slice(d).join('').trim();
+  const outB = stemB.slice(d).join('').trim();
+  if (!outA || !outB || outA === outB) return null;
+  if (Array.from(outA).length > max || Array.from(outB).length > max) return null;
+  return [outA, outB];
+}
+
 // File names in the top bar button, its popover and the pane captions.
 function updateFileLabels() {
   const left = state.leftName || t('noFileLeft');
@@ -195,8 +214,9 @@ function updateFileLabels() {
   const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 12;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
-  filesLeft.textContent = truncateFileName(left, right, max);
-  filesRight.textContent = truncateFileName(right, left, max, true);
+  const compact = max <= 12 && state.leftName && state.rightName ? compactFilePair(left, right, 16) : null;
+  filesLeft.textContent = compact ? compact[0] : truncateFileName(left, right, max);
+  filesRight.textContent = compact ? compact[1] : truncateFileName(right, left, max, true);
   // Pane names for screen readers: "Alte Fassung: Vertrag_v1.docx".
   document.getElementById('pane-left').setAttribute('aria-label', `${t('colLeft')}: ${left}`);
   document.getElementById('pane-right').setAttribute('aria-label', `${t('colRight')}: ${right}`);

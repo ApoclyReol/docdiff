@@ -671,14 +671,6 @@ document.getElementById('btn-help-sample').addEventListener('click', () => {
   loadSampleComparison();
 });
 
-// First-visit hint in the list header: dismissible for this session only (nothing is stored).
-document.getElementById('btn-legend-close').addEventListener('click', () => {
-  state.legendDismissed = true;
-  document.body.classList.add('legend-dismissed');
-  const tab = document.querySelector('#sidebar-filter-bar [aria-selected="true"]');
-  if (tab) tab.focus();
-});
-
 const privacyModal = document.getElementById('privacy-modal');
 document.getElementById('btn-close-privacy').addEventListener('click', () => privacyModal.close());
 document.getElementById('btn-ok-privacy').addEventListener('click', () => privacyModal.close());

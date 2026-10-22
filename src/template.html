@@ -444,28 +444,25 @@ __APP_CSS__
           <h2 class="list-title" id="list-title">0 Änderungen</h2>
           <button type="button" class="btn btn-ghost sheet-done" id="btn-close-sidebar-sheet"><span data-i18n="mobDone">Fertig</span></button>
         </div>
-        <div class="list-progress">
-          <span class="progress-track" aria-hidden="true"><span class="progress-fill" id="progress-fill"></span></span>
-          <span class="progress-text" id="list-progress"></span>
+        <div class="list-sub">
+          <span class="list-progress" id="list-progress"></span>
+          <label class="sr-only" for="list-filter" data-i18n="listFilterLabel">Änderungen filtern</label>
+          <select class="list-filter-select" id="list-filter">
+            <option value="all">Alle</option>
+            <optgroup id="lf-group-status" label="Prüfstand">
+              <option value="open">Offen</option>
+              <option value="reviewed">Geprüft</option>
+            </optgroup>
+            <optgroup id="lf-group-kind" label="Art">
+              <option value="modified">Geändert</option>
+              <option value="inserted">Hinzugefügt</option>
+              <option value="deleted">Entfernt</option>
+            </optgroup>
+          </select>
         </div>
-        <p class="first-hint" id="first-hint">
-          <span class="first-hint-text" data-i18n="hintGlyphs">✓ annehmen · ✗ ablehnen · J/K nächste Änderung</span>
-          <button type="button" class="hint-close" id="btn-legend-close" aria-label="Hinweis ausblenden" data-i18n-label="legendClose">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
-        </p>
-        <div class="status-filters" id="status-filter-bar" role="group" aria-label="Nach Prüfstand filtern" data-i18n-label="statusGroupLabel">
-          <button type="button" class="status-filter" id="status-open" data-status-filter="open" aria-pressed="false"><span data-i18n="filterOpen">Offen</span> <span class="lf-count" id="filter-count-open">0</span></button>
-          <button type="button" class="status-filter" id="status-reviewed" data-status-filter="reviewed" aria-pressed="false"><span data-i18n="filterReviewed">Geprüft</span> <span class="lf-count" id="filter-count-reviewed">0</span></button>
-        </div>
-        <div class="list-filters" id="sidebar-filter-bar" role="tablist" aria-label="Nach Art filtern" data-i18n-label="filterGroupLabel">
-          <button type="button" class="list-filter" role="tab" id="tab-all" data-sidebar-filter="all" aria-selected="true" aria-controls="sidebar-list"><span data-i18n="filterAll">Alle</span></button>
-          <button type="button" class="list-filter" role="tab" id="tab-modified" data-sidebar-filter="modified" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterMod">Geändert</span> <span class="lf-count" id="filter-count-mod">0</span></button>
-          <button type="button" class="list-filter" role="tab" id="tab-inserted" data-sidebar-filter="inserted" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterIns">Neu</span> <span class="lf-count" id="filter-count-ins">0</span></button>
-          <button type="button" class="list-filter" role="tab" id="tab-deleted" data-sidebar-filter="deleted" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterDel">Entfernt</span> <span class="lf-count" id="filter-count-del">0</span></button>
-        </div>
+        <span class="progress-track" aria-hidden="true"><span class="progress-fill" id="progress-fill"></span></span>
       </div>
-      <div class="sidebar-list" id="sidebar-list" role="tabpanel" aria-labelledby="tab-all"></div>
+      <div class="sidebar-list" id="sidebar-list"></div>
     </div>
   </main>
 

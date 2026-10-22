@@ -1436,12 +1436,6 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
   min-height: 24px;
   user-select: none;
 }
-.clause.state-placeholder:has(> .review-status) {
-  display: block;
-}
-.clause.state-placeholder:has(> .review-status)::before {
-  display: none;
-}
 .clause.state-placeholder::before {
   content: "";
   flex: 1;
@@ -1495,27 +1489,15 @@ ins.tok-ins.tok-marker {
   text-decoration-style: dotted;
 }
 
-/* Reviewed: accepted changes are muted and carry a check mark */
+/* Reviewed: accepted changes are muted; the mark sits in the margin of the new version */
 .clause.is-accepted {
-  border-left-color: hsl(var(--muted-foreground) / 0.45);
+  border-left-color: hsl(var(--muted-foreground) / 0.3);
   background: transparent;
-  padding-right: 34px;
 }
 .clause.is-accepted del.tok-del,
 .clause.is-accepted ins.tok-ins {
   background: transparent;
   color: hsl(var(--muted-foreground));
-}
-.clause.is-accepted::after {
-  content: "";
-  position: absolute;
-  top: 12px;
-  right: 10px;
-  width: 16px;
-  height: 16px;
-  background: hsl(var(--success-ink));
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
 }
 .review-note,
 .moved-note {
@@ -1528,6 +1510,10 @@ ins.tok-ins.tok-marker {
 }
 .diff-row-anchor.has-ghost .clause {
   border-left: 2px dotted hsl(var(--muted-foreground) / 0.6);
+}
+.diff-row-anchor.has-ghost .clause.is-active {
+  border-left-style: solid;
+  border-left-color: hsl(var(--current));
 }
 /* Moved paragraphs: neutral dashed edge, the words are not marked */
 .clause.is-moved {
@@ -1544,7 +1530,7 @@ ins.tok-ins.tok-marker {
 
 /* Header / footer lines that differ: body font, muted, grouped and collapsible */
 .clause.kind-hf {
-  font-size: 13.5px;
+  font-size: var(--text-ui-sm);
   line-height: 1.5;
   padding-top: 3px;
   padding-bottom: 3px;
@@ -1553,17 +1539,11 @@ ins.tok-ins.tok-marker {
 .hf-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin: 2px 0 6px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid hsl(var(--border));
+  gap: 0;
+  margin: 0 0 var(--sp-3);
 }
 .doc-page-body > .hf-group:last-child {
-  margin-top: 8px;
-  padding-top: 6px;
-  padding-bottom: 0;
-  border-top: 1px solid hsl(var(--border));
-  border-bottom: 0;
+  margin: var(--sp-3) 0 0;
 }
 .hf-toggle::after {
   content: "";
@@ -1577,20 +1557,21 @@ ins.tok-ins.tok-marker {
   align-items: center;
   gap: 4px;
   min-height: 24px;
-  padding: 0 4px 0 16px;
+  padding: 0 4px 0 18px;
   border: 0;
   background: transparent;
   color: hsl(var(--muted-foreground));
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
   cursor: pointer;
 }
 .hf-toggle::before {
   content: "";
   width: 7px;
   height: 7px;
-  margin-right: 3px;
+  order: 2;
+  margin-left: 6px;
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: translateY(-2px) rotate(45deg);
@@ -1675,63 +1656,62 @@ ins.tok-ins.tok-marker {
   .ra-btn.ra-edit:hover { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
 }
 
-/* Status line of a reviewed paragraph: "✓ Angenommen · Rückgängig" */
+/* Status mark of a reviewed paragraph: ✓ / ✗ in the margin, undo below it */
 .review-status {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  z-index: 3;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  column-gap: 6px;
-  grid-column: 1 / -1;
-  margin: -2px 0 2px;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
+  width: var(--rv-btn);
+}
+.rs-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rv-btn);
+  height: var(--rv-btn);
 }
 .review-status .icon {
-  width: 15px;
-  height: 15px;
-  stroke-width: 2.4;
-  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.2;
 }
-.review-status.is-accepted { color: hsl(var(--success-ink)); }
-.review-status.is-rejected { color: hsl(var(--foreground)); }
-.review-status-sep {
-  color: hsl(var(--muted-foreground));
-  font-weight: 400;
-}
+.review-status.is-accepted .rs-mark { color: hsl(var(--success-ink)); }
+.review-status.is-rejected .rs-mark { color: hsl(var(--muted-foreground)); }
 .ra-undo {
-  position: relative;
-  min-height: 24px;
-  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rv-btn);
+  height: var(--rv-btn);
+  padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: transparent;
-  color: hsl(var(--primary-ink));
-  font: inherit;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  color: hsl(var(--muted-foreground));
   cursor: pointer;
+  visibility: hidden;
 }
-/* 44 × 44 px pointer target without moving the text around it */
-.ra-undo::before {
-  content: "";
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: max(100%, 44px);
-  height: 44px;
-  transform: translate(-50%, -50%);
+.clause.is-active .ra-undo,
+.review-status:focus-within .ra-undo {
+  visibility: visible;
 }
 @media (hover: hover) {
-  .ra-undo:hover { background: hsl(var(--ton-2)); }
+  .clause:hover .ra-undo { visibility: visible; }
+  .ra-undo:hover { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
 }
-.clause.kind-hf .review-status {
-  font-size: 12.5px;
+/* On a reviewed current paragraph the actions continue below the mark */
+.review-status ~ .review-bar {
+  top: calc(4px + 2 * var(--rv-btn));
 }
-/* The status line carries the check mark in the new version */
-#sheet-right .clause.is-accepted::after,
-#sheet-unified .clause.is-accepted::after {
-  display: none;
+.clause.state-placeholder > .review-status {
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: row;
+  width: auto;
 }
 
 /* Inline editor */
@@ -1839,7 +1819,8 @@ ins.tok-ins.tok-marker {
 }
 .list-head {
   flex-shrink: 0;
-  padding: 14px 16px 0;
+  position: relative;
+  padding: var(--sp-3) var(--sp-4) var(--sp-2);
   border-bottom: 1px solid hsl(var(--border));
 }
 .sheet-grabber,
@@ -1850,152 +1831,72 @@ ins.tok-ins.tok-marker {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--sp-2);
 }
 .list-title {
-  font-size: 16px;
+  font-size: var(--text-title);
   font-weight: 600;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
-.list-progress {
+.list-sub {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 4px;
-  font-size: 13px;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: 2px;
+}
+.list-progress {
+  font-size: var(--text-ui-sm);
   color: hsl(var(--muted-foreground));
   font-variant-numeric: tabular-nums;
 }
-.list-progress[hidden] {
-  display: none;
-}
+/* Review progress as a hairline along the bottom edge of the header */
 .progress-track {
-  flex: 0 0 72px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--control-edge);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
   overflow: hidden;
+  pointer-events: none;
 }
 .progress-fill {
   display: block;
   height: 100%;
   width: 0;
-  background: hsl(var(--foreground));
-  border-radius: 999px;
-  transition: width 160ms ease-out;
+  background: hsl(var(--success));
+  transition: width 200ms ease-out;
 }
-.first-hint-text {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 12px;
-}
-.first-hint {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 4px 4px 4px 10px;
-  border-radius: var(--radius-md);
-  background: hsl(var(--ton-1));
-  font-size: 13px;
-  line-height: 1.5;
-}
-body.legend-dismissed .first-hint {
-  display: none;
-}
-.hint-close {
-  width: 44px;
+/* One native select, styled as a quiet text button */
+.list-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
   height: 44px;
-  flex-shrink: 0;
+  max-width: 60%;
+  margin: -4px calc(-1 * var(--sp-2)) -4px 0;
+  padding: 0 28px 0 var(--sp-2);
   border: 0;
   border-radius: var(--radius-md);
-  background: transparent;
-  color: hsl(var(--foreground));
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-/* Review status: two toggles ("Offen 12", "Geprüft 8"), separate from the kind of change */
-.status-filters {
-  display: flex;
-  margin-top: 10px;
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 1px var(--kante-500);
-}
-.status-filter {
-  flex: 1;
-  min-height: 44px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 8px center / 14px 14px no-repeat;
   color: hsl(var(--foreground));
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui-sm);
   font-weight: 500;
+  text-overflow: ellipsis;
   cursor: pointer;
 }
-.status-filter + .status-filter {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  box-shadow: inset 1px 0 0 var(--kante-500);
+.list-filter-select.is-filtered {
+  background-color: hsl(var(--ton-2));
 }
-.status-filter:first-child {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-.status-filter[aria-pressed="true"] {
-  background: hsl(var(--foreground));
-  color: hsl(var(--background));
-  font-weight: 600;
-}
-@media (hover: hover) {
-  .status-filter[aria-pressed="false"]:hover {
-    background: hsl(var(--ton-2));
-  }
-}
-.list-filters {
-  display: flex;
-  gap: 2px;
-  margin: 4px -4px 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.list-filter {
-  flex-shrink: 0;
-  height: 44px;
-  min-width: 44px;
-  padding: 0 4px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: hsl(var(--muted-foreground));
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.list-filter[aria-selected="true"] {
+.list-filter-select option,
+.list-filter-select optgroup {
+  background: hsl(var(--card));
   color: hsl(var(--foreground));
-  font-weight: 600;
-  border-bottom-color: hsl(var(--foreground));
-}
-.list-filter:focus-visible {
-  outline-offset: -2px;
-}
-.lf-count {
-  font-variant-numeric: tabular-nums;
 }
 @media (hover: hover) {
-  .list-filter:hover {
-    color: hsl(var(--foreground));
-  }
-  .hint-close:hover {
-    background: hsl(var(--ton-2));
+  .list-filter-select:hover {
+    background-color: hsl(var(--ton-2));
   }
 }
 
@@ -2027,12 +1928,12 @@ body.legend-dismissed .first-hint {
 .nav-item-main {
   display: block;
   width: 100%;
-  padding: 10px 14px 11px 13px;
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) 14px;
   border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-ui);
   line-height: 1.5;
   text-align: left;
   cursor: pointer;
@@ -2048,21 +1949,35 @@ body.legend-dismissed .first-hint {
 .nav-item-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 3px;
+  gap: var(--sp-2);
+  margin-bottom: 2px;
   min-width: 0;
 }
 .nav-item-ref {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
   color: hsl(var(--muted-foreground));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.nav-more {
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: hsl(var(--ton-2));
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: hsl(var(--muted-foreground));
+  font-variant-numeric: tabular-nums;
+}
 .nav-status {
   display: inline-flex;
   margin-left: auto;
+}
+.nav-more + .nav-status {
+  margin-left: 0;
 }
 .nav-status .icon {
   width: 16px;
@@ -2073,8 +1988,8 @@ body.legend-dismissed .first-hint {
 .nav-status.is-rejected { color: hsl(var(--muted-foreground)); }
 .nav-item.is-accepted .nav-item-ref,
 .nav-item.is-rejected .nav-item-ref,
-.nav-item.is-accepted .nav-item-deltas,
-.nav-item.is-rejected .nav-item-deltas {
+.nav-item.is-accepted .nav-item-snippet,
+.nav-item.is-rejected .nav-item-snippet {
   color: hsl(var(--muted-foreground));
 }
 .nav-item.is-accepted .tok-del,
@@ -2084,23 +1999,8 @@ body.legend-dismissed .first-hint {
   background: transparent;
   color: hsl(var(--muted-foreground));
 }
-.nav-item-deltas {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-/* One change in its sentence: grey context, struck / underlined words, in normal text flow */
-.nav-delta-row {
-  display: block;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
 .nav-ctx,
 .nav-ctx-label {
-  color: hsl(var(--muted-foreground));
-}
-.nav-delta-more {
-  font-size: 13px;
   color: hsl(var(--muted-foreground));
 }
 .nav-item-snippet {
@@ -2108,7 +2008,7 @@ body.legend-dismissed .first-hint {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .empty-state {
   margin: auto;
@@ -2784,14 +2684,10 @@ body.is-diff-busy .doc-sheet {
   .tb-icon-btn {
     min-width: 44px;
   }
-  .list-filter,
+  .list-filter-select,
   .menu-item,
-  .hf-toggle,
-  .hint-close {
+  .hf-toggle {
     min-height: 44px;
-  }
-  .hint-close {
-    min-width: 44px;
   }
   .ra-btn {
     width: 44px;
@@ -2800,13 +2696,6 @@ body.is-diff-busy .doc-sheet {
   .ra-btn .icon {
     width: 20px;
     height: 20px;
-  }
-  .ra-pill,
-  .ra-undo {
-    min-height: 44px;
-  }
-  .ra-undo {
-    padding: 0 10px;
   }
 }
 
@@ -2927,7 +2816,7 @@ body.list-open .toast-region {
   .review-bar,
   .stepper,
   .tb-files,
-  .status-filters {
+  .list-filter-select {
     border: 1px solid CanvasText;
   }
   del.tok-del { text-decoration: line-through; }
@@ -2984,11 +2873,12 @@ body.list-open .toast-region {
     content-visibility: visible !important;
   }
   /* No interactive leftovers on paper */
-  .hf-toggle, .review-status .ra-undo, .review-status-sep, .import-notice {
+  .hf-toggle, .review-status, .import-notice {
     display: none !important;
   }
   .clause.is-active {
     box-shadow: none !important;
+    background: transparent !important;
   }
   .hf-group.is-collapsed > .diff-row-anchor {
     display: flex !important;

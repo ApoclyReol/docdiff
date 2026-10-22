@@ -1614,12 +1614,6 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
   min-height: 24px;
   user-select: none;
 }
-.clause.state-placeholder:has(> .review-status) {
-  display: block;
-}
-.clause.state-placeholder:has(> .review-status)::before {
-  display: none;
-}
 .clause.state-placeholder::before {
   content: "";
   flex: 1;
@@ -1673,27 +1667,15 @@ ins.tok-ins.tok-marker {
   text-decoration-style: dotted;
 }
 
-/* Reviewed: accepted changes are muted and carry a check mark */
+/* Reviewed: accepted changes are muted; the mark sits in the margin of the new version */
 .clause.is-accepted {
-  border-left-color: hsl(var(--muted-foreground) / 0.45);
+  border-left-color: hsl(var(--muted-foreground) / 0.3);
   background: transparent;
-  padding-right: 34px;
 }
 .clause.is-accepted del.tok-del,
 .clause.is-accepted ins.tok-ins {
   background: transparent;
   color: hsl(var(--muted-foreground));
-}
-.clause.is-accepted::after {
-  content: "";
-  position: absolute;
-  top: 12px;
-  right: 10px;
-  width: 16px;
-  height: 16px;
-  background: hsl(var(--success-ink));
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
 }
 .review-note,
 .moved-note {
@@ -1706,6 +1688,10 @@ ins.tok-ins.tok-marker {
 }
 .diff-row-anchor.has-ghost .clause {
   border-left: 2px dotted hsl(var(--muted-foreground) / 0.6);
+}
+.diff-row-anchor.has-ghost .clause.is-active {
+  border-left-style: solid;
+  border-left-color: hsl(var(--current));
 }
 /* Moved paragraphs: neutral dashed edge, the words are not marked */
 .clause.is-moved {
@@ -1722,7 +1708,7 @@ ins.tok-ins.tok-marker {
 
 /* Header / footer lines that differ: body font, muted, grouped and collapsible */
 .clause.kind-hf {
-  font-size: 13.5px;
+  font-size: var(--text-ui-sm);
   line-height: 1.5;
   padding-top: 3px;
   padding-bottom: 3px;
@@ -1731,17 +1717,11 @@ ins.tok-ins.tok-marker {
 .hf-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin: 2px 0 6px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid hsl(var(--border));
+  gap: 0;
+  margin: 0 0 var(--sp-3);
 }
 .doc-page-body > .hf-group:last-child {
-  margin-top: 8px;
-  padding-top: 6px;
-  padding-bottom: 0;
-  border-top: 1px solid hsl(var(--border));
-  border-bottom: 0;
+  margin: var(--sp-3) 0 0;
 }
 .hf-toggle::after {
   content: "";
@@ -1755,20 +1735,21 @@ ins.tok-ins.tok-marker {
   align-items: center;
   gap: 4px;
   min-height: 24px;
-  padding: 0 4px 0 16px;
+  padding: 0 4px 0 18px;
   border: 0;
   background: transparent;
   color: hsl(var(--muted-foreground));
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
   cursor: pointer;
 }
 .hf-toggle::before {
   content: "";
   width: 7px;
   height: 7px;
-  margin-right: 3px;
+  order: 2;
+  margin-left: 6px;
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: translateY(-2px) rotate(45deg);
@@ -1853,63 +1834,62 @@ ins.tok-ins.tok-marker {
   .ra-btn.ra-edit:hover { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
 }
 
-/* Status line of a reviewed paragraph: "✓ Angenommen · Rückgängig" */
+/* Status mark of a reviewed paragraph: ✓ / ✗ in the margin, undo below it */
 .review-status {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  z-index: 3;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  column-gap: 6px;
-  grid-column: 1 / -1;
-  margin: -2px 0 2px;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
+  width: var(--rv-btn);
+}
+.rs-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rv-btn);
+  height: var(--rv-btn);
 }
 .review-status .icon {
-  width: 15px;
-  height: 15px;
-  stroke-width: 2.4;
-  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.2;
 }
-.review-status.is-accepted { color: hsl(var(--success-ink)); }
-.review-status.is-rejected { color: hsl(var(--foreground)); }
-.review-status-sep {
-  color: hsl(var(--muted-foreground));
-  font-weight: 400;
-}
+.review-status.is-accepted .rs-mark { color: hsl(var(--success-ink)); }
+.review-status.is-rejected .rs-mark { color: hsl(var(--muted-foreground)); }
 .ra-undo {
-  position: relative;
-  min-height: 24px;
-  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rv-btn);
+  height: var(--rv-btn);
+  padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: transparent;
-  color: hsl(var(--primary-ink));
-  font: inherit;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  color: hsl(var(--muted-foreground));
   cursor: pointer;
+  visibility: hidden;
 }
-/* 44 × 44 px pointer target without moving the text around it */
-.ra-undo::before {
-  content: "";
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: max(100%, 44px);
-  height: 44px;
-  transform: translate(-50%, -50%);
+.clause.is-active .ra-undo,
+.review-status:focus-within .ra-undo {
+  visibility: visible;
 }
 @media (hover: hover) {
-  .ra-undo:hover { background: hsl(var(--ton-2)); }
+  .clause:hover .ra-undo { visibility: visible; }
+  .ra-undo:hover { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
 }
-.clause.kind-hf .review-status {
-  font-size: 12.5px;
+/* On a reviewed current paragraph the actions continue below the mark */
+.review-status ~ .review-bar {
+  top: calc(4px + 2 * var(--rv-btn));
 }
-/* The status line carries the check mark in the new version */
-#sheet-right .clause.is-accepted::after,
-#sheet-unified .clause.is-accepted::after {
-  display: none;
+.clause.state-placeholder > .review-status {
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: row;
+  width: auto;
 }
 
 /* Inline editor */
@@ -2017,7 +1997,8 @@ ins.tok-ins.tok-marker {
 }
 .list-head {
   flex-shrink: 0;
-  padding: 14px 16px 0;
+  position: relative;
+  padding: var(--sp-3) var(--sp-4) var(--sp-2);
   border-bottom: 1px solid hsl(var(--border));
 }
 .sheet-grabber,
@@ -2028,152 +2009,72 @@ ins.tok-ins.tok-marker {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--sp-2);
 }
 .list-title {
-  font-size: 16px;
+  font-size: var(--text-title);
   font-weight: 600;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
-.list-progress {
+.list-sub {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 4px;
-  font-size: 13px;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: 2px;
+}
+.list-progress {
+  font-size: var(--text-ui-sm);
   color: hsl(var(--muted-foreground));
   font-variant-numeric: tabular-nums;
 }
-.list-progress[hidden] {
-  display: none;
-}
+/* Review progress as a hairline along the bottom edge of the header */
 .progress-track {
-  flex: 0 0 72px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--control-edge);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
   overflow: hidden;
+  pointer-events: none;
 }
 .progress-fill {
   display: block;
   height: 100%;
   width: 0;
-  background: hsl(var(--foreground));
-  border-radius: 999px;
-  transition: width 160ms ease-out;
+  background: hsl(var(--success));
+  transition: width 200ms ease-out;
 }
-.first-hint-text {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 12px;
-}
-.first-hint {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 4px 4px 4px 10px;
-  border-radius: var(--radius-md);
-  background: hsl(var(--ton-1));
-  font-size: 13px;
-  line-height: 1.5;
-}
-body.legend-dismissed .first-hint {
-  display: none;
-}
-.hint-close {
-  width: 44px;
+/* One native select, styled as a quiet text button */
+.list-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
   height: 44px;
-  flex-shrink: 0;
+  max-width: 60%;
+  margin: -4px calc(-1 * var(--sp-2)) -4px 0;
+  padding: 0 28px 0 var(--sp-2);
   border: 0;
   border-radius: var(--radius-md);
-  background: transparent;
-  color: hsl(var(--foreground));
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-/* Review status: two toggles ("Offen 12", "Geprüft 8"), separate from the kind of change */
-.status-filters {
-  display: flex;
-  margin-top: 10px;
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 1px var(--kante-500);
-}
-.status-filter {
-  flex: 1;
-  min-height: 44px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 8px center / 14px 14px no-repeat;
   color: hsl(var(--foreground));
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui-sm);
   font-weight: 500;
+  text-overflow: ellipsis;
   cursor: pointer;
 }
-.status-filter + .status-filter {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  box-shadow: inset 1px 0 0 var(--kante-500);
+.list-filter-select.is-filtered {
+  background-color: hsl(var(--ton-2));
 }
-.status-filter:first-child {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-.status-filter[aria-pressed="true"] {
-  background: hsl(var(--foreground));
-  color: hsl(var(--background));
-  font-weight: 600;
-}
-@media (hover: hover) {
-  .status-filter[aria-pressed="false"]:hover {
-    background: hsl(var(--ton-2));
-  }
-}
-.list-filters {
-  display: flex;
-  gap: 2px;
-  margin: 4px -4px 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.list-filter {
-  flex-shrink: 0;
-  height: 44px;
-  min-width: 44px;
-  padding: 0 4px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: hsl(var(--muted-foreground));
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.list-filter[aria-selected="true"] {
+.list-filter-select option,
+.list-filter-select optgroup {
+  background: hsl(var(--card));
   color: hsl(var(--foreground));
-  font-weight: 600;
-  border-bottom-color: hsl(var(--foreground));
-}
-.list-filter:focus-visible {
-  outline-offset: -2px;
-}
-.lf-count {
-  font-variant-numeric: tabular-nums;
 }
 @media (hover: hover) {
-  .list-filter:hover {
-    color: hsl(var(--foreground));
-  }
-  .hint-close:hover {
-    background: hsl(var(--ton-2));
+  .list-filter-select:hover {
+    background-color: hsl(var(--ton-2));
   }
 }
 
@@ -2205,12 +2106,12 @@ body.legend-dismissed .first-hint {
 .nav-item-main {
   display: block;
   width: 100%;
-  padding: 10px 14px 11px 13px;
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) 14px;
   border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-ui);
   line-height: 1.5;
   text-align: left;
   cursor: pointer;
@@ -2226,21 +2127,35 @@ body.legend-dismissed .first-hint {
 .nav-item-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 3px;
+  gap: var(--sp-2);
+  margin-bottom: 2px;
   min-width: 0;
 }
 .nav-item-ref {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
   color: hsl(var(--muted-foreground));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.nav-more {
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: hsl(var(--ton-2));
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: hsl(var(--muted-foreground));
+  font-variant-numeric: tabular-nums;
+}
 .nav-status {
   display: inline-flex;
   margin-left: auto;
+}
+.nav-more + .nav-status {
+  margin-left: 0;
 }
 .nav-status .icon {
   width: 16px;
@@ -2251,8 +2166,8 @@ body.legend-dismissed .first-hint {
 .nav-status.is-rejected { color: hsl(var(--muted-foreground)); }
 .nav-item.is-accepted .nav-item-ref,
 .nav-item.is-rejected .nav-item-ref,
-.nav-item.is-accepted .nav-item-deltas,
-.nav-item.is-rejected .nav-item-deltas {
+.nav-item.is-accepted .nav-item-snippet,
+.nav-item.is-rejected .nav-item-snippet {
   color: hsl(var(--muted-foreground));
 }
 .nav-item.is-accepted .tok-del,
@@ -2262,23 +2177,8 @@ body.legend-dismissed .first-hint {
   background: transparent;
   color: hsl(var(--muted-foreground));
 }
-.nav-item-deltas {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-/* One change in its sentence: grey context, struck / underlined words, in normal text flow */
-.nav-delta-row {
-  display: block;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
 .nav-ctx,
 .nav-ctx-label {
-  color: hsl(var(--muted-foreground));
-}
-.nav-delta-more {
-  font-size: 13px;
   color: hsl(var(--muted-foreground));
 }
 .nav-item-snippet {
@@ -2286,7 +2186,7 @@ body.legend-dismissed .first-hint {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .empty-state {
   margin: auto;
@@ -2962,14 +2862,10 @@ body.is-diff-busy .doc-sheet {
   .tb-icon-btn {
     min-width: 44px;
   }
-  .list-filter,
+  .list-filter-select,
   .menu-item,
-  .hf-toggle,
-  .hint-close {
+  .hf-toggle {
     min-height: 44px;
-  }
-  .hint-close {
-    min-width: 44px;
   }
   .ra-btn {
     width: 44px;
@@ -2978,13 +2874,6 @@ body.is-diff-busy .doc-sheet {
   .ra-btn .icon {
     width: 20px;
     height: 20px;
-  }
-  .ra-pill,
-  .ra-undo {
-    min-height: 44px;
-  }
-  .ra-undo {
-    padding: 0 10px;
   }
 }
 
@@ -3105,7 +2994,7 @@ body.list-open .toast-region {
   .review-bar,
   .stepper,
   .tb-files,
-  .status-filters {
+  .list-filter-select {
     border: 1px solid CanvasText;
   }
   del.tok-del { text-decoration: line-through; }
@@ -3162,11 +3051,12 @@ body.list-open .toast-region {
     content-visibility: visible !important;
   }
   /* No interactive leftovers on paper */
-  .hf-toggle, .review-status .ra-undo, .review-status-sep, .import-notice {
+  .hf-toggle, .review-status, .import-notice {
     display: none !important;
   }
   .clause.is-active {
     box-shadow: none !important;
+    background: transparent !important;
   }
   .hf-group.is-collapsed > .diff-row-anchor {
     display: flex !important;
@@ -3777,28 +3667,25 @@ body.list-open .toast-region {
           <h2 class="list-title" id="list-title">0 Änderungen</h2>
           <button type="button" class="btn btn-ghost sheet-done" id="btn-close-sidebar-sheet"><span data-i18n="mobDone">Done</span></button>
         </div>
-        <div class="list-progress">
-          <span class="progress-track" aria-hidden="true"><span class="progress-fill" id="progress-fill"></span></span>
-          <span class="progress-text" id="list-progress"></span>
+        <div class="list-sub">
+          <span class="list-progress" id="list-progress"></span>
+          <label class="sr-only" for="list-filter" data-i18n="listFilterLabel">Filter changes</label>
+          <select class="list-filter-select" id="list-filter">
+            <option value="all">Alle</option>
+            <optgroup id="lf-group-status" label="Prüfstand">
+              <option value="open">Offen</option>
+              <option value="reviewed">Geprüft</option>
+            </optgroup>
+            <optgroup id="lf-group-kind" label="Art">
+              <option value="modified">Geändert</option>
+              <option value="inserted">Hinzugefügt</option>
+              <option value="deleted">Entfernt</option>
+            </optgroup>
+          </select>
         </div>
-        <p class="first-hint" id="first-hint">
-          <span class="first-hint-text" data-i18n="hintGlyphs">✓ accept · ✗ reject · J/K next change</span>
-          <button type="button" class="hint-close" id="btn-legend-close" aria-label="Dismiss hint" data-i18n-label="legendClose">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
-        </p>
-        <div class="status-filters" id="status-filter-bar" role="group" aria-label="Filter by review status" data-i18n-label="statusGroupLabel">
-          <button type="button" class="status-filter" id="status-open" data-status-filter="open" aria-pressed="false"><span data-i18n="filterOpen">Open</span> <span class="lf-count" id="filter-count-open">0</span></button>
-          <button type="button" class="status-filter" id="status-reviewed" data-status-filter="reviewed" aria-pressed="false"><span data-i18n="filterReviewed">Reviewed</span> <span class="lf-count" id="filter-count-reviewed">0</span></button>
-        </div>
-        <div class="list-filters" id="sidebar-filter-bar" role="tablist" aria-label="Filter by kind" data-i18n-label="filterGroupLabel">
-          <button type="button" class="list-filter" role="tab" id="tab-all" data-sidebar-filter="all" aria-selected="true" aria-controls="sidebar-list"><span data-i18n="filterAll">All</span></button>
-          <button type="button" class="list-filter" role="tab" id="tab-modified" data-sidebar-filter="modified" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterMod">Changed</span> <span class="lf-count" id="filter-count-mod">0</span></button>
-          <button type="button" class="list-filter" role="tab" id="tab-inserted" data-sidebar-filter="inserted" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterIns">Added</span> <span class="lf-count" id="filter-count-ins">0</span></button>
-          <button type="button" class="list-filter" role="tab" id="tab-deleted" data-sidebar-filter="deleted" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterDel">Removed</span> <span class="lf-count" id="filter-count-del">0</span></button>
-        </div>
+        <span class="progress-track" aria-hidden="true"><span class="progress-fill" id="progress-fill"></span></span>
       </div>
-      <div class="sidebar-list" id="sidebar-list" role="tabpanel" aria-labelledby="tab-all"></div>
+      <div class="sidebar-list" id="sidebar-list"></div>
     </div>
   </main>
 
@@ -4086,8 +3973,6 @@ const I18N = {
     listTitle: '{n} Änderungen',
     listTitleOne: '1 Änderung',
     listProgress: '{k} von {n} geprüft',
-    filterGroupLabel: 'Nach Art filtern',
-    statusGroupLabel: 'Nach Prüfstand filtern',
     filterAll: 'Alle',
     filterOpen: 'Offen',
     filterReviewed: 'Geprüft',
@@ -4101,7 +3986,9 @@ const I18N = {
     stepLabel_inserted: 'hinzugefügten',
     stepLabel_deleted: 'entfernten',
     listTitleFiltered: '{k} von {n} Änderungen',
-    legendClose: 'Hinweis ausblenden',
+    listFilterLabel: 'Änderungen filtern',
+    filterGroupStatus: 'Prüfstand',
+    filterGroupKind: 'Art der Änderung',
     mobDone: 'Fertig',
     noMatchesTitle: 'Nichts in diesem Filter',
     noMatchesDesc: 'Wählen Sie „Alle“ und heben Sie „Offen“ / „Geprüft“ auf, um alle Änderungen zu sehen.',
@@ -4140,7 +4027,6 @@ const I18N = {
     cardAdded: 'hinzugefügt:',
     paragraphShort: 'Absatz',
     hfMergedRef: 'Kopf-/Fußzeile – auf {n} Seiten gleich geändert',
-    hintGlyphs: '✓ annehmen · ✗ ablehnen · J/K nächste Änderung',
     reviewBarLabel: 'Änderung {i} von {n}',
     paraActionsLabel: 'Absatz',
     acceptedNote: 'Angenommen',
@@ -4458,8 +4344,6 @@ const I18N = {
     listTitle: '{n} changes',
     listTitleOne: '1 change',
     listProgress: '{k} of {n} reviewed',
-    filterGroupLabel: 'Filter by kind',
-    statusGroupLabel: 'Filter by review status',
     filterAll: 'All',
     filterOpen: 'Open',
     filterReviewed: 'Reviewed',
@@ -4473,7 +4357,9 @@ const I18N = {
     stepLabel_inserted: 'added',
     stepLabel_deleted: 'removed',
     listTitleFiltered: '{k} of {n} changes',
-    legendClose: 'Dismiss hint',
+    listFilterLabel: 'Filter changes',
+    filterGroupStatus: 'Review status',
+    filterGroupKind: 'Kind of change',
     mobDone: 'Done',
     noMatchesTitle: 'Nothing in this filter',
     noMatchesDesc: 'Choose “All” and clear “Open” / “Reviewed” to see every change.',
@@ -4512,7 +4398,6 @@ const I18N = {
     cardAdded: 'added:',
     paragraphShort: 'Paragraph',
     hfMergedRef: 'Header/footer – same change on {n} pages',
-    hintGlyphs: '✓ accept · ✗ reject · J/K next change',
     reviewBarLabel: 'Change {i} of {n}',
     paraActionsLabel: 'Paragraph',
     acceptedNote: 'Accepted',
@@ -5084,7 +4969,6 @@ const state = {
   reviews: {},
   undoStack: [],
   redoStack: [],
-  legendDismissed: false,
   singleKeyShortcuts: true,
 };
 
@@ -5217,6 +5101,26 @@ function truncateFileName(name, other, max, second = false) {
   return chars.slice(0, keepStart).join('') + '…' + chars.slice(chars.length - keepEnd).join('');
 }
 
+// Narrow screens: only the parts that tell the two files apart, without the shared start (cut at
+// a separator) and the shared extension: "Vertrag_v1_Vorher.docx" / "Vertrag_v2_Nachher.docx"
+// become "v1_Vorher" / "v2_Nachher". Null when that does not give two short, different names.
+function compactFilePair(left, right, max) {
+  const a = Array.from(String(left || ''));
+  const b = Array.from(String(right || ''));
+  const extA = (/\.[A-Za-z0-9]{1,5}$/.exec(left) || [''])[0];
+  const extB = (/\.[A-Za-z0-9]{1,5}$/.exec(right) || [''])[0];
+  const stemA = a.slice(0, a.length - (extA === extB ? extA.length : 0));
+  const stemB = b.slice(0, b.length - (extA === extB ? extB.length : 0));
+  let d = 0;
+  while (d < stemA.length && d < stemB.length && stemA[d] === stemB[d]) d++;
+  while (d > 0 && !/[\s_\-.]/.test(stemA[d - 1])) d--;
+  const outA = stemA.slice(d).join('').trim();
+  const outB = stemB.slice(d).join('').trim();
+  if (!outA || !outB || outA === outB) return null;
+  if (Array.from(outA).length > max || Array.from(outB).length > max) return null;
+  return [outA, outB];
+}
+
 // File names in the top bar button, its popover and the pane captions.
 function updateFileLabels() {
   const left = state.leftName || t('noFileLeft');
@@ -5224,8 +5128,9 @@ function updateFileLabels() {
   const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 12;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
-  filesLeft.textContent = truncateFileName(left, right, max);
-  filesRight.textContent = truncateFileName(right, left, max, true);
+  const compact = max <= 12 && state.leftName && state.rightName ? compactFilePair(left, right, 16) : null;
+  filesLeft.textContent = compact ? compact[0] : truncateFileName(left, right, max);
+  filesRight.textContent = compact ? compact[1] : truncateFileName(right, left, max, true);
   // Pane names for screen readers: "Alte Fassung: Vertrag_v1.docx".
   document.getElementById('pane-left').setAttribute('aria-label', `${t('colLeft')}: ${left}`);
   document.getElementById('pane-right').setAttribute('aria-label', `${t('colRight')}: ${right}`);
@@ -7242,7 +7147,6 @@ function applyComparisonResult(request, result, opts = {}) {
 
   document.body.classList.toggle('has-docs', leftBlocks.length > 0 || rightBlocks.length > 0);
   document.body.classList.toggle('is-comparing', bothLoaded);
-  document.body.classList.toggle('legend-dismissed', state.legendDismissed);
 
   if (!bothLoaded) {
     pendingRowFocus = null;
@@ -7796,29 +7700,23 @@ function getItemTexts(item) {
   return { left: item.row.leftBlock ? item.row.leftBlock.text : '', right: item.row.rightBlock ? item.row.rightBlock.text : '' };
 }
 
-// A card shows each change in its sentence: up to four grey words before and after, the removed
-// words struck through and the added ones underlined (no arrows). A paragraph that is removed
-// or added as a whole reads "entfernt: …" / "hinzugefügt: …".
+// A card scans like an inbox line: the first change in its sentence (up to four grey words before
+// and after, removed words struck through, added ones underlined), at most two lines. Further
+// changes in the same paragraph are counted in the card head. A paragraph that is removed or
+// added as a whole reads "entfernt: …" / "hinzugefügt: …".
 function renderSidebarDeltaHtml(item) {
   const { left, right } = getItemTexts(item);
   if (item.type === 'deleted') {
-    return `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardRemoved'))}</span> <del class="tok-del">${escapeHtml(truncateClean(left, 92))}</del></span>`;
+    return { html: `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardRemoved'))}</span> <del class="tok-del">${escapeHtml(truncateClean(left, 140))}</del></span>`, more: 0 };
   }
   if (item.type === 'inserted') {
-    return `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardAdded'))}</span> <ins class="tok-ins">${escapeHtml(truncateClean(right, 92))}</ins></span>`;
+    return { html: `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardAdded'))}</span> <ins class="tok-ins">${escapeHtml(truncateClean(right, 140))}</ins></span>`, more: 0 };
   }
   const snippets = buildContextSnippets(getItemWordDiffs(item));
   if (snippets.length === 0) {
-    return `<span class="nav-item-snippet">${item.ghost ? escapeHtml(truncateClean(right, 92)) : renderUnifiedBlockHtml(item.row, '')}</span>`;
+    return { html: `<span class="nav-item-snippet">${item.ghost ? escapeHtml(truncateClean(right, 140)) : renderUnifiedBlockHtml(item.row, '')}</span>`, more: 0 };
   }
-  const max = 2;
-  const html = snippets
-    .slice(0, max)
-    .map(sn => `<span class="nav-delta-row">${sn}</span>`)
-    .join('');
-  const moreHtml =
-    snippets.length > max ? `<span class="nav-delta-more">+${snippets.length - max} ${escapeHtml(t('moreDeltas'))}</span>` : '';
-  return `<span class="nav-item-deltas">${html}${moreHtml}</span>`;
+  return { html: `<span class="nav-item-snippet">${snippets[0]}</span>`, more: snippets.length - 1 };
 }
 
 // The changed runs of a word diff (as in extractDeltaPairs; runs separated by at most two
@@ -7931,33 +7829,31 @@ function updateSidebarHeaderState() {
     : changesTitle(total);
   document.getElementById('list-progress').textContent = total ? formatMsg('listProgress', { k: review.reviewed, n: total }) : '';
   document.getElementById('progress-fill').style.width = total ? `${(review.reviewed / total) * 100}%` : '0';
-  document.querySelector('.list-progress').hidden = total === 0;
-  const set = (id, n) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = String(n);
-  };
-  set('filter-count-open', review.open);
-  set('filter-count-reviewed', review.reviewed);
-  document.querySelectorAll('[data-status-filter]').forEach(btn => {
-    btn.setAttribute('aria-pressed', String(btn.getAttribute('data-status-filter') === state.statusFilter));
-  });
-  set('filter-count-mod', counts.mod);
-  set('filter-count-ins', counts.ins);
-  set('filter-count-del', counts.del);
   const btnListCount = document.getElementById('btn-list-count');
   if (btnListCount) btnListCount.textContent = String(total);
   const btnList = document.getElementById('btn-list');
   if (btnList) btnList.setAttribute('aria-label', formatMsg('listBtnLabel', { n: total }));
 
-  const countFor = f => (f === 'all' ? total : f === 'modified' ? counts.mod : f === 'inserted' ? counts.ins : counts.del);
-  document.querySelectorAll('[data-sidebar-filter]').forEach(btn => {
-    const f = btn.getAttribute('data-sidebar-filter');
-    const isActive = f === state.sidebarFilter;
-    btn.setAttribute('aria-selected', String(isActive));
-    btn.tabIndex = isActive ? 0 : -1;
-    btn.classList.toggle('is-zero', countFor(f) === 0);
-    if (isActive) sidebarList.setAttribute('aria-labelledby', btn.id);
-  });
+  // One filter: "Alle", a review status or a kind of change, each with its count.
+  const select = document.getElementById('list-filter');
+  const value = state.statusFilter !== 'all' ? state.statusFilter : state.sidebarFilter;
+  const options = [
+    ['all', 'filterAll', total],
+    ['open', 'filterOpen', review.open],
+    ['reviewed', 'filterReviewed', review.reviewed],
+    ['modified', 'filterMod', counts.mod],
+    ['inserted', 'filterIns', counts.ins],
+    ['deleted', 'filterDel', counts.del],
+  ];
+  for (const [v, key, n] of options) {
+    const opt = select.querySelector(`option[value="${v}"]`);
+    opt.textContent = `${t(key)} (${n})`;
+    opt.disabled = n === 0 && v !== value;
+  }
+  document.getElementById('lf-group-status').label = t('filterGroupStatus');
+  document.getElementById('lf-group-kind').label = t('filterGroupKind');
+  if (select.value !== value) select.value = value;
+  select.classList.toggle('is-filtered', value !== 'all');
 }
 
 function renderSidebarList(bothLoaded) {
@@ -7999,7 +7895,9 @@ function renderSidebarList(bothLoaded) {
         const pages = item.members ? itemMembers(item).map(m => getItemPage(m)) : [page];
         const pageLabel = pages.length > 1 ? `${t('pageShort')} ${Math.min(...pages)}–${Math.max(...pages)}` : `${t('pageShort')} ${page}`;
         const head = item.members ? `${ref} · ${pageLabel}` : [ref, pageLabel].filter(Boolean).join(' · ');
-        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}. </span></span>${renderSidebarDeltaHtml(item)}</button></div>`;
+        const delta = renderSidebarDeltaHtml(item);
+        const moreHtml = delta.more > 0 ? `<span class="nav-more"><span aria-hidden="true">+${delta.more}</span><span class="sr-only">, ${delta.more} ${escapeHtml(t('moreDeltas'))}</span></span>` : '';
+        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${moreHtml}${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}. </span></span>${delta.html}</button></div>`;
       })
       .join('')
   );
@@ -9153,22 +9051,25 @@ function refreshReviewState() {
   scheduleRulerDraw();
 }
 
-/* ── Status line of a reviewed change ───────────────────────────────────────
+/* ── Status mark of a reviewed change ───────────────────────────────────────
  *
- * Every reviewed paragraph of the new version carries a short line on top: "✓ Angenommen ·
- * Rückgängig" or "✗ Abgelehnt – alte Fassung wiederhergestellt · Rückgängig". It is part of
- * the paragraph (so selecting a paragraph never changes any height).
+ * Every reviewed paragraph of the new version carries a quiet mark in its right margin, where
+ * the review actions sit: ✓ (accepted) or ✗ (rejected), with an undo button below it that
+ * shows on the current paragraph and on hover. It is absolutely positioned in the margin every
+ * paragraph keeps free, so reviewing never moves text or changes a height.
  */
+
+const ICON_UNDO = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 
 function reviewStatusHtml(row) {
   const accepted = row.reviewStatus === 'accepted';
   if (!accepted && !row.ghostNote) return '';
   const active = row.id === state.activeRowId;
+  const note = t(accepted ? 'acceptedNote' : row.ghostNote === 'rejected' ? 'rejectedNote' : 'rejectedInsNote');
   return (
     `<span class="review-status ${accepted ? 'is-accepted' : 'is-rejected'}" data-status-row="${row.id}">` +
-    `${accepted ? ICON_CHECK : ICON_X}<span class="review-status-text">${escapeHtml(t(accepted ? 'acceptedNote' : row.ghostNote === 'rejected' ? 'rejectedNote' : 'rejectedInsNote'))}</span>` +
-    `<span class="review-status-sep" aria-hidden="true">·</span>` +
-    `<button type="button" class="ra-undo" data-review-action="reopen" data-tooltip="${escapeHtml(t('reopenTitle'))}" tabindex="${active ? 0 : -1}">${escapeHtml(t('reopenBtn'))}</button>` +
+    `<span class="rs-mark" data-tooltip="${escapeHtml(note)}">${accepted ? ICON_CHECK : ICON_X}<span class="sr-only">${escapeHtml(note)}</span></span>` +
+    `<button type="button" class="ra-undo" data-review-action="reopen" aria-label="${escapeHtml(t('reopenBtn'))}" data-tooltip="${escapeHtml(t('reopenTitle'))}" tabindex="${active ? 0 : -1}">${ICON_UNDO}</button>` +
     `</span>`
   );
 }
@@ -10064,24 +9965,13 @@ sidebarList.addEventListener('focusin', e => {
   for (const b of sidebarList.querySelectorAll('.nav-item-main')) b.tabIndex = b === e.target ? 0 : -1;
 });
 
-const sidebarFilterBar = document.getElementById('sidebar-filter-bar');
-function setListFilter(f, focus) {
-  state.sidebarFilter = f;
-  applyListFilters();
-  if (focus) {
-    const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);
-    if (tab) tab.focus();
-  }
-}
-// Status ("Offen" / "Geprüft") is a separate toggle on top of the kind of change.
-function setStatusFilter(s) {
-  state.statusFilter = state.statusFilter === s ? 'all' : s;
+// The list filter: a review status ("Offen", "Geprüft") or a kind of change, never both.
+function setListFilter(value) {
+  const isStatus = value === 'open' || value === 'reviewed';
+  state.statusFilter = isStatus ? value : 'all';
+  state.sidebarFilter = isStatus ? 'all' : value;
   applyListFilters();
 }
-document.getElementById('status-filter-bar').addEventListener('click', e => {
-  const btn = e.target.closest('[data-status-filter]');
-  if (btn) setStatusFilter(btn.getAttribute('data-status-filter'));
-});
 function applyListFilters() {
   renderSidebarList(state.alignedRows.length > 0);
   // The stepper follows the filter: a current change outside it gives way to the first one in it.
@@ -10092,24 +9982,7 @@ function applyListFilters() {
   }
   updateStepper();
 }
-sidebarFilterBar.addEventListener('click', e => {
-  const btn = e.target.closest('[data-sidebar-filter]');
-  if (btn) setListFilter(btn.getAttribute('data-sidebar-filter'), false);
-});
-// Tabs: arrow keys move between the filters.
-sidebarFilterBar.addEventListener('keydown', e => {
-  const tabs = Array.from(sidebarFilterBar.querySelectorAll('[data-sidebar-filter]'));
-  const i = tabs.indexOf(document.activeElement);
-  if (i < 0) return;
-  let n = -1;
-  if (e.key === 'ArrowRight') n = (i + 1) % tabs.length;
-  else if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
-  else if (e.key === 'Home') n = 0;
-  else if (e.key === 'End') n = tabs.length - 1;
-  if (n < 0) return;
-  e.preventDefault();
-  setListFilter(tabs[n].getAttribute('data-sidebar-filter'), true);
-});
+document.getElementById('list-filter').addEventListener('change', e => setListFilter(e.target.value));
 
 // Editing the new version: double-click a paragraph.
 [sheetRight, sheetUnified].forEach(editableSheet => {
@@ -12927,14 +12800,6 @@ document.getElementById('btn-ok-help').addEventListener('click', () => helpModal
 document.getElementById('btn-help-sample').addEventListener('click', () => {
   helpModal.close();
   loadSampleComparison();
-});
-
-// First-visit hint in the list header: dismissible for this session only (nothing is stored).
-document.getElementById('btn-legend-close').addEventListener('click', () => {
-  state.legendDismissed = true;
-  document.body.classList.add('legend-dismissed');
-  const tab = document.querySelector('#sidebar-filter-bar [aria-selected="true"]');
-  if (tab) tab.focus();
 });
 
 const privacyModal = document.getElementById('privacy-modal');
