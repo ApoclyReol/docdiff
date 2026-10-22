@@ -494,6 +494,10 @@ test('pasted/DOCX text: a bare "2/3" or "- 4 -" line is content, not a page numb
     'Titel\n\nErster Absatz.\n\n1/2\n\nZweiter Absatz.\n\nDritter Absatz.\n\n2/2'
   );
   assert.equal(pasted.changes.length, 0);
+  // Same in a PDF body (single page: no geometric footer detection).
+  const pdfDoc = v => [P + '1', 'Titel', 'Anteil', v, 'Ende des Vertrags.'].join('\n\n');
+  const pr = compare(pdfDoc('2/3'), pdfDoc('1/3'));
+  assert.ok(pr.changes.some(c => c.leftBlock && c.leftBlock.text === '2/3'), 'PDF: old value shown');
   // Explicit labels ("Seite 2 von 9") keep their behaviour.
   assert.ok(core.parseIntoBlocks('Titel\n\nSeite 2 von 9\n\nText.')[1].isHeaderFooter);
 });
@@ -543,6 +547,31 @@ test('PDF: a wrapped line starting with an amount or a date continues the paragr
     const text = core.assemblePdfText(page([['Vorheriger Absatz endet hier', 500], [start, 486]])).text;
     assert.equal(core.parseIntoBlocks(text).length, 2, start);
   }
+});
+
+test('PDF: a sentence broken at a page end continues even when the next word is a capitalised noun', () => {
+  const pages = [
+    pdfPage([['Kopf', 0.97], ['Die Schlussrechnung ist innerhalb von 30 Tagen nach Zugang zu prüfen; danach', 0.5], ['Seite 1', 0.03]]),
+    pdfPage([['Kopf', 0.97], ['Verzugszinsen in gesetzlicher Höhe.', 0.85], ['Seite 2', 0.03]]),
+  ];
+  const blocks = core.parseIntoBlocks(core.assemblePdfText(pages).text).filter(b => !b.isHeaderFooter);
+  assert.equal(blocks.length, 1, JSON.stringify(blocks.map(b => b.text)));
+  // A short line without punctuation (a heading) at the end of a page is not joined.
+  const heading = [
+    pdfPage([['Kopf', 0.97], ['Vergütung und Zahlung', 0.5], ['Seite 1', 0.03]]),
+    pdfPage([['Kopf', 0.97], ['Der Auftraggeber zahlt monatlich.', 0.85], ['Seite 2', 0.03]]),
+  ];
+  const hb = core.parseIntoBlocks(core.assemblePdfText(heading).text).filter(b => !b.isHeaderFooter);
+  assert.equal(hb.length, 2, JSON.stringify(hb.map(b => b.text)));
+});
+
+test('DOCX table row vs the same row from a PDF (cell separator) is not a change', () => {
+  const docx = 'Titel\n\nPos · Leistung · Preis\n\n1 · Erdarbeiten · 12.500,00 EUR';
+  const pdf = 'Titel\n\nPos Leistung Preis\n\n1 Erdarbeiten 12.500,00 EUR';
+  assert.equal(compare(docx, pdf).changes.length, 0);
+  const changed = compare(docx, pdf.replace('12.500', '13.500'));
+  assert.equal(changed.changes.length, 1);
+  assertInvariant(changed.changes[0].leftBlock.text, changed.changes[0].rightBlock.text, changed.changes[0].wordDiffs);
 });
 
 test('PDF: private-use bullet glyphs (Symbol/Wingdings/OpenSymbol) become "•"', () => {

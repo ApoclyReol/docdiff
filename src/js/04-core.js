@@ -418,9 +418,19 @@ const PDF_STRUCTURAL_START =
   /^(§\s*\d+|\(\d+\)|(?!\d{1,3}(?:\.\d{3})+(?:,\d+)?\s|\d{1,2}\.\d{1,2}\.\d{2,4}\b)\d+\.(?:\d+\.)*\d*\s|[•‣▪◦–*-]\s|\([a-z]\)|[a-z]\)|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i;
 
 // Does `next` (first body line of a page) continue the paragraph `prev` from the previous page?
-function continuesAcrossPage(prev, next) {
+// A capitalised first word (German nouns) also continues when the previous page ended in the
+// middle of a long paragraph of the same font size; a short unpunctuated line (heading) does not.
+function continuesAcrossPage(prev, next, prevSize, nextSize) {
   if (/[A-Za-zÄÖÜäöüß][-­]$/.test(prev)) return true;
-  return !/[.:;!?)"“”]$/.test(prev) && /^[a-zäöüß]/.test(next);
+  if (/[.:;!?)"“”]$/.test(prev)) return false;
+  if (/^[a-zäöüß]/.test(next)) return true;
+  return (
+    /^[A-ZÄÖÜ]/.test(next) &&
+    prev.length >= 60 &&
+    typeof prevSize === 'number' &&
+    typeof nextSize === 'number' &&
+    Math.abs(prevSize - nextSize) < 0.5
+  );
 }
 
 /**
@@ -454,14 +464,16 @@ function assemblePdfText(pages) {
       const structural = PDF_STRUCTURAL_START.test(line.text);
       let newPara;
       if (!para) newPara = true;
-      else if (para.page !== p && firstBodyLine) newPara = structural || !continuesAcrossPage(para.text, line.text);
-      else newPara = line.gapBefore || structural;
+      else if (para.page !== p && firstBodyLine) {
+        newPara = structural || !continuesAcrossPage(para.text, line.text, para.fontSize, line.fontSize);
+      } else newPara = line.gapBefore || structural;
       firstBodyLine = false;
       if (newPara) {
         flush();
-        para = { page: p, text: line.text };
+        para = { page: p, text: line.text, fontSize: line.fontSize };
       } else {
         para.text = joinWrappedLine(para.text, line.text);
+        para.fontSize = line.fontSize;
       }
     });
   });
@@ -544,26 +556,23 @@ function parseIntoBlocks(rawText) {
     }
   }
 
-  // Bare number labels ("2/3", "3 von 9", "- 4 -") are page numbers in a paginated document
-  // (PDF). In pasted text or DOCX they are only page numbers when they form a running
-  // sequence (2+ labels of the same shape with increasing numbers); otherwise they are
-  // content, e.g. a table cell "2/3", and must be compared like any other line.
+  // Bare number labels ("2/3", "3 von 9", "- 4 -") also occur as content (a table cell "2/3",
+  // a share). Unless the PDF reader already marked them as running footer lines (by position
+  // and repetition), they are only page numbers when they form a running sequence: 2+ labels
+  // of the same shape with increasing numbers. Otherwise they are compared like any other line.
   const barePageLabelKeys = new Set();
-  if (!hasExplicitPageMarkers) {
-    const firstNums = new Map();
-    for (const e of entries) {
-      if (e.hfMarked || !isBarePageNumberLabel(e.line)) continue;
-      const key = normalizeHfRepeatKey(e.line);
-      if (!firstNums.has(key)) firstNums.set(key, []);
-      firstNums.get(key).push(parseInt(e.line.match(/\d+/)[0], 10));
-    }
-    for (const [key, nums] of firstNums) {
-      if (nums.length >= 2 && nums.every((n, i) => i === 0 || n > nums[i - 1])) barePageLabelKeys.add(key);
-    }
+  const firstNums = new Map();
+  for (const e of entries) {
+    if (e.hfMarked || !isBarePageNumberLabel(e.line)) continue;
+    const key = normalizeHfRepeatKey(e.line);
+    if (!firstNums.has(key)) firstNums.set(key, []);
+    firstNums.get(key).push(parseInt(e.line.match(/\d+/)[0], 10));
+  }
+  for (const [key, nums] of firstNums) {
+    if (nums.length >= 2 && nums.every((n, i) => i === 0 || n > nums[i - 1])) barePageLabelKeys.add(key);
   }
   const isPageLabel = line =>
-    isPageNumberLabel(line) &&
-    (hasExplicitPageMarkers || !isBarePageNumberLabel(line) || barePageLabelKeys.has(normalizeHfRepeatKey(line)));
+    isPageNumberLabel(line) && (!isBarePageNumberLabel(line) || barePageLabelKeys.has(normalizeHfRepeatKey(line)));
 
   const blocks = [];
   let currentSectionRef = '';
@@ -613,7 +622,9 @@ function parseIntoBlocks(rawText) {
       isHeading,
       isHeaderFooter,
       numberingMarker: numbering ? numbering.marker : '',
-      alignKey: alignText.replace(/\s+/g, ' '),
+      // Whitespace and the table-cell separator " · " (DOCX/HTML intake; a PDF has spaces there) do not
+      // make two paragraphs different: such rows are shown as unchanged, like renumbering.
+      alignKey: alignText.replace(/\s+/g, ' ').replace(/ \u00B7 /g, ' '),
       words,
       wordSet: set,
       wordCounts: counts,
