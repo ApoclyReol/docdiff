@@ -174,6 +174,47 @@ function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true) {
   }
 }
 
+// Edits, reverts and undo re-render the row (or the whole pane) and remove the control that
+// had keyboard focus. A request made right before such an action puts focus back on the
+// same row once it is rendered, instead of leaving it on <body>.
+let pendingRowFocus = null;
+
+function requestRowFocus(rowId, fromSidebar) {
+  const items = Array.from(sidebarList.querySelectorAll('.nav-item[data-row-id]'));
+  const sidebarIndex = items.findIndex(el => el.getAttribute('data-row-id') === rowId);
+  pendingRowFocus = { rowId, fromSidebar: Boolean(fromSidebar), sidebarIndex };
+}
+
+// A request that was not consumed by a re-render (no-op revert, comparison still running in
+// the worker) must not move focus later; the worker path consumes it when its result lands.
+function applyPendingRowFocusIfIdle() {
+  if (isShownComparisonCurrent()) applyPendingRowFocus();
+}
+
+function applyPendingRowFocus() {
+  const req = pendingRowFocus;
+  pendingRowFocus = null;
+  if (!req || !document.body.classList.contains('is-comparing')) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && active.isConnected) return;
+  let target = null;
+  if (req.fromSidebar) {
+    target = sidebarList.querySelector(`.nav-item[data-row-id="${req.rowId}"] .nav-item-main`);
+    if (!target && req.sidebarIndex >= 0) {
+      const items = sidebarList.querySelectorAll('.nav-item[data-row-id] .nav-item-main');
+      target = items[Math.min(req.sidebarIndex, items.length - 1)] || null;
+    }
+  }
+  const pane = state.viewMode === 'inline' ? paneUnified : paneRight;
+  if (!target) {
+    const sheet = state.viewMode === 'inline' ? sheetUnified : sheetRight;
+    target = sheet.querySelector(`.clause[data-row-id="${req.rowId}"] [data-edit-row]`);
+  }
+  if (target) target.focus({ preventScroll: true });
+  // Hidden controls (e.g. row actions on narrow screens) cannot take focus: use the pane.
+  if (document.activeElement !== target) pane.focus({ preventScroll: true });
+}
+
 function updateUndoRedoButtons() {
   const btnUndo = document.getElementById('btn-undo');
   const btnRedo = document.getElementById('btn-redo');
@@ -201,6 +242,7 @@ function performUndo() {
   if (!state.undoStack.length) return;
   state.redoStack.push(state.rightText);
   state.rightText = state.undoStack.pop();
+  updateUndoRedoButtons();
   runComparison();
 }
 
@@ -208,6 +250,7 @@ function performRedo() {
   if (!state.redoStack.length) return;
   state.undoStack.push(state.rightText);
   state.rightText = state.redoStack.pop();
+  updateUndoRedoButtons();
   runComparison();
 }
 
@@ -299,6 +342,9 @@ function startInlineClauseEdit(clauseEl, rowId) {
   const rightTextAtOpen = state.rightText;
 
   hideTooltip();
+  // Where keyboard focus returns once the edit is saved or cancelled with the keyboard.
+  const opener = document.activeElement;
+  const openerInSidebar = Boolean(opener && opener.closest && opener.closest('#sidebar-list'));
 
   const initialText = row.rightBlock
     ? row.rightBlock.text
@@ -338,7 +384,24 @@ function startInlineClauseEdit(clauseEl, rowId) {
   editor.setSelectionRange(editor.value.length, editor.value.length);
 
   let finished = false;
-  const commit = () => {
+  // Saving or cancelling from the keyboard (Enter, Esc, the editor buttons) keeps focus on
+  // this row; a commit by blur leaves focus wherever the user moved it.
+  const restoreFocus = () => {
+    if (opener && opener !== document.body && opener.isConnected && opener !== editor) {
+      opener.focus({ preventScroll: true });
+    } else {
+      requestRowFocus(rowId, openerInSidebar);
+      applyPendingRowFocus();
+    }
+  };
+  const closeUnchanged = keepFocus => {
+    clauseEl.classList.remove('is-editing');
+    clauseEl.innerHTML = originalHtml;
+    resetEqualizedRowHeights(rowId);
+    scheduleGutterDraw();
+    if (keepFocus) restoreFocus();
+  };
+  const commit = keepFocus => {
     if (finished) return;
     finished = true;
     const newText = editor.value.replace(/\r\n/g, '\n').trim();
@@ -347,24 +410,19 @@ function startInlineClauseEdit(clauseEl, rowId) {
     // dropped meanwhile): this row may no longer exist, so the edit cannot be applied.
     const stale = state.rightText !== rightTextAtOpen || !isShownComparisonCurrent();
     if (newText === oldText || stale) {
-      clauseEl.classList.remove('is-editing');
-      clauseEl.innerHTML = originalHtml;
-      resetEqualizedRowHeights(rowId);
-      scheduleGutterDraw();
+      closeUnchanged(keepFocus && !stale);
       return;
     }
     pushUndoSnapshot();
     state.rightText = rebuildRightTextFromRows(rowId, newText);
+    if (keepFocus) requestRowFocus(rowId, openerInSidebar);
     runComparison();
   };
 
   const cancel = () => {
     if (finished) return;
     finished = true;
-    clauseEl.classList.remove('is-editing');
-    clauseEl.innerHTML = originalHtml;
-    resetEqualizedRowHeights(rowId);
-    scheduleGutterDraw();
+    closeUnchanged(true);
   };
 
   helperBar.querySelector('[data-editor-cancel]').addEventListener('mousedown', ev => {
@@ -375,7 +433,7 @@ function startInlineClauseEdit(clauseEl, rowId) {
   helperBar.querySelector('[data-editor-save]').addEventListener('mousedown', ev => {
     ev.preventDefault();
     ev.stopPropagation();
-    commit();
+    commit(true);
   });
 
   editor.addEventListener('keydown', ev => {
@@ -386,11 +444,11 @@ function startInlineClauseEdit(clauseEl, rowId) {
     } else if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey || !ev.shiftKey)) {
       ev.preventDefault();
       ev.stopPropagation();
-      commit();
+      commit(true);
     }
   });
   editor.addEventListener('blur', () => {
-    commit();
+    commit(false);
   });
 }
 
@@ -434,7 +492,10 @@ function closeMobileSheets() {
     if (revertBtn) {
       e.stopPropagation();
       hideTooltip();
-      revertRowToOriginal(revertBtn.getAttribute('data-revert-row'));
+      const revertId = revertBtn.getAttribute('data-revert-row');
+      requestRowFocus(revertId, container === sidebarList);
+      revertRowToOriginal(revertId);
+      applyPendingRowFocusIfIdle();
       return;
     }
     if (e.target.closest('.clause-inline-editor') || e.target.closest('.clause-editor-bar')) return;
@@ -472,8 +533,25 @@ if (sidebarFilterBar) {
   });
 }
 
-document.getElementById('btn-undo').addEventListener('click', () => performUndo());
-document.getElementById('btn-redo').addEventListener('click', () => performRedo());
+// When Undo (Redo) empties its stack the button gets disabled and would drop keyboard focus:
+// hand it to the other history button.
+function keepFocusOnHistoryButtons(selfId, otherId) {
+  updateUndoRedoButtons();
+  const self = document.getElementById(selfId);
+  const other = document.getElementById(otherId);
+  const active = document.activeElement;
+  if (self.disabled && (active === self || active === document.body) && !other.disabled) {
+    other.focus();
+  }
+}
+document.getElementById('btn-undo').addEventListener('click', () => {
+  performUndo();
+  keepFocusOnHistoryButtons('btn-undo', 'btn-redo');
+});
+document.getElementById('btn-redo').addEventListener('click', () => {
+  performRedo();
+  keepFocusOnHistoryButtons('btn-redo', 'btn-undo');
+});
 
 // Editing in the Right ("Nachher / Neuer Stand") pane and Unified ("Kompakt") pane
 [sheetRight, sheetUnified].forEach(editableSheet => {

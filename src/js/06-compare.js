@@ -22,6 +22,10 @@ function applyComparisonResult(request, result, opts = {}) {
   const focusWasLost = !active || active === document.body;
   const focusInLanding = Boolean(emptyLaunchpad && active && emptyLaunchpad.contains(active));
   const focusInCompareChrome = Boolean(active && active.closest && active.closest('.compare-only'));
+  // Focus inside a document pane or the change list is lost when they are re-rendered.
+  const focusInDocument = Boolean(
+    active && active.closest && active.closest('#sheet-left, #sheet-right, #sheet-unified, #sidebar-list')
+  );
 
   document.body.classList.toggle('has-docs', leftBlocks.length > 0 || rightBlocks.length > 0);
   document.body.classList.toggle('is-comparing', bothLoaded);
@@ -32,6 +36,7 @@ function applyComparisonResult(request, result, opts = {}) {
   }
 
   if (!bothLoaded) {
+    pendingRowFocus = null;
     cancelPaneRender();
     resetRowLayoutRegistry();
     state.alignedRows = [];
@@ -92,6 +97,11 @@ function applyComparisonResult(request, result, opts = {}) {
   }
 
   scheduleGutterDraw();
+  applyPendingRowFocus();
+  const focusNow = document.activeElement;
+  if (focusInDocument && wasComparing && (!focusNow || focusNow === document.body || !focusNow.isConnected)) {
+    (state.viewMode === 'inline' ? paneUnified : paneRight).focus({ preventScroll: true });
+  }
 
   if (!wasComparing) {
     const total = state.changeRows.length;

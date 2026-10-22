@@ -542,7 +542,9 @@ document.addEventListener('click', e => {
     return;
   }
   if (e.target.closest('[data-session-action="save"]')) {
-    if (typeof closeExportMenu === 'function') closeExportMenu(false);
+    const menu = document.getElementById('export-menu');
+    const returnFocus = Boolean(menu && menu.contains(document.activeElement));
+    if (typeof closeExportMenu === 'function') closeExportMenu(returnFocus);
     if (typeof closeMobileSheets === 'function') closeMobileSheets();
     saveSession();
   }

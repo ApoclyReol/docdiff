@@ -76,6 +76,9 @@ mobBtnExport.addEventListener('click', e => {
 exportMenu.addEventListener('click', e => {
   const item = e.target.closest('[data-export]');
   if (!item) return;
+  // The menu closes: keyboard focus goes back to the button that opened it.
+  const returnFocus = exportMenu.contains(document.activeElement);
+  closeExportMenu(returnFocus);
   closeMobileSheets();
   handleExportAction(item.getAttribute('data-export'));
 });
