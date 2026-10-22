@@ -416,8 +416,20 @@ async function extractDocxText(arrayBuffer) {
     return documentElement;
   };
 
+  // Mammoth shows a document with tracked changes as if every change were accepted (deleted
+  // text is dropped silently). Say so, otherwise the comparison would misrepresent the file.
+  const warnings = [];
+  if (parts && /<w:(?:ins|del|moveFrom|moveTo)\b/.test(parts['word/document.xml'] || '')) {
+    warnings.push(t('warnDocxTrackedChanges'));
+  }
+
   const htmlResult = await window.mammoth.convertToHtml({ arrayBuffer }, { transformDocument });
   const doc = new DOMParser().parseFromString(htmlResult.value || '', 'text/html');
+  // A line break inside a paragraph (Shift+Enter) separates words: "Hauptstraße 1" + break +
+  // "12345 Berlin" must not become "Hauptstraße 112345 Berlin".
+  doc.querySelectorAll('br').forEach(br => br.replaceWith(' '));
+  // Mammoth's footnote/endnote back-links ("↑") are not document text.
+  doc.querySelectorAll('a[href^="#footnote-ref-"], a[href^="#endnote-ref-"]').forEach(a => a.remove());
   const out = [];
   const S = DOCX_MARKER_SENTINEL;
   const L = DOCX_LEVEL_SEP;
@@ -481,12 +493,12 @@ async function extractDocxText(arrayBuffer) {
   };
 
   walkNodes(doc.body);
-  if (out.length > 0) return { text: out.join('\n\n'), warnings: [], markersInjected };
+  if (out.length > 0) return { text: out.join('\n\n'), warnings, markersInjected };
 
   const result = await window.mammoth.extractRawText({ arrayBuffer });
   const raw = sanitizeExternalText(result.value).trim();
   if (!raw) throw new ImportError('errDocxEmpty');
-  return { text: raw, warnings: [], markersInjected: false };
+  return { text: raw, warnings, markersInjected: false };
 }
 
 /* ── HTML & plain text ─────────────────────────────────────────────────── */
@@ -614,15 +626,31 @@ async function readDocumentFile(file) {
   return result;
 }
 
+// Reading a file is asynchronous (a large PDF takes seconds). A read that finishes after the
+// user chose another file for the same side, or replaced that side otherwise (paste, sample,
+// clear), is discarded so the comparison always shows the latest choice.
+const uploadSeq = { left: 0, right: 0 };
+
 // opts.keepNotice: do not clear an earlier notice on success (multi-file drops).
 async function handleFileUpload(file, side, opts = {}) {
   if (!file) return false;
+  const seq = ++uploadSeq[side];
+  const sideDoc = () => (side === 'left' ? [state.leftName, state.leftFormat] : [state.rightName, state.rightFormat]).join('|');
+  const docBefore = sideDoc();
+  const isStale = () => seq !== uploadSeq[side] || sideDoc() !== docBefore;
   const fnLabel = document.getElementById(side === 'left' ? 'filename-left' : 'filename-right');
-  const prevName = fnLabel.textContent;
+  const restoreLabel = () => {
+    fnLabel.textContent =
+      (side === 'left' ? state.leftName : state.rightName) || t(side === 'left' ? 'noFileLeft' : 'noFileRight');
+  };
   fnLabel.textContent = `${t('readingFile')} ${file.name}…`;
 
   try {
     const { text, format, warnings } = await readDocumentFile(file);
+    if (isStale()) {
+      if (seq === uploadSeq[side]) restoreLabel();
+      return false;
+    }
 
     if (side === 'left') {
       state.leftName = file.name;
@@ -642,7 +670,8 @@ async function handleFileUpload(file, side, opts = {}) {
     runComparison();
     return true;
   } catch (err) {
-    fnLabel.textContent = prevName;
+    if (seq !== uploadSeq[side]) return false; // a newer file for this side is being read
+    restoreLabel();
     showImportNotice(`${t('readError')} „${file.name}“: ${describeImportError(err)}`, 'error');
     return false;
   } finally {

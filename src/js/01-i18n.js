@@ -165,6 +165,8 @@ const I18N = {
     errScannedPdf: 'Dieses PDF enthält keinen Text (eingescanntes Dokument oder Bild). Scans werden nicht unterstützt, da keine Texterkennung (OCR) verfügbar ist.',
     warnPdfPagesWithoutText: 'Hinweis: Seiten ohne Textebene (Scan/Bild) können nicht verglichen werden:',
     errDocxEmpty: 'Im Word-Dokument wurde kein Text gefunden.',
+    warnDocxTrackedChanges:
+      'Hinweis: Das Word-Dokument enthält nachverfolgte Änderungen. Verglichen wird die Fassung mit allen Änderungen angenommen; gelöschter Text ist nicht enthalten.',
     errImage: 'Bilddateien werden nicht unterstützt, da keine Texterkennung (OCR) verfügbar ist. Bitte ein PDF mit Textebene, Word (.docx) oder Text verwenden.',
     manualLeft: 'Eingefügter Text (alte Fassung)',
     manualRight: 'Eingefügter Text (neue Fassung)',
@@ -463,6 +465,8 @@ const I18N = {
     errScannedPdf: 'This PDF contains no text (scanned document or image). Scans are not supported because text recognition (OCR) is not available.',
     warnPdfPagesWithoutText: 'Note: pages without a text layer (scan/image) cannot be compared:',
     errDocxEmpty: 'No text was found in the Word document.',
+    warnDocxTrackedChanges:
+      'Note: the Word document contains tracked changes. It is compared as if all changes were accepted; deleted text is not included.',
     errImage: 'Image files are not supported because text recognition (OCR) is not available. Please use a PDF with a text layer, Word (.docx) or text.',
     manualLeft: 'Pasted text (old version)',
     manualRight: 'Pasted text (new version)',
