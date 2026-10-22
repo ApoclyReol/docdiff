@@ -875,7 +875,8 @@ document.addEventListener('pointerover', e => {
 
 document.addEventListener('focusin', e => {
   const target = e.target.closest && e.target.closest('[data-tooltip]');
-  if (target && target.matches(':focus-visible')) showTooltipFor(target);
+  // Keyboard aid only: on touch screens a focus tooltip would cover what was just tapped.
+  if (target && target.matches(':focus-visible') && !matchMedia('(pointer: coarse)').matches) showTooltipFor(target);
 });
 
 document.addEventListener('focusout', () => hideTooltip());

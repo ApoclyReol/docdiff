@@ -125,21 +125,25 @@ __APP_CSS__
             <p class="fp-role" data-i18n="colLeft">Alte Fassung</p>
             <p class="fp-name" id="fp-name-left"></p>
             <p class="fp-meta" id="meta-left"></p>
-            <button type="button" class="btn fp-btn" id="btn-upload-left">
+            <div class="fp-actions">
+            <button type="button" class="btn fp-btn" id="btn-upload-left" aria-label="Alte Fassung ersetzen…" data-i18n-label="replaceLeft">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span data-i18n="replaceLeft">Alte Fassung ersetzen…</span>
+              <span data-i18n="replaceShort">Ersetzen…</span>
             </button>
-            <button type="button" class="btn" id="btn-clear-left" hidden><span data-i18n="slotClearLeft">Alte Fassung entfernen</span></button>
+            <button type="button" class="btn btn-ghost fp-btn" id="btn-clear-left" aria-label="Alte Fassung entfernen" data-i18n-label="slotClearLeft" hidden><span data-i18n="removeShort">Entfernen</span></button>
+            </div>
           </section>
           <section class="fp-doc">
             <p class="fp-role" data-i18n="colRight">Neue Fassung</p>
             <p class="fp-name" id="fp-name-right"></p>
             <p class="fp-meta" id="meta-right"></p>
-            <button type="button" class="btn fp-btn" id="btn-upload-right">
+            <div class="fp-actions">
+            <button type="button" class="btn fp-btn" id="btn-upload-right" aria-label="Neue Fassung ersetzen…" data-i18n-label="replaceRight">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span data-i18n="replaceRight">Neue Fassung ersetzen…</span>
+              <span data-i18n="replaceShort">Ersetzen…</span>
             </button>
-            <button type="button" class="btn" id="btn-clear-right" hidden><span data-i18n="slotClearRight">Neue Fassung entfernen</span></button>
+            <button type="button" class="btn btn-ghost fp-btn" id="btn-clear-right" aria-label="Neue Fassung entfernen" data-i18n-label="slotClearRight" hidden><span data-i18n="removeShort">Entfernen</span></button>
+            </div>
           </section>
           <div class="fp-foot">
             <button type="button" class="btn btn-ghost fp-btn" id="btn-swap-docs">
@@ -259,7 +263,6 @@ __APP_CSS__
           <div class="menu-sep" role="separator"></div>
           <button type="button" class="menu-item" role="menuitem" data-session-action="save" id="menu-save"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span data-i18n="sessionSave">Arbeitsstand speichern…</span></button>
           <button type="button" class="menu-item btn-open-session" role="menuitem" id="menu-open"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span data-i18n="sessionOpen">Arbeitsstand öffnen…</span></button>
-          <div class="menu-sep" role="separator"></div>
           <div class="menu-sep" role="separator"></div>
           <button type="button" class="menu-item phone-only" role="menuitem" id="menu-view"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg><span data-i18n="viewMenu">Ansicht</span></button>
           <button type="button" class="menu-item phone-only" role="menuitem" id="menu-help"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-i18n="helpMenu">Hilfe &amp; Tastenkürzel</span></button>
@@ -472,7 +475,7 @@ __APP_CSS__
     <button type="button" class="bb-btn" id="mob-btn-prev" aria-label="Vorherige Änderung" data-i18n-label="prevLabel">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
     </button>
-    <button type="button" class="bb-step" id="mob-step" aria-expanded="false" aria-controls="sidebar"><span id="mob-step-count">0 von 0</span></button>
+    <button type="button" class="bb-step" id="mob-step" aria-expanded="false" aria-controls="sidebar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg><span id="mob-step-count">0 von 0</span></button>
     <button type="button" class="bb-btn" id="mob-btn-next" aria-label="Nächste Änderung" data-i18n-label="nextLabel">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
     </button>

@@ -7,6 +7,8 @@ const I18N = {
     filesTitle: 'Dokumente',
     filesBtnLabel: 'Dokumente: {left} → {right}. Ersetzen, tauschen, Dateiinfo',
     replaceLeft: 'Alte Fassung ersetzen…',
+    replaceShort: 'Ersetzen…',
+    removeShort: 'Entfernen',
     replaceRight: 'Neue Fassung ersetzen…',
     swapBtn: 'Alte und neue Fassung tauschen',
     colLeft: 'Alte Fassung',
@@ -173,11 +175,11 @@ const I18N = {
     helpBodyHtml: `
       <section class="help-sec">
         <h3>Lesen</h3>
-        <p>Links steht die alte, rechts die neue Fassung. <del class="tok-del">Durchgestrichen</del> = entfernt, <ins class="tok-ins">grün</ins> = hinzugefügt, ein <span class="legend-swatch" aria-hidden="true"></span>bernsteinfarbener Rand = Absatz geändert. Die schmale Leiste rechts neben dem Text zeigt, wo im Dokument Änderungen liegen; ein Klick springt dorthin.</p>
+        <p>Links steht die alte, rechts die neue Fassung. <del class="tok-del">Durchgestrichen</del> = entfernt, <ins class="tok-ins">grün</ins> = hinzugefügt, ein <span class="legend-swatch" aria-hidden="true"></span>bernsteinfarbener Rand = Absatz geändert. Die schmale Leiste zwischen den beiden Fassungen (untereinander: rechts neben dem Text) zeigt, wo im Dokument Änderungen liegen; ein Klick springt dorthin.</p>
       </section>
       <section class="help-sec">
         <h3>Prüfen</h3>
-        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft, springen zur nächsten offenen Änderung und lassen sich über <strong>Rückgängig</strong> am Absatz zurücknehmen. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
+        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft, springen zur nächsten offenen Änderung und Ein geprüfter Absatz trägt rechts ein ✓ oder ✗; der Pfeil darunter (<strong>Rückgängig</strong>) nimmt die Prüfung zurück. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
       </section>
       <section class="help-sec">
         <h3>Tastenkürzel</h3>
@@ -378,6 +380,8 @@ const I18N = {
     filesTitle: 'Documents',
     filesBtnLabel: 'Documents: {left} → {right}. Replace, swap, file info',
     replaceLeft: 'Replace old version…',
+    replaceShort: 'Replace…',
+    removeShort: 'Remove',
     replaceRight: 'Replace new version…',
     swapBtn: 'Swap old and new version',
     colLeft: 'Old version',
@@ -544,11 +548,11 @@ const I18N = {
     helpBodyHtml: `
       <section class="help-sec">
         <h3>Reading</h3>
-        <p>The old version is on the left, the new one on the right. <del class="tok-del">Struck through</del> = removed, <ins class="tok-ins">green</ins> = added, an <span class="legend-swatch" aria-hidden="true"></span>amber edge = paragraph changed. The slim bar next to the text shows where the changes are in the document; click it to jump there.</p>
+        <p>The old version is on the left, the new one on the right. <del class="tok-del">Struck through</del> = removed, <ins class="tok-ins">green</ins> = added, an <span class="legend-swatch" aria-hidden="true"></span>amber edge = paragraph changed. The slim bar between the two versions (stacked view: next to the text) shows where the changes are in the document; click it to jump there.</p>
       </section>
       <section class="help-sec">
         <h3>Reviewing</h3>
-        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed, move on to the next open change and can be taken back with <strong>Undo</strong> at the paragraph. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
+        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed, move on to the next open change A reviewed paragraph carries a ✓ or ✗ on the right; the arrow below it (<strong>Undo</strong>) takes the review back. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
       </section>
       <section class="help-sec">
         <h3>Keyboard shortcuts</h3>

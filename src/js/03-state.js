@@ -211,7 +211,7 @@ function compactFilePair(left, right, max) {
 function updateFileLabels() {
   const left = state.leftName || t('noFileLeft');
   const right = state.rightName || t('noFileRight');
-  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 12;
+  const max = window.innerWidth >= 1440 ? 34 : window.innerWidth >= 1200 ? 26 : 12;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
   const compact = max <= 12 && state.leftName && state.rightName ? compactFilePair(left, right, 16) : null;

@@ -302,7 +302,7 @@
   --control-edge: rgb(255 255 255 / 0.45);
 
   --primary: 212.4 100% 35.7%;
-  --primary-hover: 212.4 100% 41%;
+  --primary-hover: 212.4 100% 31%;
   --primary-foreground: 0 0% 100%;
   --primary-ink: 212.4 100% 76%;
   --primary-ton-1: 218 60% 13%;
@@ -571,6 +571,7 @@ body:not(.is-comparing) .topbar {
 .tb-file {
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
   min-width: 0;
 }
 .tb-file-arrow {
@@ -674,31 +675,41 @@ body:not(.is-comparing) .topbar {
   display: none;
 }
 .fp-doc {
-  padding: 10px 10px 12px;
+  padding: var(--sp-3) var(--sp-3) var(--sp-3);
   border-bottom: 1px solid hsl(var(--border));
 }
 .fp-role {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-ui-sm);
+  font-weight: 500;
   color: hsl(var(--muted-foreground));
 }
 .fp-name {
   margin-top: 2px;
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 .fp-meta {
-  margin: 2px 0 10px;
-  font-size: 13px;
+  margin-top: 2px;
+  font-size: var(--text-ui-sm);
   color: hsl(var(--muted-foreground));
   font-variant-numeric: tabular-nums;
 }
+.fp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
 .fp-foot {
-  padding: 6px 4px 2px;
+  padding: var(--sp-1);
 }
 .fp-btn {
-  height: 34px;
+  height: 36px;
+}
+.fp-foot .fp-btn {
+  width: 100%;
+  justify-content: flex-start;
 }
 
 /* ── Menus (Ansicht, Exportieren, ⋯) ───────────────────────────────────── */
@@ -811,6 +822,17 @@ body:not(.is-comparing) .topbar {
 }
 .phone-only {
   display: none !important;
+}
+
+/* Menus, popovers and the find bar fade in, barely moving */
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.menu:not([hidden]),
+.popover:not([hidden]),
+.search-panel:not([hidden]) {
+  animation: popIn 120ms ease-out;
 }
 
 /* ── Find in document ──────────────────────────────────────────────────── */
@@ -1407,6 +1429,18 @@ body:not(.view-inline) #pane-unified {
 .doc-pane-unified:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: -2px;
+}
+/* With a caption, keyboard focus on a pane is a ring-coloured line under the caption */
+@media (min-width: 768px) {
+  .doc-pane:focus-visible,
+  .doc-pane-unified:focus-visible {
+    outline: none;
+  }
+  .doc-pane:focus-visible > .pane-caption,
+  .doc-pane-unified:focus-visible > .pane-caption {
+    color: hsl(var(--foreground));
+    box-shadow: inset 0 -2px 0 hsl(var(--ring));
+  }
 }
 
 /* Sticky, neutral caption per pane: "Alte Fassung · Vertrag_v1.docx" */
@@ -2762,7 +2796,11 @@ body.is-diff-busy .doc-sheet {
   .bb-step {
     font-variant-numeric: tabular-nums;
     font-weight: 500;
-    background: hsl(var(--ton-1));
+  }
+  .bb-step .icon {
+    width: 18px;
+    height: 18px;
+    color: hsl(var(--muted-foreground));
   }
   .bb-export {
     padding: 0 14px;
@@ -2932,9 +2970,13 @@ ins.tok-ins::after {
 .tb-btn {
   min-width: 44px;
 }
-@media (max-width: 767px) {
+/* Below the desktop layout help moves into the ⋯ menu, so the file names keep their room */
+@media (max-width: 1199px) {
   body.is-comparing .hide-phone-compare {
     display: none !important;
+  }
+  #menu-help {
+    display: flex !important;
   }
 }
 
@@ -3360,21 +3402,25 @@ body.list-open .toast-region {
             <p class="fp-role" data-i18n="colLeft">Alte Fassung</p>
             <p class="fp-name" id="fp-name-left"></p>
             <p class="fp-meta" id="meta-left"></p>
-            <button type="button" class="btn fp-btn" id="btn-upload-left">
+            <div class="fp-actions">
+            <button type="button" class="btn fp-btn" id="btn-upload-left" aria-label="Alte Fassung ersetzen…" data-i18n-label="replaceLeft">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span data-i18n="replaceLeft">Alte Fassung ersetzen…</span>
+              <span data-i18n="replaceShort">Ersetzen…</span>
             </button>
-            <button type="button" class="btn" id="btn-clear-left" hidden><span data-i18n="slotClearLeft">Alte Fassung entfernen</span></button>
+            <button type="button" class="btn btn-ghost fp-btn" id="btn-clear-left" aria-label="Alte Fassung entfernen" data-i18n-label="slotClearLeft" hidden><span data-i18n="removeShort">Entfernen</span></button>
+            </div>
           </section>
           <section class="fp-doc">
             <p class="fp-role" data-i18n="colRight">Neue Fassung</p>
             <p class="fp-name" id="fp-name-right"></p>
             <p class="fp-meta" id="meta-right"></p>
-            <button type="button" class="btn fp-btn" id="btn-upload-right">
+            <div class="fp-actions">
+            <button type="button" class="btn fp-btn" id="btn-upload-right" aria-label="Neue Fassung ersetzen…" data-i18n-label="replaceRight">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span data-i18n="replaceRight">Neue Fassung ersetzen…</span>
+              <span data-i18n="replaceShort">Ersetzen…</span>
             </button>
-            <button type="button" class="btn" id="btn-clear-right" hidden><span data-i18n="slotClearRight">Neue Fassung entfernen</span></button>
+            <button type="button" class="btn btn-ghost fp-btn" id="btn-clear-right" aria-label="Neue Fassung entfernen" data-i18n-label="slotClearRight" hidden><span data-i18n="removeShort">Entfernen</span></button>
+            </div>
           </section>
           <div class="fp-foot">
             <button type="button" class="btn btn-ghost fp-btn" id="btn-swap-docs">
@@ -3494,7 +3540,6 @@ body.list-open .toast-region {
           <div class="menu-sep" role="separator"></div>
           <button type="button" class="menu-item" role="menuitem" data-session-action="save" id="menu-save"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span data-i18n="sessionSave">Arbeitsstand speichern…</span></button>
           <button type="button" class="menu-item btn-open-session" role="menuitem" id="menu-open"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span data-i18n="sessionOpen">Arbeitsstand öffnen…</span></button>
-          <div class="menu-sep" role="separator"></div>
           <div class="menu-sep" role="separator"></div>
           <button type="button" class="menu-item phone-only" role="menuitem" id="menu-view"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg><span data-i18n="viewMenu">Ansicht</span></button>
           <button type="button" class="menu-item phone-only" role="menuitem" id="menu-help"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-i18n="helpMenu">Hilfe &amp; Tastenkürzel</span></button>
@@ -3711,7 +3756,7 @@ body.list-open .toast-region {
     <button type="button" class="bb-btn" id="mob-btn-prev" aria-label="Vorherige Änderung" data-i18n-label="prevLabel">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
     </button>
-    <button type="button" class="bb-step" id="mob-step" aria-expanded="false" aria-controls="sidebar"><span id="mob-step-count">0 von 0</span></button>
+    <button type="button" class="bb-step" id="mob-step" aria-expanded="false" aria-controls="sidebar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg><span id="mob-step-count">0 von 0</span></button>
     <button type="button" class="bb-btn" id="mob-btn-next" aria-label="Nächste Änderung" data-i18n-label="nextLabel">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
     </button>
@@ -3893,6 +3938,8 @@ const I18N = {
     filesTitle: 'Dokumente',
     filesBtnLabel: 'Dokumente: {left} → {right}. Ersetzen, tauschen, Dateiinfo',
     replaceLeft: 'Alte Fassung ersetzen…',
+    replaceShort: 'Ersetzen…',
+    removeShort: 'Entfernen',
     replaceRight: 'Neue Fassung ersetzen…',
     swapBtn: 'Alte und neue Fassung tauschen',
     colLeft: 'Alte Fassung',
@@ -4059,11 +4106,11 @@ const I18N = {
     helpBodyHtml: `
       <section class="help-sec">
         <h3>Lesen</h3>
-        <p>Links steht die alte, rechts die neue Fassung. <del class="tok-del">Durchgestrichen</del> = entfernt, <ins class="tok-ins">grün</ins> = hinzugefügt, ein <span class="legend-swatch" aria-hidden="true"></span>bernsteinfarbener Rand = Absatz geändert. Die schmale Leiste rechts neben dem Text zeigt, wo im Dokument Änderungen liegen; ein Klick springt dorthin.</p>
+        <p>Links steht die alte, rechts die neue Fassung. <del class="tok-del">Durchgestrichen</del> = entfernt, <ins class="tok-ins">grün</ins> = hinzugefügt, ein <span class="legend-swatch" aria-hidden="true"></span>bernsteinfarbener Rand = Absatz geändert. Die schmale Leiste zwischen den beiden Fassungen (untereinander: rechts neben dem Text) zeigt, wo im Dokument Änderungen liegen; ein Klick springt dorthin.</p>
       </section>
       <section class="help-sec">
         <h3>Prüfen</h3>
-        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft, springen zur nächsten offenen Änderung und lassen sich über <strong>Rückgängig</strong> am Absatz zurücknehmen. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
+        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft, springen zur nächsten offenen Änderung und Ein geprüfter Absatz trägt rechts ein ✓ oder ✗; der Pfeil darunter (<strong>Rückgängig</strong>) nimmt die Prüfung zurück. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
       </section>
       <section class="help-sec">
         <h3>Tastenkürzel</h3>
@@ -4264,6 +4311,8 @@ const I18N = {
     filesTitle: 'Documents',
     filesBtnLabel: 'Documents: {left} → {right}. Replace, swap, file info',
     replaceLeft: 'Replace old version…',
+    replaceShort: 'Replace…',
+    removeShort: 'Remove',
     replaceRight: 'Replace new version…',
     swapBtn: 'Swap old and new version',
     colLeft: 'Old version',
@@ -4430,11 +4479,11 @@ const I18N = {
     helpBodyHtml: `
       <section class="help-sec">
         <h3>Reading</h3>
-        <p>The old version is on the left, the new one on the right. <del class="tok-del">Struck through</del> = removed, <ins class="tok-ins">green</ins> = added, an <span class="legend-swatch" aria-hidden="true"></span>amber edge = paragraph changed. The slim bar next to the text shows where the changes are in the document; click it to jump there.</p>
+        <p>The old version is on the left, the new one on the right. <del class="tok-del">Struck through</del> = removed, <ins class="tok-ins">green</ins> = added, an <span class="legend-swatch" aria-hidden="true"></span>amber edge = paragraph changed. The slim bar between the two versions (stacked view: next to the text) shows where the changes are in the document; click it to jump there.</p>
       </section>
       <section class="help-sec">
         <h3>Reviewing</h3>
-        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed, move on to the next open change and can be taken back with <strong>Undo</strong> at the paragraph. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
+        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed, move on to the next open change A reviewed paragraph carries a ✓ or ✗ on the right; the arrow below it (<strong>Undo</strong>) takes the review back. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
       </section>
       <section class="help-sec">
         <h3>Keyboard shortcuts</h3>
@@ -5141,7 +5190,7 @@ function compactFilePair(left, right, max) {
 function updateFileLabels() {
   const left = state.leftName || t('noFileLeft');
   const right = state.rightName || t('noFileRight');
-  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 12;
+  const max = window.innerWidth >= 1440 ? 34 : window.innerWidth >= 1200 ? 26 : 12;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
   const compact = max <= 12 && state.leftName && state.rightName ? compactFilePair(left, right, 16) : null;
@@ -13022,7 +13071,8 @@ document.addEventListener('pointerover', e => {
 
 document.addEventListener('focusin', e => {
   const target = e.target.closest && e.target.closest('[data-tooltip]');
-  if (target && target.matches(':focus-visible')) showTooltipFor(target);
+  // Keyboard aid only: on touch screens a focus tooltip would cover what was just tapped.
+  if (target && target.matches(':focus-visible') && !matchMedia('(pointer: coarse)').matches) showTooltipFor(target);
 });
 
 document.addEventListener('focusout', () => hideTooltip());
