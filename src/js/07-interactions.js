@@ -211,6 +211,24 @@ function performRedo() {
   runComparison();
 }
 
+// True when the rows on screen (state.alignedRows) were computed from the current texts.
+// While a long document is re-compared in the worker they are not: an edit or revert built
+// from those rows would silently drop the change that started the comparison.
+function isShownComparisonCurrent() {
+  const req = typeof lastComparison !== 'undefined' && lastComparison && lastComparison.request;
+  return Boolean(
+    req &&
+      req.leftText === (state.leftText || '') &&
+      req.rightText === (state.rightText || '') &&
+      req.ignoreHeadersFooters === state.ignoreHeadersFooters
+  );
+}
+
+// Exports and printing read state.alignedRows: bring them up to date first (synchronously).
+function ensureComparisonCurrent() {
+  if (!isShownComparisonCurrent()) runComparison({ sync: true });
+}
+
 function rebuildRightTextFromRows(targetRowId, replacementText) {
   const hasExplicit = state.rightAllBlocks && state.rightAllBlocks.some(b => b.hasExplicitPage);
   const hfByPage = new Map();
@@ -265,7 +283,7 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
 function revertRowToOriginal(targetRowId) {
   if (!state.alignedRows.length) return;
   const targetRow = state.alignedRows.find(r => r.id === targetRowId);
-  if (!targetRow) return;
+  if (!targetRow || !isShownComparisonCurrent()) return;
   pushUndoSnapshot();
   const revertedText = targetRow.leftBlock ? targetRow.leftBlock.text : '';
   state.rightText = rebuildRightTextFromRows(targetRowId, revertedText);
@@ -274,8 +292,11 @@ function revertRowToOriginal(targetRowId) {
 
 function startInlineClauseEdit(clauseEl, rowId) {
   if (!clauseEl || clauseEl.classList.contains('is-editing')) return;
+  // Not while the shown rows are being re-compared (the sheet is dimmed meanwhile).
+  if (!isShownComparisonCurrent()) return;
   const row = state.alignedRows.find(r => r.id === rowId);
   if (!row) return;
+  const rightTextAtOpen = state.rightText;
 
   hideTooltip();
 
@@ -322,7 +343,10 @@ function startInlineClauseEdit(clauseEl, rowId) {
     finished = true;
     const newText = editor.value.replace(/\r\n/g, '\n').trim();
     const oldText = row.rightBlock ? row.rightBlock.text : '';
-    if (newText === oldText) {
+    // The document was replaced or re-compared while the editor was open (e.g. a file
+    // dropped meanwhile): this row may no longer exist, so the edit cannot be applied.
+    const stale = state.rightText !== rightTextAtOpen || !isShownComparisonCurrent();
+    if (newText === oldText || stale) {
       clauseEl.classList.remove('is-editing');
       clauseEl.innerHTML = originalHtml;
       resetEqualizedRowHeights(rowId);

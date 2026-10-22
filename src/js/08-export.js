@@ -657,6 +657,7 @@ function buildPrintViewHtml(date = new Date()) {
 }
 
 function preparePrintView() {
+  if (typeof ensureComparisonCurrent === 'function') ensureComparisonCurrent();
   if (!state.alignedRows.length) return;
   const date = new Date();
   let view = document.getElementById('print-view');
@@ -741,6 +742,9 @@ function handleExportAction(type) {
   // Commit an inline edit that is still open so the export reflects it.
   const openEditor = document.querySelector('.clause-inline-editor');
   if (openEditor) openEditor.blur();
+  // A long document may still be re-compared in the worker after an edit or undo: export
+  // the current text, not the rows from before.
+  ensureComparisonCurrent();
 
   if (type === 'print') {
     if (!state.alignedRows.length) return;
