@@ -284,8 +284,11 @@ for (const lang of Object.keys(SAMPLES)) {
   }
 }
 
-const initialLang =
-  typeof navigator !== 'undefined' &&
+// A page built for one language (/en/) says so with data-page-lang; otherwise follow the browser.
+const pageLang = typeof document !== 'undefined' ? document.documentElement.getAttribute('data-page-lang') : null;
+const initialLang = pageLang === 'en' || pageLang === 'de'
+  ? pageLang
+  : typeof navigator !== 'undefined' &&
   navigator.language &&
   navigator.language.toLowerCase().startsWith('de')
     ? 'de'

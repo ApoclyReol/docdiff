@@ -1,3 +1,5 @@
+# All crawlers are welcome, including search engines and AI assistants
+# (e.g. Googlebot, Bingbot, GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended).
 User-agent: *
 Allow: /
 

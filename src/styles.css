@@ -1015,11 +1015,28 @@ body.is-comparing .empty-launchpad {
   text-decoration-thickness: 0.08em;
   font-weight: 500;
 }
+/* The struck-out word is decoration: drawn from data-word, so it is not part of the heading text
+   that search engines, assistants and screen readers read ("Dokumente einfach vergleichen."). */
+.landing-title .hero-del::before {
+  content: attr(data-word);
+}
 .landing-title .hero-ins {
   background: hsl(var(--success-ton-2));
   color: hsl(var(--success-ink));
   box-shadow: inset 0 0 0 1px hsl(var(--success) / 0.25);
   text-decoration: none;
+}
+.lang-hint {
+  margin-bottom: 20px;
+  font-size: 0.9375rem;
+}
+.lang-hint a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .landing-title:focus {
   outline: none;
@@ -1386,7 +1403,7 @@ body.is-dragging-file .drop-slot-btn {
 .lp-link {
   background: transparent;
   border: 0;
-  padding: 0;
+  padding: 4px 0; /* 24px+ tap target */
   font: inherit;
   color: hsl(var(--primary-ink));
   text-decoration: underline;

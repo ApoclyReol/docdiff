@@ -165,6 +165,14 @@ const I18N = {
     errScannedPdf: 'Dieses PDF enthält keinen Text (eingescanntes Dokument oder Bild). Scans werden nicht unterstützt, da keine Texterkennung (OCR) verfügbar ist.',
     warnPdfPagesWithoutText: 'Hinweis: Seiten ohne Textebene (Scan/Bild) können nicht verglichen werden:',
     errDocxEmpty: 'Im Word-Dokument wurde kein Text gefunden.',
+    errPdfPassword:
+      'Das PDF ist mit einem Kennwort geschützt. Bitte den Kennwortschutz entfernen (z. B. ungeschützt neu speichern oder drucken) und die Datei erneut laden.',
+    errPdfCorrupt: 'Das PDF ist beschädigt oder unvollständig und kann nicht gelesen werden.',
+    errDocxCorrupt: 'Das Word-Dokument ist beschädigt, unvollständig oder kein gültiges .docx und kann nicht gelesen werden.',
+    warnTextLegacyEncoding:
+      'Hinweis: Die Textdatei ist nicht UTF-8-kodiert und wurde als Windows-1252 (Westeuropäisch) gelesen. Bitte Umlaute und Sonderzeichen prüfen.',
+    warnDocxTrackedChanges:
+      'Hinweis: Das Word-Dokument enthält nachverfolgte Änderungen. Verglichen wird die Fassung mit allen Änderungen angenommen; gelöschter Text ist nicht enthalten.',
     errImage: 'Bilddateien werden nicht unterstützt, da keine Texterkennung (OCR) verfügbar ist. Bitte ein PDF mit Textebene, Word (.docx) oder Text verwenden.',
     manualLeft: 'Eingefügter Text (alte Fassung)',
     manualRight: 'Eingefügter Text (neue Fassung)',
@@ -215,7 +223,7 @@ const I18N = {
     privacyBodyHtml: `
       <p><strong>Impressum (§ 5 DDG):</strong><br/>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden · <a href="mailto:tschnorpfeil@gmail.com" style="color:hsl(var(--primary-ink));">tschnorpfeil@gmail.com</a></p>
       <p><strong>Datenschutz:</strong><br/>Alle Dateien und Texte werden ausschließlich lokal im Arbeitsspeicher Ihres Browsers verarbeitet. Es werden keine Dokumente hochgeladen, keine Cookies gesetzt und keine Tracker genutzt. Beim Aufruf über <code>docdiff.app</code> werden technisch notwendige Verbindungsdaten durch GitHub Pages (GitHub, Inc., USA) und Cloudflare DNS verarbeitet (Art. 6 Abs. 1 lit. f DSGVO).</p>
-      <p><a href="impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="datenschutz.html" style="color:hsl(var(--primary-ink));">Datenschutz</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub</a></p>
+      <p><a href="https://docdiff.app/impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="https://docdiff.app/datenschutz.html" style="color:hsl(var(--primary-ink));">Datenschutz</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub</a></p>
     `,
     sampleLeftName: 'Vertrag_v1_Vorher.docx',
     sampleRightName: 'Vertrag_v2_Nachher.docx',
@@ -244,8 +252,8 @@ const I18N = {
     legendTouch: 'Pfeile unten = nächste / vorherige Änderung',
     legendClose: 'Ausblenden',
     shortcutsToggle: 'Tastenkürzel mit einzelnen Buchstaben verwenden (J, K, C, H, /)',
-    heroTitle: 'Dokumente <del class="hero-del" aria-hidden="true">mühsam</del> <ins class="hero-ins">einfach</ins> vergleichen.',
-    heroSub: 'PDF, Word oder Text: Jede Änderung wird Wort für Wort markiert. Ihre Dateien verlassen dabei nie Ihren Computer.',
+    heroTitle: 'Dokumente <del class="hero-del" aria-hidden="true" data-word="mühsam"></del> <ins class="hero-ins">einfach</ins> vergleichen.',
+    heroSub: 'Zwei Fassungen als PDF, Word oder Text: Jede Änderung wird Wort für Wort markiert. Ihre Dateien verlassen dabei nie Ihren Computer.',
     trustFree: 'Kostenlos & Open Source (MIT)',
     trustLocal: 'Keine Uploads – alles läuft lokal im Browser',
     trustNoTracking: 'Keine Werbung, kein Tracking, keine Cookies',
@@ -266,7 +274,7 @@ const I18N = {
     how3Text: 'Als Word-Datei mit markierten Änderungen, als PDF oder als Bericht.',
     scopeTitle: 'Was es kann – und was nicht',
     scopeCanTitle: 'Kann',
-    scopeCan1: 'PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen',
+    scopeCan1: 'PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen – auch gemischt, etwa PDF mit Word',
     scopeCan2: 'Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge',
     scopeCan3: 'Seiten wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet',
     scopeCan4: 'Ohne Internet arbeiten – als einzelne HTML-Datei',
@@ -283,12 +291,24 @@ const I18N = {
             `,
     faqOfflineQ: 'Kann ich Doc Diff offline nutzen?',
     faqOfflineA: `
-              <p>Ja. Laden Sie <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> herunter (eine einzelne Datei, etwa 2,5&nbsp;MB) und öffnen Sie sie per Doppelklick im Browser – ohne Installation und ohne Internet.</p>
+              <p>Ja. Laden Sie <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> herunter (eine einzelne Datei, knapp 3&nbsp;MB) und öffnen Sie sie per Doppelklick im Browser – ohne Installation und ohne Internet.</p>
             `,
     faqWhoQ: 'Wer steckt dahinter? Wo ist der Quellcode?',
     faqWhoA: `
               <p>Doc Diff ist ein privates Open-Source-Projekt von Tobias Schnorpfeil – ohne Firma, Werbung oder Datensammlung dahinter. Der vollständige Quellcode steht unter MIT-Lizenz <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">auf GitHub</a>: Sie können ihn prüfen, selbst bauen oder selbst betreiben.</p>
             `,
+    faqScanQ: 'Kann ich gescannte PDFs vergleichen?',
+    faqScanA: `
+              <p>Nein. Doc Diff liest nur PDFs mit Textebene, also PDFs, in denen Sie Text markieren und kopieren können. Ein Scan ist ein Bild der Seite, und eine Texterkennung (OCR) ist nicht eingebaut. Solche Dateien werden mit einem Hinweis abgelehnt. Wandeln Sie den Scan vorher mit einem OCR-Programm in ein durchsuchbares PDF um.</p>
+            `,
+    faqWordQ: 'Kann ich die Änderungen in Word weiterbearbeiten?',
+    faqWordA: `
+              <p>Ja. Der Export „Word-Redline“ erzeugt eine .docx-Datei, in der jeder Unterschied als nachverfolgte Änderung steht. In Word oder LibreOffice können Sie die Änderungen einzeln annehmen oder ablehnen. Übernommen wird nur der Text, nicht die ursprüngliche Formatierung.</p>
+            `,
+    metaTitle: 'Doc Diff – PDF- und Word-Dokumente vergleichen, ohne Upload',
+    otherPageHint: 'Diese Seite gibt es auch auf Deutsch →',
+    metaDescription: 'Zwei Fassungen eines Vertrags oder Dokuments vergleichen: PDF, Word oder Text, Wort für Wort markiert. Kostenlos, Open Source, ohne Upload.',
+    ogImageAlt: 'Doc Diff: Zwei Vertragsfassungen nebeneinander, entfernter Text rot durchgestrichen, neuer Text grün markiert.',
     footerSource: 'Quellcode auf GitHub',
     footerLicense: 'MIT-Lizenz',
     announceCompared: 'Vergleich fertig: {n} Änderungen. Mit J und K springen Sie von Änderung zu Änderung.',
@@ -463,6 +483,14 @@ const I18N = {
     errScannedPdf: 'This PDF contains no text (scanned document or image). Scans are not supported because text recognition (OCR) is not available.',
     warnPdfPagesWithoutText: 'Note: pages without a text layer (scan/image) cannot be compared:',
     errDocxEmpty: 'No text was found in the Word document.',
+    errPdfPassword:
+      'The PDF is password-protected. Please remove the password protection (e.g. save or print it without protection) and load the file again.',
+    errPdfCorrupt: 'The PDF is damaged or incomplete and cannot be read.',
+    errDocxCorrupt: 'The Word document is damaged, incomplete or not a valid .docx and cannot be read.',
+    warnTextLegacyEncoding:
+      'Note: the text file is not UTF-8 encoded and was read as Windows-1252 (Western European). Please check umlauts and special characters.',
+    warnDocxTrackedChanges:
+      'Note: the Word document contains tracked changes. It is compared as if all changes were accepted; deleted text is not included.',
     errImage: 'Image files are not supported because text recognition (OCR) is not available. Please use a PDF with a text layer, Word (.docx) or text.',
     manualLeft: 'Pasted text (old version)',
     manualRight: 'Pasted text (new version)',
@@ -513,7 +541,7 @@ const I18N = {
     privacyBodyHtml: `
       <p><strong>Legal Notice (§ 5 DDG):</strong><br/>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden, Germany · <a href="mailto:tschnorpfeil@gmail.com" style="color:hsl(var(--primary-ink));">tschnorpfeil@gmail.com</a></p>
       <p><strong>Privacy:</strong><br/>All files and texts are processed strictly locally in your browser's memory. No documents are uploaded, no cookies are set, and no analytics are used. When accessed via <code>docdiff.app</code>, standard connection metadata (IP address, timestamp, user agent) is processed by GitHub Pages (GitHub, Inc., USA) and Cloudflare DNS (Art. 6(1)(f) GDPR).</p>
-      <p><a href="impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="datenschutz.html" style="color:hsl(var(--primary-ink));">Privacy Policy</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub</a></p>
+      <p><a href="https://docdiff.app/impressum.html" style="color:hsl(var(--primary-ink));">Impressum</a> · <a href="https://docdiff.app/datenschutz.html" style="color:hsl(var(--primary-ink));">Privacy Policy</a> · <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:hsl(var(--primary-ink));">GitHub</a></p>
     `,
     sampleLeftName: 'Contract_v1_Before.docx',
     sampleRightName: 'Contract_v2_After.docx',
@@ -542,8 +570,8 @@ const I18N = {
     legendTouch: 'Arrows at the bottom = next / previous change',
     legendClose: 'Dismiss',
     shortcutsToggle: 'Use single-letter keyboard shortcuts (J, K, C, H, /)',
-    heroTitle: 'Compare documents <del class="hero-del" aria-hidden="true">by hand</del> <ins class="hero-ins">easily</ins>.',
-    heroSub: 'PDF, Word or text: every change is marked word by word. Your files never leave your computer.',
+    heroTitle: 'Compare documents <del class="hero-del" aria-hidden="true" data-word="by hand"></del> <ins class="hero-ins">easily</ins>.',
+    heroSub: 'Two versions as PDF, Word or text: every change is marked word by word. Your files never leave your computer.',
     trustFree: 'Free & open source (MIT)',
     trustLocal: 'No uploads – everything runs locally in your browser',
     trustNoTracking: 'No ads, no tracking, no cookies',
@@ -564,7 +592,7 @@ const I18N = {
     how3Text: 'As a Word file with marked changes, as PDF or as a report.',
     scopeTitle: 'What it can do – and what it can’t',
     scopeCanTitle: 'Can',
-    scopeCan1: 'Compare PDFs with a text layer, Word files (.docx) and plain text',
+    scopeCan1: 'Compare PDFs with a text layer, Word files (.docx) and plain text – also mixed, e.g. a PDF against a Word file',
     scopeCan2: 'Show changes word by word – including changed numbers, dates and amounts',
     scopeCan3: 'Show pages as in the original; repeating headers and footers are left out',
     scopeCan4: 'Work without internet – as a single HTML file',
@@ -581,12 +609,24 @@ const I18N = {
             `,
     faqOfflineQ: 'Can I use Doc Diff offline?',
     faqOfflineA: `
-              <p>Yes. Download <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> (a single file of about 2.5&nbsp;MB) and open it in your browser with a double-click – no installation and no internet needed.</p>
+              <p>Yes. Download <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> (a single file of just under 3&nbsp;MB) and open it in your browser with a double-click – no installation and no internet needed.</p>
             `,
     faqWhoQ: 'Who is behind it? Where is the source code?',
     faqWhoA: `
               <p>Doc Diff is a private open-source project by Tobias Schnorpfeil – with no company, advertising or data collection behind it. The complete source code is available under the MIT licence <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">on GitHub</a>: you can review it, build it yourself or host it yourself.</p>
             `,
+    faqScanQ: 'Can I compare scanned PDFs?',
+    faqScanA: `
+              <p>No. Doc Diff only reads PDFs with a text layer, that is, PDFs in which you can select and copy text. A scan is an image of the page, and there is no built-in text recognition (OCR). Such files are rejected with a message. Convert the scan into a searchable PDF with an OCR program first.</p>
+            `,
+    faqWordQ: 'Can I keep working on the changes in Word?',
+    faqWordA: `
+              <p>Yes. The “Word redline” export creates a .docx file in which every difference is a tracked change. In Word or LibreOffice you can accept or reject each change. Only the text is carried over, not the original formatting.</p>
+            `,
+    metaTitle: 'Doc Diff – Compare PDF and Word documents without uploading',
+    otherPageHint: 'This page is also available in English →',
+    metaDescription: 'Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads.',
+    ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green (German interface).',
     footerSource: 'Source code on GitHub',
     footerLicense: 'MIT licence',
     announceCompared: 'Comparison ready: {n} changes. Press J and K to move between changes.',

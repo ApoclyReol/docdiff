@@ -169,6 +169,7 @@ btnOnlyChanges.addEventListener('click', toggleOnlyChanges);
 mobBtnOnlyChanges.addEventListener('click', toggleOnlyChanges);
 
 document.getElementById('btn-clear').addEventListener('click', () => {
+  cancelPendingUploads();
   state.leftText = '';
   state.rightText = '';
   state.leftName = '';
@@ -186,7 +187,22 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   runComparison();
 });
 
+// A hosted page pinned to one language points browsers set to the other language to their page.
+(function showOtherLanguagePageHint() {
+  const hint = document.getElementById('lang-hint');
+  const link = document.getElementById('lang-hint-link');
+  if (!hint || !link || !pageLang || !/^https?:$/.test(location.protocol)) return;
+  const browserLang = (navigator.language || '').toLowerCase().startsWith('de') ? 'de' : 'en';
+  if (browserLang === pageLang) return;
+  link.textContent = I18N[browserLang].otherPageHint;
+  link.lang = browserLang;
+  link.href = pageLang === 'de' ? 'en/' : '../';
+  hint.hidden = false;
+})();
+
 document.getElementById('btn-lang').addEventListener('click', () => {
+  const langHint = document.getElementById('lang-hint');
+  if (langHint) langHint.hidden = true;
   state.lang = state.lang === 'de' ? 'en' : 'de';
   if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
     const sample = SAMPLES[state.lang] || SAMPLES.de;

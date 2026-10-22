@@ -221,9 +221,10 @@ test('samples: expected change counts (de + en)', () => {
   for (const lang of ['de', 'en']) {
     const { rows, hfCount } = compare(core.SAMPLES[lang].v1, core.SAMPLES[lang].v2);
     const c = countTypes(rows);
-    // 16 modified clauses + the running header whose version/date changed (shown once).
-    assert.deepEqual(c, { modified: 17, inserted: 2, deleted: 1, moved: 0, markerOnly: 0 }, lang);
-    assert.equal(hfCount, 10, `${lang}: hidden header/footer lines`);
+    // 16 modified clauses + the running header whose version/date changed, shown on each of
+    // its 3 pages (change-preserving header/footer filter; previously shown once).
+    assert.deepEqual(c, { modified: 19, inserted: 2, deleted: 1, moved: 0, markerOnly: 0 }, lang);
+    assert.equal(hfCount, 6, `${lang}: hidden header/footer lines (identical in both versions)`);
     const hfRow = rows.find(r => r.leftBlock && r.leftBlock.kind === 'hf');
     assert.ok(hfRow && hfRow.type === 'modified', `${lang}: changed header must be visible`);
   }
@@ -312,16 +313,16 @@ test('pasted text: running "Vertraulich · Seite n von m" lines are hidden only 
   assert.equal(twice[3].isHeaderFooter, true);
 });
 
-test('header/footer that differs between versions is shown once; page numbers stay hidden', () => {
+test('header/footer that differs between versions is shown at every occurrence; page numbers stay hidden', () => {
   const doc = header =>
     [1, 2, 3]
       .map(p => [`${P}${p}`, HF(`${header} · Seite ${p} von 3`), `Absatz ${p} bleibt gleich.`, HF(`- ${p} -`)].join('\n\n'))
       .join('\n\n');
   const { rows, hfCount } = compare(doc('Entwurf v1 (Stand 12.03.2026)'), doc('Entwurf v2 (Stand 18.04.2026)'));
   const visibleHf = rows.filter(r => (r.leftBlock || r.rightBlock).kind === 'hf');
-  assert.equal(visibleHf.length, 1);
-  assert.equal(visibleHf[0].type, 'modified');
-  assert.equal(hfCount, 10);
+  assert.equal(visibleHf.length, 3);
+  assert.ok(visibleHf.every(r => r.type === 'modified'));
+  assert.equal(hfCount, 6, 'only the identical page labels stay hidden');
   const same = compare(doc('Entwurf v1'), doc('Entwurf v1'));
   assert.equal(same.changes.length, 0);
   assert.equal(same.hfCount, 12);
@@ -458,6 +459,217 @@ test('moves: short or different paragraphs are not paired', () => {
 test('form feed in text is treated as a line break', () => {
   const blocks = core.parseIntoBlocks(core.sanitizeExternalText('Titel\fZweiter Absatz.'));
   assert.deepEqual(plain(blocks.map(b => b.text)), ['Titel', 'Zweiter Absatz.']);
+});
+
+/* ── QA: robustness and fidelity regressions ───────────────────────────── */
+
+test('word diff: huge, completely rewritten paragraphs finish quickly and keep the invariant', () => {
+  let seed = 7;
+  const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const vocab = 'der die das und oder Auftragnehmer Auftraggeber Vertrag Leistung Vergütung Frist Tage'.split(' ');
+  const para = n => Array.from({ length: n }, () => vocab[Math.floor(rand() * vocab.length)]).join(' ');
+  const a = para(20000);
+  const b = para(20000);
+  const t0 = Date.now();
+  const parts = assertInvariant(a, b);
+  const ms = Date.now() - t0;
+  assert.ok(ms < 5000, `word diff of two 20,000-word paragraphs took ${ms} ms`);
+  assert.ok(parts.some(p => p.added) && parts.some(p => p.removed));
+  // A small edit in a huge paragraph is still shown precisely.
+  const c = a.replace(/ Frist /, ' Kündigungsfrist ');
+  const small = assertInvariant(a, c);
+  assert.equal(small.filter(p => p.added).map(p => p.value).join(''), 'Kündigungsfrist');
+});
+
+test('pasted/DOCX text: a bare "2/3" or "- 4 -" line is content, not a page number', () => {
+  // DOCX table cells and short paragraphs: a changed share must not be hidden as a page label.
+  const r = compare('Titel\n\nAnteil\n\n2/3\n\nEnde des Vertrags.', 'Titel\n\nAnteil\n\n1/3\n\nEnde des Vertrags.');
+  assert.ok(r.changes.some(c => c.leftBlock && c.leftBlock.text === '2/3'), 'old value shown');
+  assert.ok(r.changes.some(c => c.rightBlock && c.rightBlock.text === '1/3'), 'new value shown');
+  const del = compare('Titel\n\nPosition\n\n- 4 -\n\nEnde des Vertrags.', 'Titel\n\nPosition\n\nEnde des Vertrags.');
+  assert.equal(del.changes.length, 1);
+  assert.equal(del.changes[0].type, 'deleted');
+  // A running sequence of page labels in pasted text is still recognised and hidden.
+  const pasted = compare(
+    'Titel\n\nErster Absatz.\n\n1/3\n\nZweiter Absatz.\n\n2/3\n\nDritter Absatz.\n\n3/3',
+    'Titel\n\nErster Absatz.\n\n1/2\n\nZweiter Absatz.\n\nDritter Absatz.\n\n2/2'
+  );
+  assert.equal(pasted.changes.length, 0);
+  // Same in a PDF body (single page: no geometric footer detection).
+  const pdfDoc = v => [P + '1', 'Titel', 'Anteil', v, 'Ende des Vertrags.'].join('\n\n');
+  const pr = compare(pdfDoc('2/3'), pdfDoc('1/3'));
+  assert.ok(pr.changes.some(c => c.leftBlock && c.leftBlock.text === '2/3'), 'PDF: old value shown');
+  // Explicit labels ("Seite 2 von 9") keep their behaviour.
+  assert.ok(core.parseIntoBlocks('Titel\n\nSeite 2 von 9\n\nText.')[1].isHeaderFooter);
+});
+
+test('Unicode: canonically equivalent and invisible-character variants compare equal', () => {
+  const base = 'Titel\n\nDie Größe der Fläche beträgt 100 m² und die finale Vertragsstrafe 5 %.';
+  const variants = [
+    base.normalize('NFD'), // decomposed umlauts (macOS / some PDFs)
+    base.replace('Vertragsstrafe', 'Vertrags\u00ADstrafe'), // soft hyphen
+    base.replace('Vertragsstrafe', 'Vertrags\u200Bstrafe'), // zero-width space
+    base.replace('finale', '\uFB01nale'), // fi ligature from a PDF
+    base.replace('100 m\u00B2', '100\u202Fm\u00B2').replace('5 %', '5\u2009%'), // narrow / thin spaces
+    '\uFEFF' + base, // BOM
+    base.replace('\n\n', '\r\r'), // old Mac line endings
+  ];
+  for (const v of variants) {
+    const r = compare(base, v);
+    assert.equal(r.changes.length, 0, `false change for ${JSON.stringify(v)}: ${JSON.stringify(r.changes.map(c => c.wordDiffs))}`);
+    assert.ok(r.rows.every(row => !row.markerOnly), `no marker-only noise for ${JSON.stringify(v)}`);
+  }
+  // A real difference next to such characters is still reported.
+  assert.equal(compare(base, base.normalize('NFD').replace('100', '120')).changes.length, 1);
+});
+
+test('word diff never splits a surrogate pair or a combining sequence', () => {
+  for (const [a, b] of [
+    ['Preis 😀 gut', 'Preis 😃 gut'],
+    ['a😀b', 'a😃b'],
+    ['🇩🇪 Flag', '🇫🇷 Flag'],
+  ]) {
+    const parts = assertInvariant(a, b);
+    for (const p of parts) {
+      assert.ok(!/^[\uDC00-\uDFFF]/.test(p.value) && !/[\uD800-\uDBFF]$/.test(p.value), `split surrogate in ${JSON.stringify(parts)}`);
+    }
+  }
+});
+
+test('PDF: a wrapped line starting with an amount or a date continues the paragraph', () => {
+  const page = lines => [lines.map(([text, y]) => ({ text, y, yPct: y / 842, fontSize: 11, gapBefore: false }))];
+  for (const start of ['145.000,00 EUR.', '1.000 Stück Bewehrung.', '12.03.2026 fertigzustellen.']) {
+    const text = core.assemblePdfText(page([['Der Betrag für die Leistung beträgt', 500], [start, 486]])).text;
+    const blocks = core.parseIntoBlocks(text);
+    assert.equal(blocks.length, 1, `${start}: ${JSON.stringify(blocks.map(b => b.text))}`);
+  }
+  // Real numbering still starts a new paragraph.
+  for (const start of ['3.2 Abschlagszahlungen', '4. Haftung', '(2) Der Auftraggeber zahlt.']) {
+    const text = core.assemblePdfText(page([['Vorheriger Absatz endet hier', 500], [start, 486]])).text;
+    assert.equal(core.parseIntoBlocks(text).length, 2, start);
+  }
+});
+
+test('PDF: a sentence broken at a page end continues even when the next word is a capitalised noun', () => {
+  const pages = [
+    pdfPage([['Kopf', 0.97], ['Die Schlussrechnung ist innerhalb von 30 Tagen nach Zugang zu prüfen; danach', 0.5], ['Seite 1', 0.03]]),
+    pdfPage([['Kopf', 0.97], ['Verzugszinsen in gesetzlicher Höhe.', 0.85], ['Seite 2', 0.03]]),
+  ];
+  const blocks = core.parseIntoBlocks(core.assemblePdfText(pages).text).filter(b => !b.isHeaderFooter);
+  assert.equal(blocks.length, 1, JSON.stringify(blocks.map(b => b.text)));
+  // A short line without punctuation (a heading) at the end of a page is not joined.
+  const heading = [
+    pdfPage([['Kopf', 0.97], ['Vergütung und Zahlung', 0.5], ['Seite 1', 0.03]]),
+    pdfPage([['Kopf', 0.97], ['Der Auftraggeber zahlt monatlich.', 0.85], ['Seite 2', 0.03]]),
+  ];
+  const hb = core.parseIntoBlocks(core.assemblePdfText(heading).text).filter(b => !b.isHeaderFooter);
+  assert.equal(hb.length, 2, JSON.stringify(hb.map(b => b.text)));
+});
+
+test('DOCX table row vs the same row from a PDF (cell separator) is not a change', () => {
+  const docx = 'Titel\n\nPos · Leistung · Preis\n\n1 · Erdarbeiten · 12.500,00 EUR';
+  const pdf = 'Titel\n\nPos Leistung Preis\n\n1 Erdarbeiten 12.500,00 EUR';
+  assert.equal(compare(docx, pdf).changes.length, 0);
+  const changed = compare(docx, pdf.replace('12.500', '13.500'));
+  assert.equal(changed.changes.length, 1);
+  assertInvariant(changed.changes[0].leftBlock.text, changed.changes[0].rightBlock.text, changed.changes[0].wordDiffs);
+});
+
+test('PDF: private-use bullet glyphs (Symbol/Wingdings/OpenSymbol) become "•"', () => {
+  const item = (str, x, width, y) => ({ str, transform: [11, 0, 0, 11, x, y], width, hasEOL: false });
+  const lines = core.buildPdfPageLines(
+    [item('\uF0B7', 72, 5, 700), item('Erster Punkt.', 90, 60, 700), item('\uF095 Zweiter Punkt.', 72, 70, 686)],
+    [0, 0, 595, 842]
+  );
+  assert.deepEqual(plain(lines.map(l => l.text)), ['• Erster Punkt.', '• Zweiter Punkt.']);
+});
+
+test('header/footer of a PDF is not reported against a version without any (DOCX/text)', () => {
+  const pdf = [P + '1', HF('Rahmenvertrag – Fassung 1.0'), 'Titel', 'Erster Absatz.', HF('Seite 1 von 2'),
+    P + '2', HF('Rahmenvertrag – Fassung 1.0'), 'Zweiter Absatz.', HF('Seite 2 von 2')].join('\n\n');
+  const docx = 'Titel\n\nErster Absatz.\n\nZweiter Absatz.';
+  assert.equal(compare(docx, pdf).changes.length, 0);
+  assert.equal(compare(pdf, docx).changes.length, 0);
+  // PDF vs PDF: a header that differs is shown on both pages.
+  const pdf2 = pdf.replace(/Fassung 1\.0/g, 'Fassung 2.0');
+  assert.equal(compare(pdf, pdf2).changes.length, 2);
+});
+
+/* ── Change-preserving header/footer filter ────────────────────────────── */
+
+// n pages, each: header, body paragraph, footer. edit(page, parts) may change any part.
+function pagedDoc(n, edit = () => {}) {
+  const out = [];
+  for (let p = 1; p <= n; p++) {
+    const parts = {
+      header: `Bauvertrag Kita – Fassung 1.0`,
+      body: [`Absatz ${p}: Der Auftragnehmer erbringt die Leistung nach Plan ${p}.`],
+      footer: `Vertraulich · Seite ${p} von ${n}`,
+    };
+    edit(p, parts);
+    out.push(P + p, ...(parts.header ? [HF(parts.header)] : []), ...parts.body, ...(parts.footer ? [HF(parts.footer)] : []));
+  }
+  return out.join('\n\n');
+}
+
+test('hf filter: a running header changed on only one page out of ten is shown on that page', () => {
+  const a = pagedDoc(10);
+  const b = pagedDoc(10, (p, parts) => { if (p === 7) parts.header = 'Bauvertrag Kita – Fassung 1.1'; });
+  const r = compare(a, b);
+  assert.equal(r.changes.length, 1, JSON.stringify(r.changes.map(c => [c.leftBlock && c.leftBlock.text, c.rightBlock && c.rightBlock.text])));
+  assert.equal(r.changes[0].type, 'modified');
+  assert.equal(r.changes[0].pageNum, 7);
+  assert.equal(r.hfCount, 38, 'badge: only the 2 × 19 identical running lines are counted');
+});
+
+test('hf filter: a footer changed on all pages is shown on every page', () => {
+  const a = pagedDoc(10);
+  const b = pagedDoc(10, (p, parts) => { parts.footer = `Streng vertraulich · Seite ${p} von 10`; });
+  const r = compare(a, b);
+  assert.equal(r.changes.length, 10);
+  assert.ok(r.changes.every(c => c.type === 'modified' && c.leftBlock.isHeaderFooter));
+  assert.equal(r.hfCount, 20, 'only the unchanged headers stay hidden');
+});
+
+test('hf filter: a running line removed from one page (or added) is reported', () => {
+  const a = pagedDoc(10);
+  const removed = compare(a, pagedDoc(10, (p, parts) => { if (p === 4) parts.header = ''; }));
+  assert.equal(removed.changes.length, 1);
+  assert.equal(removed.changes[0].type, 'deleted');
+  assert.equal(removed.changes[0].pageNum, 4);
+  const added = compare(pagedDoc(10, (p, parts) => { if (p === 4) parts.header = ''; }), a);
+  assert.equal(added.changes.length, 1);
+  assert.equal(added.changes[0].type, 'inserted');
+  // Inserting a whole page shifts the slots but must not unhide the other pages' lines.
+  const extraPage = pagedDoc(11).replace('Seite 11 von 11', 'Seite 11 von 11');
+  const shifted = compare(a, extraPage);
+  assert.ok(shifted.changes.every(c => c.pageNum >= 10), JSON.stringify(shifted.changes.map(c => c.pageNum)));
+});
+
+test('hf filter: deletion inside a repeated near-top body line (misdetected as header) is reported', () => {
+  // The repetitive LibreOffice fixture: identical clause text near the top of most pages is
+  // classified as a running line by the PDF reader. Deleting a sentence of it on one page
+  // must still show up.
+  const clause = '(3) Der Auftragnehmer verpflichtet sich, die Leistungen fachgerecht auszuführen.';
+  const a = pagedDoc(6, (p, parts) => { parts.header = clause; });
+  const b = pagedDoc(6, (p, parts) => {
+    parts.header = p === 2 ? '(3) Der Auftragnehmer verpflichtet sich.' : clause;
+  });
+  const r = compare(a, b);
+  assert.ok(r.changes.length >= 1, 'change inside the repeated line is shown');
+  assert.ok(r.changes.every(c => c.pageNum === 2));
+  const removed = compare(a, pagedDoc(6, (p, parts) => { parts.header = p === 2 ? '' : clause; }));
+  assert.equal(removed.changes.length, 1);
+  assert.equal(removed.changes[0].leftBlock.text, clause);
+});
+
+test('hf filter: identical running lines stay hidden, filter off shows everything', () => {
+  const a = pagedDoc(10);
+  const same = compare(a, a);
+  assert.equal(same.changes.length, 0);
+  assert.equal(same.hfCount, 40);
+  const b = pagedDoc(10, (p, parts) => { if (p === 7) parts.header = 'Bauvertrag Kita – Fassung 1.1'; });
+  assert.equal(compare(a, b, false).changes.length, 1);
 });
 
 for (const f of failures) console.error(f);
