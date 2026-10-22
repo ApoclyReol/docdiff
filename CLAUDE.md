@@ -14,7 +14,7 @@ Always edit the sources and run the build plus checks:
 - `src/styles.css`: all app styles
 - `src/js/*.js`: app code, concatenated in file-name order into one classic `<script>` (shared scope, no modules)
 
-Never hand-edit `DocDiff.html` or `site/index.html`; both are generated.
+Never hand-edit `DocDiff.html`, `site/index.html` or `site/en/index.html`; they are generated. The hosted pages are pinned to German (`/`) and English (`/en/`); the offline `DocDiff.html` follows the browser language.
 
 
 ```sh

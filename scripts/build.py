@@ -37,7 +37,18 @@ OFFLINE_URL = REPO_URL + "/raw/main/DocDiff.html"
 PAGES = {
     "de": {
         "url": SITE_URL,
-        "html_attrs": 'lang="de"',  # no data-page-lang: the app follows the browser language
+        # The hosted root page stays German (search engines render with an English browser
+        # language and would otherwise see a copy of /en/). The offline file follows the browser.
+        "html_attrs": 'lang="de" data-page-lang="de"',
+        "output_html_attrs": {"DocDiff.html": 'lang="de"'},
+        # Files that only exist on the website; the offline file keeps the inline SVG icon.
+        "output_strip_lines": {
+            "DocDiff.html": [
+                '  <link rel="icon" href="favicon.ico" sizes="any" />\n',
+                '  <link rel="apple-touch-icon" href="apple-touch-icon.png" />\n',
+                '  <link rel="manifest" href="manifest.webmanifest" />\n',
+            ]
+        },
         "asset_base": "",
         "og_locale": "de_DE",
         "og_locale_alt": "en_US",
@@ -262,9 +273,20 @@ def main() -> None:
         for rel in page["outputs"]:
             path = os.path.join(ROOT, rel)
             os.makedirs(os.path.dirname(path), exist_ok=True)
+            html = pages[lang]
+            override = page.get("output_html_attrs", {}).get(rel)
+            if override:
+                tag = f'<html {page["html_attrs"]}>'
+                if html.count(tag) != 1:
+                    sys.exit(f"Expected exactly one {tag} in {rel}")
+                html = html.replace(tag, f"<html {override}>")
+            for line in page.get("output_strip_lines", {}).get(rel, []):
+                if html.count(line) != 1:
+                    sys.exit(f"Expected exactly one {line.strip()} in {rel}")
+                html = html.replace(line, "")
             with open(path, "w", encoding="utf-8") as f:
-                f.write(pages[lang])
-            print(f"Wrote {rel} ({len(pages[lang]):,} bytes, {lang})")
+                f.write(html)
+            print(f"Wrote {rel} ({len(html):,} bytes, {lang})")
 
 
 if __name__ == "__main__":

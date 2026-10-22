@@ -35,9 +35,6 @@
   <link rel="alternate" hreflang="en" href="https://docdiff.app/en/" />
   <link rel="alternate" hreflang="x-default" href="https://docdiff.app/" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='100 80 340 340' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='gp' x1='135' y1='115' x2='395' y2='395' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23ff3b30'/%3E%3Cstop offset='24%25' stop-color='%23ef4444'/%3E%3Cstop offset='50%25' stop-color='%232563eb'/%3E%3Cstop offset='68%25' stop-color='%230284c7'/%3E%3Cstop offset='88%25' stop-color='%2310b981'/%3E%3Cstop offset='100%25' stop-color='%2334c759'/%3E%3C/linearGradient%3E%3CradialGradient id='gr' cx='22%25' cy='18%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ff3b30'/%3E%3Cstop offset='100%25' stop-color='%23ff3b30' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='gb' cx='24%25' cy='80%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%231d4ed8' stop-opacity='0.95'/%3E%3Cstop offset='100%25' stop-color='%232563eb' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='gg' cx='84%25' cy='68%25' r='58%25'%3E%3Cstop offset='0%25' stop-color='%2330d158'/%3E%3Cstop offset='100%25' stop-color='%2310b981' stop-opacity='0'/%3E%3C/radialGradient%3E%3CclipPath id='dChip'%3E%3Cpath d='M 122 170 L 194 98 H 262 C 358 98 420 162 420 256 C 420 350 358 414 262 414 H 170 C 143.5 414 122 392.5 122 366 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23dChip)'%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gp)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gb)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gr)'/%3E%3Crect x='100' y='80' width='340' height='340' fill='url(%23gg)'/%3E%3C/g%3E%3C/svg%3E" />
-  <link rel="icon" href="favicon.ico" sizes="any" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="manifest" href="manifest.webmanifest" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://docdiff.app/" />
   <meta property="og:site_name" content="Doc Diff" />
@@ -1203,6 +1200,18 @@ body.is-comparing .empty-launchpad {
   color: hsl(var(--success-ink));
   box-shadow: inset 0 0 0 1px hsl(var(--success) / 0.25);
   text-decoration: none;
+}
+.lang-hint {
+  margin-bottom: 20px;
+  font-size: 0.9375rem;
+}
+.lang-hint a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .landing-title:focus {
   outline: none;
@@ -4364,6 +4373,7 @@ ins.tok-ins.tok-marker { color: hsl(var(--muted-foreground)); text-decoration: u
          and the app re-translates it at runtime. The German text below is only a readable placeholder. -->
     <div class="empty-launchpad landing" id="empty-launchpad">
       <div class="landing-inner">
+        <p class="lang-hint" id="lang-hint" hidden><a id="lang-hint-link" href="./"></a></p>
         <section class="landing-hero" aria-labelledby="landing-title">
           <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n-html="heroTitle">Dokumente <del class="hero-del" aria-hidden="true" data-word="mühsam"></del> <ins class="hero-ins">einfach</ins> vergleichen.</h1>
           <p class="landing-sub" data-i18n="heroSub">Zwei Fassungen als PDF, Word oder Text: Jede Änderung wird Wort für Wort markiert. Ihre Dateien verlassen dabei nie Ihren Computer.</p>
@@ -5062,6 +5072,7 @@ const I18N = {
               <p>Ja. Der Export „Word-Redline“ erzeugt eine .docx-Datei, in der jeder Unterschied als nachverfolgte Änderung steht. In Word oder LibreOffice können Sie die Änderungen einzeln annehmen oder ablehnen. Übernommen wird nur der Text, nicht die ursprüngliche Formatierung.</p>
             `,
     metaTitle: 'Doc Diff – PDF- und Word-Dokumente vergleichen, ohne Upload',
+    otherPageHint: 'Diese Seite gibt es auch auf Deutsch →',
     metaDescription: 'Zwei Fassungen eines Vertrags oder Dokuments vergleichen: PDF, Word oder Text, Wort für Wort markiert. Kostenlos, Open Source, ohne Upload.',
     ogImageAlt: 'Doc Diff: Zwei Vertragsfassungen nebeneinander, entfernter Text rot durchgestrichen, neuer Text grün markiert.',
     footerSource: 'Quellcode auf GitHub',
@@ -5371,6 +5382,7 @@ const I18N = {
               <p>Yes. The “Word redline” export creates a .docx file in which every difference is a tracked change. In Word or LibreOffice you can accept or reject each change. Only the text is carried over, not the original formatting.</p>
             `,
     metaTitle: 'Doc Diff – Compare PDF and Word documents without uploading',
+    otherPageHint: 'This page is also available in English →',
     metaDescription: 'Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads.',
     ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green (German interface).',
     footerSource: 'Source code on GitHub',
@@ -5783,6 +5795,7 @@ function applyDataI18n() {
 
 function applyTranslationsToStaticDom() {
   document.documentElement.lang = state.lang;
+  document.title = t('metaTitle');
   applyDataI18n();
   document.getElementById('btn-lang').textContent = state.lang.toUpperCase();
   setTooltip(
@@ -11723,7 +11736,22 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   runComparison();
 });
 
+// A hosted page pinned to one language points browsers set to the other language to their page.
+(function showOtherLanguagePageHint() {
+  const hint = document.getElementById('lang-hint');
+  const link = document.getElementById('lang-hint-link');
+  if (!hint || !link || !pageLang || !/^https?:$/.test(location.protocol)) return;
+  const browserLang = (navigator.language || '').toLowerCase().startsWith('de') ? 'de' : 'en';
+  if (browserLang === pageLang) return;
+  link.textContent = I18N[browserLang].otherPageHint;
+  link.lang = browserLang;
+  link.href = pageLang === 'de' ? 'en/' : '../';
+  hint.hidden = false;
+})();
+
 document.getElementById('btn-lang').addEventListener('click', () => {
+  const langHint = document.getElementById('lang-hint');
+  if (langHint) langHint.hidden = true;
   state.lang = state.lang === 'de' ? 'en' : 'de';
   if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
     const sample = SAMPLES[state.lang] || SAMPLES.de;

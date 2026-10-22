@@ -1026,6 +1026,18 @@ body.is-comparing .empty-launchpad {
   box-shadow: inset 0 0 0 1px hsl(var(--success) / 0.25);
   text-decoration: none;
 }
+.lang-hint {
+  margin-bottom: 20px;
+  font-size: 0.9375rem;
+}
+.lang-hint a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .landing-title:focus {
   outline: none;
 }

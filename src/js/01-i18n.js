@@ -298,6 +298,7 @@ const I18N = {
               <p>Ja. Der Export „Word-Redline“ erzeugt eine .docx-Datei, in der jeder Unterschied als nachverfolgte Änderung steht. In Word oder LibreOffice können Sie die Änderungen einzeln annehmen oder ablehnen. Übernommen wird nur der Text, nicht die ursprüngliche Formatierung.</p>
             `,
     metaTitle: 'Doc Diff – PDF- und Word-Dokumente vergleichen, ohne Upload',
+    otherPageHint: 'Diese Seite gibt es auch auf Deutsch →',
     metaDescription: 'Zwei Fassungen eines Vertrags oder Dokuments vergleichen: PDF, Word oder Text, Wort für Wort markiert. Kostenlos, Open Source, ohne Upload.',
     ogImageAlt: 'Doc Diff: Zwei Vertragsfassungen nebeneinander, entfernter Text rot durchgestrichen, neuer Text grün markiert.',
     footerSource: 'Quellcode auf GitHub',
@@ -607,6 +608,7 @@ const I18N = {
               <p>Yes. The “Word redline” export creates a .docx file in which every difference is a tracked change. In Word or LibreOffice you can accept or reject each change. Only the text is carried over, not the original formatting.</p>
             `,
     metaTitle: 'Doc Diff – Compare PDF and Word documents without uploading',
+    otherPageHint: 'This page is also available in English →',
     metaDescription: 'Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads.',
     ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green (German interface).',
     footerSource: 'Source code on GitHub',

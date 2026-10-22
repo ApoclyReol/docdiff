@@ -1204,6 +1204,18 @@ body.is-comparing .empty-launchpad {
   box-shadow: inset 0 0 0 1px hsl(var(--success) / 0.25);
   text-decoration: none;
 }
+.lang-hint {
+  margin-bottom: 20px;
+  font-size: 0.9375rem;
+}
+.lang-hint a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .landing-title:focus {
   outline: none;
 }
@@ -4364,6 +4376,7 @@ ins.tok-ins.tok-marker { color: hsl(var(--muted-foreground)); text-decoration: u
          and the app re-translates it at runtime. The German text below is only a readable placeholder. -->
     <div class="empty-launchpad landing" id="empty-launchpad">
       <div class="landing-inner">
+        <p class="lang-hint" id="lang-hint" hidden><a id="lang-hint-link" href="./"></a></p>
         <section class="landing-hero" aria-labelledby="landing-title">
           <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n-html="heroTitle">Compare documents <del class="hero-del" aria-hidden="true" data-word="by hand"></del> <ins class="hero-ins">easily</ins>.</h1>
           <p class="landing-sub" data-i18n="heroSub">Two versions as PDF, Word or text: every change is marked word by word. Your files never leave your computer.</p>
@@ -5062,6 +5075,7 @@ const I18N = {
               <p>Ja. Der Export „Word-Redline“ erzeugt eine .docx-Datei, in der jeder Unterschied als nachverfolgte Änderung steht. In Word oder LibreOffice können Sie die Änderungen einzeln annehmen oder ablehnen. Übernommen wird nur der Text, nicht die ursprüngliche Formatierung.</p>
             `,
     metaTitle: 'Doc Diff – PDF- und Word-Dokumente vergleichen, ohne Upload',
+    otherPageHint: 'Diese Seite gibt es auch auf Deutsch →',
     metaDescription: 'Zwei Fassungen eines Vertrags oder Dokuments vergleichen: PDF, Word oder Text, Wort für Wort markiert. Kostenlos, Open Source, ohne Upload.',
     ogImageAlt: 'Doc Diff: Zwei Vertragsfassungen nebeneinander, entfernter Text rot durchgestrichen, neuer Text grün markiert.',
     footerSource: 'Quellcode auf GitHub',
@@ -5371,6 +5385,7 @@ const I18N = {
               <p>Yes. The “Word redline” export creates a .docx file in which every difference is a tracked change. In Word or LibreOffice you can accept or reject each change. Only the text is carried over, not the original formatting.</p>
             `,
     metaTitle: 'Doc Diff – Compare PDF and Word documents without uploading',
+    otherPageHint: 'This page is also available in English →',
     metaDescription: 'Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads.',
     ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green (German interface).',
     footerSource: 'Source code on GitHub',
@@ -5783,6 +5798,7 @@ function applyDataI18n() {
 
 function applyTranslationsToStaticDom() {
   document.documentElement.lang = state.lang;
+  document.title = t('metaTitle');
   applyDataI18n();
   document.getElementById('btn-lang').textContent = state.lang.toUpperCase();
   setTooltip(
@@ -11723,7 +11739,22 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   runComparison();
 });
 
+// A hosted page pinned to one language points browsers set to the other language to their page.
+(function showOtherLanguagePageHint() {
+  const hint = document.getElementById('lang-hint');
+  const link = document.getElementById('lang-hint-link');
+  if (!hint || !link || !pageLang || !/^https?:$/.test(location.protocol)) return;
+  const browserLang = (navigator.language || '').toLowerCase().startsWith('de') ? 'de' : 'en';
+  if (browserLang === pageLang) return;
+  link.textContent = I18N[browserLang].otherPageHint;
+  link.lang = browserLang;
+  link.href = pageLang === 'de' ? 'en/' : '../';
+  hint.hidden = false;
+})();
+
 document.getElementById('btn-lang').addEventListener('click', () => {
+  const langHint = document.getElementById('lang-hint');
+  if (langHint) langHint.hidden = true;
   state.lang = state.lang === 'de' ? 'en' : 'de';
   if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
     const sample = SAMPLES[state.lang] || SAMPLES.de;

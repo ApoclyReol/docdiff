@@ -22,8 +22,22 @@ assert.ok(fs.existsSync(rootHtmlPath), 'DocDiff.html must exist');
 const siteHtml = fs.readFileSync(siteHtmlPath, 'utf8');
 const rootHtml = fs.readFileSync(rootHtmlPath, 'utf8');
 
-// 1. Both output files must be identical
-assert.equal(siteHtml, rootHtml, 'site/index.html and DocDiff.html must be identical');
+// 1. The offline file equals the hosted German page, except that it follows the browser language
+assert.ok(siteHtml.includes('<html lang="de" data-page-lang="de">'), 'site/index.html must pin its language to German');
+assert.ok(rootHtml.includes('<html lang="de">'), 'DocDiff.html must follow the browser language (no data-page-lang)');
+const websiteOnlyLinks = [
+  '  <link rel="icon" href="favicon.ico" sizes="any" />\n',
+  '  <link rel="apple-touch-icon" href="apple-touch-icon.png" />\n',
+  '  <link rel="manifest" href="manifest.webmanifest" />\n',
+];
+assert.equal(
+  websiteOnlyLinks.reduce(
+    (html, line) => html.replace(line, ''),
+    siteHtml.replace('<html lang="de" data-page-lang="de">', '<html lang="de">')
+  ),
+  rootHtml,
+  'DocDiff.html must equal site/index.html apart from data-page-lang and website-only icon/manifest links'
+);
 
 // 2. Unreplaced template placeholders must not exist
 for (const placeholder of [

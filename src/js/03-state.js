@@ -100,6 +100,7 @@ function applyDataI18n() {
 
 function applyTranslationsToStaticDom() {
   document.documentElement.lang = state.lang;
+  document.title = t('metaTitle');
   applyDataI18n();
   document.getElementById('btn-lang').textContent = state.lang.toUpperCase();
   setTooltip(
