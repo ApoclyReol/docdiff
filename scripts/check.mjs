@@ -275,3 +275,5 @@ await import('./test-export.mjs');
 // 6. Diff core unit tests (word-diff invariant, alignment, header/footer, PDF intake helpers)
 execFileSync(process.execPath, [path.join(__dirname, 'test-core.mjs')], { stdio: 'inherit' });
 
+// 6. App state guards (edits/exports during a running comparison, dirty flag after copy/print)
+execFileSync(process.execPath, [path.join(__dirname, 'test-app-state.mjs')], { stdio: 'inherit' });
