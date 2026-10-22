@@ -246,9 +246,9 @@ __APP_CSS__
             <button type="button" class="dropdown-item" data-export="word" role="menuitem">
               <span class="dropdown-item-left">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span id="i18n-exp-word">Word-Redline (mit Änderungen)</span>
+                <span id="i18n-exp-word">Word-Redline (Änderungen nachverfolgen)</span>
               </span>
-              <span class="dropdown-ext">.doc</span>
+              <span class="dropdown-ext">.docx</span>
             </button>
             <button type="button" class="dropdown-item" data-export="print" role="menuitem">
               <span class="dropdown-item-left">
@@ -379,6 +379,7 @@ __APP_CSS__
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               <span data-i18n="pasteText">Text einfügen</span>
             </button>
+            <!-- Further secondary start actions (e.g. "Sitzung öffnen") belong here, as .btn buttons. -->
           </div>
         </section>
 
@@ -400,6 +401,7 @@ __APP_CSS__
                 <li data-i18n="scopeCan1">PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen</li>
                 <li data-i18n="scopeCan2">Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge</li>
                 <li data-i18n="scopeCan3">Seiten wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet</li>
+                <li data-i18n="scopeCan5">Verschobene Absätze als „verschoben“ kennzeichnen</li>
                 <li data-i18n="scopeCan4">Ohne Internet arbeiten – als einzelne HTML-Datei</li>
               </ul>
             </div>
@@ -409,7 +411,6 @@ __APP_CSS__
                 <li data-i18n="scopeCannot1">Gescannte PDFs lesen – es gibt keine Texterkennung (OCR)</li>
                 <li data-i18n="scopeCannot2">Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern</li>
                 <li data-i18n="scopeCannot3">Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text</li>
-                <li data-i18n="scopeCannot4">Verschobene Absätze erkennen – sie erscheinen als entfernt und an anderer Stelle neu</li>
               </ul>
             </div>
           </div>

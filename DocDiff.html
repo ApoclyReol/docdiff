@@ -1717,7 +1717,6 @@ body.legend-dismissed .legend-bar {
   line-height: 1.4;
   padding: 6px 14px;
   color: hsl(var(--muted-foreground));
-  opacity: 0.82;
   border-bottom: 1px dashed var(--kante-200);
 }
 
@@ -2281,7 +2280,7 @@ body:not(.is-comparing) .floating-action-bar {
   line-height: 1;
 }
 #btn-filter-hf.dock-btn[aria-pressed="true"] .dock-count-pill {
-  background: hsl(var(--primary) / 0.22);
+  background: hsl(var(--card));
   color: hsl(var(--primary-ink));
 }
 
@@ -3603,6 +3602,265 @@ dialog.prime-dialog::backdrop {
   }
 }
 
+/* ── Print view (built by preparePrintView() on beforeprint / "PDF / Print") ──
+   A dedicated, row-aligned rendering for paper: no UI chrome, a header with both file names
+   and the date, page numbers in the page margin, and redline marks that survive greyscale
+   printing (strike-through for removed text, underline for added text). */
+#print-view {
+  display: none;
+}
+
+@media print {
+  body.has-print-view > :not(#print-view) {
+    display: none !important;
+  }
+  body.has-print-view #print-view {
+    display: block !important;
+    font-family: "Geist", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.45;
+    color: #000;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #print-view .pv-head {
+    border-bottom: 1.5pt solid #000;
+    padding-bottom: 6pt;
+    margin-bottom: 10pt;
+    break-after: avoid;
+  }
+  #print-view .pv-title {
+    font-size: 14pt;
+    font-weight: 700;
+    margin-bottom: 4pt;
+  }
+  #print-view .pv-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2pt 14pt;
+    font-size: 8.5pt;
+    color: #333;
+  }
+  #print-view .pv-legend {
+    margin-top: 4pt;
+    font-size: 8.5pt;
+    color: #333;
+  }
+  #print-view del.tok-del,
+  #print-view ins.tok-ins {
+    padding: 0 1pt;
+    border-radius: 1pt;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  #print-view del.tok-del {
+    color: #8a0021;
+    background: #ffe3e8;
+    text-decoration: line-through;
+    text-decoration-thickness: 1pt;
+  }
+  #print-view ins.tok-ins {
+    color: #0d5a26;
+    background: #dcf7e4;
+    text-decoration: underline;
+    text-decoration-thickness: 1pt;
+    text-underline-offset: 1.5pt;
+    font-weight: 600;
+  }
+  #print-view .pv-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  #print-view .pv-page-head {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  #print-view .pv-table thead {
+    display: table-header-group;
+  }
+  #print-view .pv-table thead th {
+    text-align: left;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #333;
+    padding: 3pt 6pt;
+    border-bottom: 1pt solid #888;
+    overflow-wrap: anywhere;
+  }
+  #print-view .pv-page-head th {
+    text-align: left;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #555;
+    padding: 6pt 6pt 2pt;
+  }
+  #print-view .pv-row,
+  #print-view .pv-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  #print-view .pv-cell {
+    vertical-align: top;
+    padding: 3pt 6pt;
+    border-bottom: 0.5pt solid #ddd;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+  #print-view .pv-cell + .pv-cell {
+    border-left: 0.5pt solid #bbb;
+  }
+  #print-view .pv-empty {
+    background: repeating-linear-gradient(135deg, transparent 0 4pt, #eee 4pt 5pt);
+  }
+  #print-view .pv-cell.kind-h1,
+  #print-view .pv-row.kind-h1 {
+    font-size: 12pt;
+    font-weight: 700;
+  }
+  #print-view .pv-cell.kind-h2,
+  #print-view .pv-row.kind-h2 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    break-after: avoid;
+  }
+  #print-view .pv-cell.kind-h3,
+  #print-view .pv-row.kind-h3 {
+    font-weight: 600;
+    break-after: avoid;
+  }
+  #print-view .pv-cell.kind-hf,
+  #print-view .pv-row.kind-hf {
+    font-size: 7.5pt;
+    font-style: italic;
+    color: #555;
+  }
+  #print-view .clause-marker {
+    display: inline-block;
+    min-width: 2.2em;
+  }
+  #print-view .clause-body {
+    display: inline;
+  }
+  #print-view .pv-tag {
+    display: block;
+    font-size: 7pt;
+    font-weight: 600;
+    font-style: normal;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #444;
+  }
+  #print-view .pv-modified > .pv-cell,
+  #print-view .pv-inline .pv-modified {
+    border-left: 2pt solid #1d4ed8;
+  }
+  #print-view .pv-deleted > .pv-cell:first-child,
+  #print-view .pv-inline .pv-deleted {
+    border-left: 2pt dashed #8a0021;
+  }
+  #print-view .pv-inserted > .pv-cell:last-child,
+  #print-view .pv-inline .pv-inserted {
+    border-left: 2pt double #0d5a26;
+  }
+  #print-view .pv-inline .pv-row {
+    padding: 2pt 0 2pt 8pt;
+    margin-bottom: 5pt;
+  }
+  #print-view .pv-inline .pv-equal {
+    border-left: 2pt solid transparent;
+  }
+  #print-view .pv-empty-note {
+    font-style: italic;
+    color: #444;
+  }
+}
+/* ── Import notices (errors / warnings, role="alert") ─────────────────── */
+.import-notice {
+  position: fixed;
+  left: 50%;
+  bottom: 88px;
+  transform: translateX(-50%);
+  z-index: 1200;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: min(560px, calc(100vw - 32px));
+  padding: 10px 12px 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  background: hsl(var(--destructive-ton-1));
+  color: hsl(var(--destructive-ink));
+  box-shadow: inset 0 0 0 1px hsl(var(--destructive) / 0.35), 0 8px 24px rgb(0 0 0 / 0.16);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.import-notice[hidden] { display: none; }
+.import-notice.is-warning {
+  background: hsl(var(--warning-ton-2));
+  color: hsl(var(--foreground));
+  box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.18), 0 8px 24px rgb(0 0 0 / 0.16);
+}
+.import-notice-msg { margin: 0; flex: 1; }
+.import-notice-close {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+/* ── Renumbering (marker-only change) and moved blocks ────────────────── */
+del.tok-del.tok-marker,
+ins.tok-ins.tok-marker {
+  background: transparent;
+  box-shadow: none;
+  font-weight: inherit;
+  opacity: 0.75;
+}
+del.tok-del.tok-marker { color: hsl(var(--muted-foreground)); }
+ins.tok-ins.tok-marker { color: hsl(var(--muted-foreground)); text-decoration: underline dotted; }
+
+.clause.is-moved {
+  border-left-color: hsl(var(--primary));
+  border-left-style: dashed;
+  background: hsl(var(--primary-ton-1));
+}
+.clause.is-moved del.tok-del,
+.clause.is-moved ins.tok-ins {
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  text-decoration: none;
+  font-weight: inherit;
+}
+.moved-note {
+  display: block;
+  grid-column: 1 / -1;
+  margin-bottom: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: hsl(var(--primary-ink));
+}
+.nav-item.moved { border-left-style: dashed; border-left-color: hsl(var(--primary)); }
+.nav-item-badge.moved {
+  background: hsl(var(--primary-ton-1));
+  color: hsl(var(--primary-ink));
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.2);
+}
+.minimap-tick.moved { opacity: 0.6; }
+
+/* ── Nested list depth (DOCX) ─────────────────────────────────────────── */
+.clause.indent-1 { margin-left: 22px; }
+.clause.indent-2 { margin-left: 44px; }
+.clause.indent-3 { margin-left: 66px; }
+.clause.indent-4 { margin-left: 88px; }
+
   </style>
 </head>
 <body>
@@ -3787,9 +4045,9 @@ dialog.prime-dialog::backdrop {
             <button type="button" class="dropdown-item" data-export="word" role="menuitem">
               <span class="dropdown-item-left">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span id="i18n-exp-word">Word-Redline (mit Änderungen)</span>
+                <span id="i18n-exp-word">Word-Redline (Änderungen nachverfolgen)</span>
               </span>
-              <span class="dropdown-ext">.doc</span>
+              <span class="dropdown-ext">.docx</span>
             </button>
             <button type="button" class="dropdown-item" data-export="print" role="menuitem">
               <span class="dropdown-item-left">
@@ -3920,6 +4178,7 @@ dialog.prime-dialog::backdrop {
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               <span data-i18n="pasteText">Text einfügen</span>
             </button>
+            <!-- Further secondary start actions (e.g. "Sitzung öffnen") belong here, as .btn buttons. -->
           </div>
         </section>
 
@@ -3941,6 +4200,7 @@ dialog.prime-dialog::backdrop {
                 <li data-i18n="scopeCan1">PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen</li>
                 <li data-i18n="scopeCan2">Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge</li>
                 <li data-i18n="scopeCan3">Seiten wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet</li>
+                <li data-i18n="scopeCan5">Verschobene Absätze als „verschoben“ kennzeichnen</li>
                 <li data-i18n="scopeCan4">Ohne Internet arbeiten – als einzelne HTML-Datei</li>
               </ul>
             </div>
@@ -3950,7 +4210,6 @@ dialog.prime-dialog::backdrop {
                 <li data-i18n="scopeCannot1">Gescannte PDFs lesen – es gibt keine Texterkennung (OCR)</li>
                 <li data-i18n="scopeCannot2">Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern</li>
                 <li data-i18n="scopeCannot3">Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text</li>
-                <li data-i18n="scopeCannot4">Verschobene Absätze erkennen – sie erscheinen als entfernt und an anderer Stelle neu</li>
               </ul>
             </div>
           </div>
@@ -4185,7 +4444,6 @@ const I18N = {
     nextTitle: 'Nächste Änderung (Taste J)',
     onlyChanges: 'Nur Änderungen',
     onlyChangesTitle: 'Unveränderte Absätze ausblenden (Taste C)',
-    syncBtn: 'Sync-Scroll',
     syncTitle: 'Beide Spalten beim Scrollen gemeinsam bewegen',
     textBtn: 'Text einfügen',
     textBtnTitle: 'Texte der alten und neuen Fassung einfügen oder bearbeiten',
@@ -4195,9 +4453,48 @@ const I18N = {
     expTxt: 'Neuen Stand speichern',
     copiedLabel: 'Kopiert',
     expPdf: 'PDF / Druckansicht',
-    expWord: 'Word-Redline (mit Änderungen)',
+    expWord: 'Word-Redline (Änderungen nachverfolgen)',
     expHtml: 'HTML-Vergleichsbericht',
     expMd: 'Markdown-Bericht',
+    exportFallbackLeft: 'Originaldokument',
+    exportFallbackRight: 'Neue Fassung',
+    exportTitleFmt: 'Vergleich: {left} → {right}',
+    exportVs: 'vs.',
+    exportCountsFmt: '{total} Änderungen ({mod} geändert, {ins} neu, {del} entfernt)',
+    exportLabelOriginal: 'Original (vorher)',
+    exportLabelRevised: 'Neue Fassung (nachher)',
+    exportLabelCreated: 'Erstellt am',
+    exportLabelChanges: 'Änderungen',
+    exportLabelScope: 'Umfang',
+    exportLabelHf: 'Kopf-/Fußzeilen',
+    exportLabelDetail: 'Angabe',
+    exportScopeFull: 'Vollständiges Dokument',
+    exportScopeChanges: 'Nur Änderungen (Filter „Nur Änderungen“ aktiv, unveränderte Absätze ausgelassen)',
+    exportHfIgnored: 'ausgeblendet (nicht verglichen)',
+    exportHfIgnoredCount: 'ausgeblendet ({n} Zeilen nicht verglichen)',
+    exportHfIncluded: 'mitverglichen',
+    exportSummaryHeading: 'Zusammenfassung',
+    exportCountTotal: 'Änderungen gesamt',
+    exportChangesHeading: 'Änderungsübersicht',
+    exportChangeListCaption: 'Alle Änderungen mit Fundstelle. Ein Klick auf die Fundstelle springt zur Stelle im Redline.',
+    exportColRef: 'Fundstelle',
+    exportColType: 'Art',
+    exportColChange: 'Änderung',
+    exportRedlineHeading: 'Redline (vorher → nachher)',
+    exportLegendLabel: 'Legende',
+    exportLegendIns: 'eingefügt',
+    exportLegendDel: 'gelöscht',
+    exportNoChanges: 'Keine Unterschiede gefunden: Beide Fassungen sind inhaltlich identisch.',
+    exportFooterNote: 'Erstellt mit Doc Diff. Alle Inhalte wurden lokal im Browser verarbeitet, es wurden keine Daten hochgeladen.',
+    a11yRemovedStart: '[gelöscht:',
+    a11yRemovedEnd: ']',
+    a11yAddedStart: '[eingefügt:',
+    a11yAddedEnd: ']',
+    docxSubject: 'Redline mit nachverfolgten Änderungen',
+    docxNote: 'Alle Abweichungen sind als nachverfolgte Änderungen (Autor „Doc Diff“) eingetragen. In Word unter „Überprüfen“ einzeln oder alle auf einmal annehmen bzw. ablehnen.',
+    exportFileFinal: 'Endfassung',
+    exportFileRedline: 'Redline',
+    exportFileReport: 'Bericht',
     editBtn: 'Bearbeiten',
     editInsertBtn: 'Einfügen',
     editTitle: 'Diesen Absatz in der neuen Fassung bearbeiten (oder Doppelklick)',
@@ -4248,6 +4545,9 @@ const I18N = {
     typeMod: 'Geändert',
     typeIns: 'Neu',
     typeDel: 'Entfernt',
+    typeMoved: 'Verschoben',
+    movedFromHere: 'Verschoben – von hier',
+    movedToHere: 'Verschoben – hierher',
     filterAll: 'Alle',
     filterMod: 'Geändert',
     filterIns: 'Neu',
@@ -4260,6 +4560,16 @@ const I18N = {
     unitPara: 'Abs.',
     readingFile: 'Lese',
     readError: 'Fehler beim Lesen der Datei',
+    noticeClose: 'Hinweis schließen',
+    errUnsupportedType: 'Dieses Dateiformat wird nicht unterstützt. Bitte PDF, Word (.docx), HTML oder reinen Text (.txt, .md) verwenden.',
+    errLegacyDoc: 'Alte Word-Dateien (.doc) werden nicht unterstützt. Bitte in Word als .docx speichern und erneut laden.',
+    errRtf: 'RTF-Dateien werden nicht unterstützt. Bitte als .docx oder .txt speichern und erneut laden.',
+    errNotText: 'Die Datei ist kein lesbarer Text (UTF-8). Bitte PDF, Word (.docx) oder eine UTF-8-Textdatei verwenden.',
+    errEmptyFile: 'Die Datei enthält keinen Text.',
+    errScannedPdf: 'Dieses PDF enthält keinen Text (eingescanntes Dokument oder Bild). Scans werden nicht unterstützt, da keine Texterkennung (OCR) verfügbar ist.',
+    warnPdfPagesWithoutText: 'Hinweis: Seiten ohne Textebene (Scan/Bild) können nicht verglichen werden:',
+    errDocxEmpty: 'Im Word-Dokument wurde kein Text gefunden.',
+    errImage: 'Bilddateien werden nicht unterstützt, da keine Texterkennung (OCR) verfügbar ist. Bitte ein PDF mit Textebene, Word (.docx) oder Text verwenden.',
     manualLeft: 'Eingefügter Text (alte Fassung)',
     manualRight: 'Eingefügter Text (neue Fassung)',
     modalPasteTitle: 'Text einfügen',
@@ -4364,7 +4674,7 @@ const I18N = {
     scopeCannot1: 'Gescannte PDFs lesen – es gibt keine Texterkennung (OCR)',
     scopeCannot2: 'Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern',
     scopeCannot3: 'Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text',
-    scopeCannot4: 'Verschobene Absätze erkennen – sie erscheinen als entfernt und an anderer Stelle neu',
+    scopeCan5: 'Verschobene Absätze als „verschoben“ kennzeichnen',
     faqTitle: 'Häufige Fragen',
     faqUploadQ: 'Wie kann ich prüfen, dass nichts hochgeladen wird?',
     faqUploadA: `
@@ -4411,7 +4721,6 @@ const I18N = {
     nextTitle: 'Next change (key J)',
     onlyChanges: 'Changes only',
     onlyChangesTitle: 'Hide unchanged paragraphs (key C)',
-    syncBtn: 'Sync-Scroll',
     syncTitle: 'Scroll both columns together',
     textBtn: 'Paste text',
     textBtnTitle: 'Paste or edit the text of both versions',
@@ -4421,9 +4730,48 @@ const I18N = {
     expTxt: 'Save new version (.txt)',
     copiedLabel: 'Copied',
     expPdf: 'PDF / Print view',
-    expWord: 'Word Redline (with changes)',
+    expWord: 'Word redline (tracked changes)',
     expHtml: 'HTML Diff Report',
     expMd: 'Markdown Report',
+    exportFallbackLeft: 'Original document',
+    exportFallbackRight: 'Revised document',
+    exportTitleFmt: 'Comparison: {left} → {right}',
+    exportVs: 'vs.',
+    exportCountsFmt: '{total} changes ({mod} modified, {ins} added, {del} removed)',
+    exportLabelOriginal: 'Original (before)',
+    exportLabelRevised: 'Revised (after)',
+    exportLabelCreated: 'Created',
+    exportLabelChanges: 'Changes',
+    exportLabelScope: 'Scope',
+    exportLabelHf: 'Headers/footers',
+    exportLabelDetail: 'Detail',
+    exportScopeFull: 'Full document',
+    exportScopeChanges: 'Changes only (“Changes only” filter active, unchanged paragraphs omitted)',
+    exportHfIgnored: 'ignored (not compared)',
+    exportHfIgnoredCount: 'ignored ({n} lines not compared)',
+    exportHfIncluded: 'included in the comparison',
+    exportSummaryHeading: 'Summary',
+    exportCountTotal: 'Total changes',
+    exportChangesHeading: 'List of changes',
+    exportChangeListCaption: 'All changes with their clause reference. Select a reference to jump to it in the redline.',
+    exportColRef: 'Reference',
+    exportColType: 'Type',
+    exportColChange: 'Change',
+    exportRedlineHeading: 'Redline (before → after)',
+    exportLegendLabel: 'Legend',
+    exportLegendIns: 'added',
+    exportLegendDel: 'removed',
+    exportNoChanges: 'No differences found: both versions have identical content.',
+    exportFooterNote: 'Generated with Doc Diff. All content was processed locally in the browser; no data was uploaded.',
+    a11yRemovedStart: '[removed:',
+    a11yRemovedEnd: ']',
+    a11yAddedStart: '[added:',
+    a11yAddedEnd: ']',
+    docxSubject: 'Redline with tracked changes',
+    docxNote: 'All differences are recorded as tracked changes (author “Doc Diff”). In Word, use Review › Accept / Reject to process them one by one or all at once.',
+    exportFileFinal: 'Final',
+    exportFileRedline: 'Redline',
+    exportFileReport: 'Report',
     editBtn: 'Edit',
     editInsertBtn: 'Insert',
     editTitle: 'Edit this paragraph in the new version (or double-click)',
@@ -4474,6 +4822,9 @@ const I18N = {
     typeMod: 'Modified',
     typeIns: 'Added',
     typeDel: 'Removed',
+    typeMoved: 'Moved',
+    movedFromHere: 'Moved – from here',
+    movedToHere: 'Moved – to here',
     filterAll: 'All',
     filterMod: 'Modified',
     filterIns: 'Added',
@@ -4486,6 +4837,16 @@ const I18N = {
     unitPara: 'paras',
     readingFile: 'Reading',
     readError: 'Failed to read file',
+    noticeClose: 'Dismiss message',
+    errUnsupportedType: 'This file format is not supported. Please use PDF, Word (.docx), HTML or plain text (.txt, .md).',
+    errLegacyDoc: 'Legacy Word files (.doc) are not supported. Please save the file as .docx in Word and load it again.',
+    errRtf: 'RTF files are not supported. Please save the file as .docx or .txt and load it again.',
+    errNotText: 'The file is not readable text (UTF-8). Please use PDF, Word (.docx) or a UTF-8 text file.',
+    errEmptyFile: 'The file does not contain any text.',
+    errScannedPdf: 'This PDF contains no text (scanned document or image). Scans are not supported because text recognition (OCR) is not available.',
+    warnPdfPagesWithoutText: 'Note: pages without a text layer (scan/image) cannot be compared:',
+    errDocxEmpty: 'No text was found in the Word document.',
+    errImage: 'Image files are not supported because text recognition (OCR) is not available. Please use a PDF with a text layer, Word (.docx) or text.',
     manualLeft: 'Pasted text (old version)',
     manualRight: 'Pasted text (new version)',
     modalPasteTitle: 'Paste text',
@@ -4590,7 +4951,7 @@ const I18N = {
     scopeCannot1: 'Read scanned PDFs – there is no text recognition (OCR)',
     scopeCannot2: 'Open old Word files (.doc) – please save them as .docx first',
     scopeCannot3: 'Compare formatting – bold, italics, table layout and images are ignored; only the text is compared',
-    scopeCannot4: 'Detect moved paragraphs – they show up as removed in one place and added in another',
+    scopeCan5: 'Mark moved paragraphs as “moved”',
     faqTitle: 'Frequently asked questions',
     faqUploadQ: 'How can I check that nothing is uploaded?',
     faqUploadA: `
@@ -4892,6 +5253,17 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
   },
 };
 
+// The samples above are written in a readable notation ("=== [SEITE n] ===" page breaks,
+// "[[HF]]" header/footer lines). Convert it to the internal document encoding
+// (see DOC_PAGE_MARK / DOC_META_MARK in 04-core.js); user input never gets this treatment.
+for (const lang of Object.keys(SAMPLES)) {
+  for (const version of ['v1', 'v2']) {
+    SAMPLES[lang][version] = SAMPLES[lang][version]
+      .replace(/^=== \[SEITE (\d+)\] ===$/gm, '\u001E$1')
+      .replace(/^\[\[HF\]\] /gm, '\u001Fhf\u001F');
+  }
+}
+
 const initialLang =
   typeof navigator !== 'undefined' &&
   navigator.language &&
@@ -4925,7 +5297,6 @@ const state = {
   changeRows: [],
   hoveredRowId: null,
   activeRowId: null,
-  syncScroll: true,
   onlyChanges: false,
   ignoreHeadersFooters: true,
   filteredHfCount: 0,
@@ -5128,16 +5499,185 @@ function setViewMode(mode) {
   });
 }
 
+/* ── Document text encoding ──────────────────────────────────────────────
+ * Loaded documents are kept as plain strings (state.leftText / state.rightText).
+ * Structural metadata that is NOT part of the document text — page breaks,
+ * header/footer lines, list nesting depth — is encoded with ASCII control
+ * characters that cannot occur in user-visible text:
+ *
+ *   DOC_PAGE_MARK + n                     starts page n (own line)
+ *   DOC_META_MARK + meta + DOC_META_MARK  prefixes a line with metadata,
+ *                                         meta = "hf" | "lvl=2" | "hf;lvl=1"
+ *
+ * Every external input (typed/pasted text, text files, PDF and DOCX text) is
+ * passed through sanitizeExternalText(), which strips these control characters,
+ * so document content can never be (mis)interpreted as metadata, and
+ * docTextToPlainText() removes the metadata before text is shown to the user.
+ * This file must stay free of DOM access (it also runs inside a Worker).
+ */
+const DOC_PAGE_MARK = '\u001E';
+const DOC_META_MARK = '\u001F';
+
+function sanitizeExternalText(text) {
+  return String(text == null ? '' : text)
+    .replace(/\r\n?/g, '\n')
+    .replace(/\f/g, '\n')
+    .replace(/[\u0000-\u0008\u000B\u000E-\u001F\u007F]/g, '');
+}
+
+function pageMarkerLine(pageNum) {
+  return `${DOC_PAGE_MARK}${pageNum}`;
+}
+
+function metaLine(meta, text) {
+  return meta ? `${DOC_META_MARK}${meta}${DOC_META_MARK}${text}` : text;
+}
+
+function serializeBlockLine(block) {
+  const meta = [];
+  if (block.kind === 'hf' || block.isHeaderFooter) meta.push('hf');
+  if (block.indent > 0) meta.push(`lvl=${block.indent}`);
+  return metaLine(meta.join(';'), block.text);
+}
+
+function parseLineMeta(line) {
+  if (!line.startsWith(DOC_META_MARK)) return { meta: null, text: line };
+  const end = line.indexOf(DOC_META_MARK, 1);
+  if (end < 0) return { meta: null, text: line.slice(1) };
+  const meta = {};
+  for (const part of line.slice(1, end).split(';')) {
+    const [key, value] = part.split('=');
+    if (key) meta[key.trim()] = value === undefined ? true : value.trim();
+  }
+  return { meta, text: line.slice(end + 1) };
+}
+
+// Plain text for display/editing (paste dialog): page and header/footer metadata removed.
+function docTextToPlainText(docText) {
+  if (!docText) return '';
+  const out = [];
+  for (const rawLine of String(docText).split('\n')) {
+    if (rawLine.startsWith(DOC_PAGE_MARK)) continue;
+    out.push(parseLineMeta(rawLine).text);
+  }
+  return out
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/* ── Header / footer detection ─────────────────────────────────────────── */
+
+// A line that is nothing but a page number label ("Seite 3 von 9", "- 3 -", "Page 2/7").
+function isPageNumberLabel(line) {
+  if (!line || line.length > 40) return false;
+  return /^(?:(?:Seite|Page|Blatt|S\.|p\.)\s*\d+(?:\s*(?:von|of|\/)\s*\d+)?|-\s*\d+\s*-|\d+\s*(?:\/|von|of)\s*\d+)$/i.test(
+    line.trim()
+  );
+}
+
+// Text-only header/footer candidate test (used for pasted text without page geometry).
+// Pure page labels qualify on their own; longer running lines ("Vertraulich · Seite 2 von 9")
+// are only treated as header/footer by parseIntoBlocks when they repeat within the document.
 function isLikelyHeaderOrFooterLine(line) {
   if (!line || line.length > 130) return false;
-  if (/^(?:Seite|Page|Blatt|S\.|p\.)\s*\d+(?:\s*(?:von|of|\/)\s*\d+)?$/i.test(line)) return true;
-  if (/^-\s*\d+\s*-$/.test(line)) return true;
-  if (/^.*(?:\bSeite|\bPage)\s+\d+\s*(?:von|of|\/)\s*\d+\s*$/i.test(line)) return true;
+  if (isPageNumberLabel(line)) return true;
+  if (/(?:\bSeite|\bPage)\s+\d+\s*(?:von|of|\/)\s*\d+\s*$/i.test(line)) return true;
   if (/^(?:Vertraulich|Confidential|Stand:|Fassung|Entwurf|Draft)\b.*(?:\bSeite|\bPage)\s+\d+/i.test(line)) {
     return true;
   }
   return false;
 }
+
+// Key for "same running line on every page": page numbers and other digits normalised away.
+function normalizeHfRepeatKey(text) {
+  return String(text).toLowerCase().replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+}
+
+// Key for comparing header/footer lines ACROSS versions: only page numbers are normalised,
+// so a changed date or version label in a header is still detected as a difference.
+function normalizeHfCompareKey(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/(?:\bseite|\bpage|\bblatt|\bs\.|\bp\.)\s*\d+(?:\s*(?:von|of|\/)\s*\d+)?/g, 'seite #')
+    .replace(/^\s*-\s*\d+\s*-\s*$/, '#')
+    .replace(/^\s*\d+\s*$/, '#')
+    .replace(/\b\d+\s*(?:\/|von|of)\s*\d+\s*$/, '#')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Decides which margin lines of a paginated document are running headers/footers.
+ * pages: array (one entry per page) of candidate lines { text, yPct } where yPct is the
+ * line's vertical position as a fraction of the page height (0 = bottom, 1 = top).
+ * A candidate is a header/footer only if its digit-normalised text occurs on at least
+ * 50% of the pages (and on at least 2 pages) at a similar vertical position.
+ * Returns an array of boolean arrays parallel to `pages`.
+ */
+function detectRepeatingMarginLines(pages, yTolerance = 0.03) {
+  const numPages = pages.length;
+  const result = pages.map(lines => lines.map(() => false));
+  if (numPages < 2) return result;
+  const minPages = Math.max(2, Math.ceil(numPages * 0.5));
+
+  const groups = new Map();
+  pages.forEach((lines, p) => {
+    lines.forEach((line, l) => {
+      if (!line || !line.text || !line.text.trim()) return;
+      const band = line.yPct >= 0.5 ? 'T' : 'B';
+      const key = `${band}|${normalizeHfRepeatKey(line.text)}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ p, l, y: line.yPct });
+    });
+  });
+
+  for (const members of groups.values()) {
+    if (new Set(members.map(m => m.p)).size < minPages) continue;
+    // Cluster by vertical position: keep the members close to the median y.
+    const ys = members.map(m => m.y).sort((a, b) => a - b);
+    const median = ys[Math.floor(ys.length / 2)];
+    const close = members.filter(m => Math.abs(m.y - median) <= yTolerance);
+    if (new Set(close.map(m => m.p)).size < minPages) continue;
+    for (const m of close) result[m.p][m.l] = true;
+  }
+  return result;
+}
+
+/**
+ * Cross-version safety net: a header/footer line whose text differs between the two
+ * versions (beyond page numbers) is never hidden. The first occurrence of each such
+ * distinct line stays visible (flag `hfVisible`), so the change shows up in the diff once
+ * instead of once per page. Pure page-number labels always stay hidden.
+ * Mutates the blocks; returns the number of header/footer blocks that remain hidden.
+ */
+function reconcileHeaderFooterBlocks(leftBlocks, rightBlocks) {
+  const hfL = leftBlocks.filter(b => b.isHeaderFooter);
+  const hfR = rightBlocks.filter(b => b.isHeaderFooter);
+  if (leftBlocks.length && rightBlocks.length) {
+    const keysL = new Set(hfL.map(b => normalizeHfCompareKey(b.text)));
+    const keysR = new Set(hfR.map(b => normalizeHfCompareKey(b.text)));
+    const unhide = (blocks, otherKeys) => {
+      const shown = new Set();
+      for (const b of blocks) {
+        if (isPageNumberLabel(b.text)) continue;
+        const key = normalizeHfCompareKey(b.text);
+        if (otherKeys.has(key) || shown.has(key)) continue;
+        shown.add(key);
+        b.hfVisible = true;
+      }
+    };
+    unhide(hfL, keysR);
+    unhide(hfR, keysL);
+  }
+  return [...hfL, ...hfR].filter(b => !b.hfVisible).length;
+}
+
+function isHiddenHeaderFooter(block) {
+  return Boolean(block && block.isHeaderFooter && !block.hfVisible);
+}
+
+/* ── Block classification ──────────────────────────────────────────────── */
 
 function classifyBlockKind(line, isFirstContentBlock, isHeaderFooter) {
   if (isHeaderFooter) return 'hf';
@@ -5155,11 +5695,14 @@ function classifyBlockKind(line, isFirstContentBlock, isHeaderFooter) {
   }
 
   if (
-    /^(§\s*\d+[a-z]?|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+|\d+\.\s+[A-ZÄÖÜ])/i.test(
-      line
-    ) &&
+    /^(§\s*\d+[a-z]?|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i.test(line) &&
     line.length < 115
   ) {
+    return 'h2';
+  }
+
+  // "1. Haftung" is a heading; "1. Der Auftragnehmer haftet …." is a numbered paragraph.
+  if (/^\d+\.\s+[A-ZÄÖÜ]/.test(line) && line.length < 115 && !/[.;:,]$/.test(line)) {
     return 'h2';
   }
 
@@ -5199,6 +5742,23 @@ function extractListMarker(text, kind) {
   return null;
 }
 
+// Numbering prefix that only reflects the position in the document (list marker or
+// heading number). Used to align blocks independent of renumbering. Returns null when
+// the block has no such marker (or the remaining body would be too short to identify it).
+function splitNumberingMarker(text, kind) {
+  let m = null;
+  if (kind === 'clause' || kind === 'bullet') {
+    const split = extractListMarker(text, kind);
+    if (split) m = [null, kind === 'bullet' ? text.match(/^\S+/)[0] : split.marker, split.body];
+  } else if (kind === 'h2' || kind === 'h3') {
+    m = text.match(/^(§\s*\d+[a-z]?|Artikel\s+\d+|\d+(?:\.\d+)+\.?|\d+\.)\s+([A-ZÄÖÜ].*)$/s);
+  }
+  if (!m) return null;
+  const body = m[2].trim();
+  if (body.length < 3) return null;
+  return { marker: m[1], body };
+}
+
 function extractClauseRef(line, fallbackIndex, currentSectionRef = '', kind = 'p') {
   if (kind === 'hf') return t('typeHf');
   const secMatch = line.match(/^(§\s*\d+[a-z]?|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i);
@@ -5226,49 +5786,240 @@ function extractClauseRef(line, fallbackIndex, currentSectionRef = '', kind = 'p
 
 function tokenizeWords(str) {
   const words = str.toLowerCase().split(/\s+/).filter(Boolean);
-  return { words, set: new Set(words) };
+  const counts = new Map();
+  for (const w of words) counts.set(w, (counts.get(w) || 0) + 1);
+  return { words, set: new Set(words), counts };
 }
 
+/* ── PDF line joining ──────────────────────────────────────────────────── */
+
+// Words after which a trailing hyphen is a genuine elision ("Vertrags- und Zahlungs…").
+const HYPHEN_ELISION_NEXT = /^(?:und|oder|bzw\.?|sowie|bis|als|wie|and|or|nor|to)\b/;
+
+// Joins a wrapped PDF line onto the paragraph text, undoing typographic hyphenation:
+// "Vertrags-" + "strafenregelung" -> "Vertragsstrafenregelung" (lowercase continuation),
+// "Ost-" + "West-Verbindung" -> "Ost-West-Verbindung" (hyphen kept, no space),
+// "Vertrags-" + "und Zahlungsbedingungen" -> unchanged with a space.
+function joinWrappedLine(prev, next) {
+  if (!prev) return next;
+  if (!next) return prev;
+  if (/[A-Za-zÄÖÜäöüß]­$/.test(prev)) return prev.slice(0, -1) + next;
+  if (/[A-Za-zÄÖÜäöüß]-$/.test(prev) && !/\s-$/.test(prev)) {
+    if (/^[a-zäöüß]/.test(next) && !HYPHEN_ELISION_NEXT.test(next)) return prev.slice(0, -1) + next;
+    if (/^[A-ZÄÖÜ]/.test(next)) return prev + next;
+  }
+  return `${prev} ${next}`;
+}
+
+/* ── PDF text layout (pure; fed with PDF.js getTextContent() items) ──────── */
+
+// Fraction of the page height at the top and bottom that may hold running headers/footers.
+const PDF_MARGIN_BAND = 0.12;
+
+/**
+ * Groups PDF.js text items of one page into lines.
+ * Spaces are inserted from geometry (gap between the end of one item and the start of the
+ * next, relative to the font size) and from `hasEOL`, not between every item, so a font
+ * change inside a word ("Ge|samt|preis") does not split the word.
+ * pageView: [xMin, yMin, xMax, yMax] (PDF.js page.view).
+ * Returns [{ text, y, yPct, fontSize, gapBefore }] in reading order.
+ */
+function buildPdfPageLines(items, pageView) {
+  const view = pageView && pageView.length === 4 ? pageView : [0, 0, 595, 842];
+  const yMin = view[1];
+  const height = view[3] - view[1] || 842;
+  const lines = [];
+  let cur = null;
+
+  for (const item of items || []) {
+    if (!item || typeof item.str !== 'string') continue;
+    const tr = item.transform || [1, 0, 0, 1, 0, 0];
+    const fontSize = Math.hypot(tr[2], tr[3]) || Math.hypot(tr[0], tr[1]) || 10;
+    const x = tr[4];
+    const y = tr[5];
+    const str = sanitizeExternalText(item.str).replace(/\n/g, ' ');
+    if (!str) {
+      if (item.hasEOL && cur) cur.eol = true;
+      continue;
+    }
+    const hasWidth = typeof item.width === 'number' && item.width > 0;
+    const isNewLine = !cur || Math.abs(y - cur.y) > Math.max(2, 0.5 * Math.min(fontSize, cur.fontSize));
+    if (isNewLine) {
+      if (cur) lines.push(cur);
+      cur = { text: str, y, fontSize, endX: hasWidth ? x + item.width : null, eol: Boolean(item.hasEOL) };
+      continue;
+    }
+    let needSpace;
+    if (cur.eol) {
+      needSpace = true;
+    } else if (cur.endX === null || !hasWidth) {
+      needSpace = true; // no geometry: keep the conservative behaviour
+    } else {
+      const gap = x - cur.endX;
+      needSpace = gap > fontSize * 0.18 || gap < -fontSize * 0.5;
+    }
+    if (/\s$/.test(cur.text) || /^\s/.test(str)) needSpace = false;
+    cur.text += (needSpace ? ' ' : '') + str;
+    cur.endX = hasWidth ? x + item.width : null;
+    cur.eol = Boolean(item.hasEOL);
+  }
+  if (cur) lines.push(cur);
+
+  const out = lines
+    .map(l => ({
+      text: l.text.replace(/\s+/g, ' ').trim(),
+      y: l.y,
+      yPct: (l.y - yMin) / height,
+      fontSize: l.fontSize,
+      gapBefore: false,
+    }))
+    .filter(l => l.text);
+
+  // Paragraph breaks: a vertical step clearly larger than the line step. The line step is
+  // the small end of this page's step distribution, capped at 1.45 × font size so pages
+  // consisting only of one-line paragraphs still get their breaks.
+  const steps = [];
+  for (let i = 1; i < out.length; i++) {
+    const dy = out[i - 1].y - out[i].y;
+    if (dy > 0) steps.push(dy);
+  }
+  steps.sort((a, b) => a - b);
+  const sizes = out.map(l => l.fontSize).sort((a, b) => a - b);
+  const bodySize = sizes.length ? sizes[Math.floor(sizes.length / 2)] : 10;
+  const lineStep = Math.min(steps.length ? steps[Math.floor(steps.length * 0.1)] : bodySize * 1.2, bodySize * 1.45);
+  for (let i = 1; i < out.length; i++) {
+    const dy = out[i - 1].y - out[i].y;
+    out[i].gapBefore = dy > lineStep * 1.25 || dy < -out[i].fontSize; // upward jump = new column/block
+  }
+  return out;
+}
+
+const PDF_STRUCTURAL_START =
+  /^(§\s*\d+|\(\d+\)|\d+\.\d+|\d+\.|[•‣▪◦–*-]\s|\([a-z]\)|[a-z]\)|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i;
+
+// Does `next` (first body line of a page) continue the paragraph `prev` from the previous page?
+function continuesAcrossPage(prev, next) {
+  if (/[A-Za-zÄÖÜäöüß][-­]$/.test(prev)) return true;
+  return !/[.:;!?)"“”]$/.test(prev) && /^[a-zäöüß]/.test(next);
+}
+
+/**
+ * Builds the encoded document text from per-page lines (see buildPdfPageLines).
+ * Running headers/footers are detected by repetition across pages and emitted as
+ * header/footer lines; wrapped lines are joined (with de-hyphenation) into paragraphs,
+ * also across page breaks. Returns { text, emptyPages } (1-based page numbers without text).
+ */
+function assemblePdfText(pages) {
+  const candidates = pages.map(lines =>
+    lines.map(l => (l.yPct >= 1 - PDF_MARGIN_BAND || l.yPct <= PDF_MARGIN_BAND ? l : null))
+  );
+  const hfFlags = detectRepeatingMarginLines(candidates);
+
+  const headers = pages.map(() => []);
+  const footers = pages.map(() => []);
+  const paragraphs = pages.map(() => []);
+  let para = null;
+  const flush = () => {
+    if (para) paragraphs[para.page].push(para.text);
+    para = null;
+  };
+
+  pages.forEach((lines, p) => {
+    let firstBodyLine = true;
+    lines.forEach((line, i) => {
+      if (hfFlags[p][i]) {
+        (line.yPct >= 0.5 ? headers : footers)[p].push(line.text);
+        return;
+      }
+      const structural = PDF_STRUCTURAL_START.test(line.text);
+      let newPara;
+      if (!para) newPara = true;
+      else if (para.page !== p && firstBodyLine) newPara = structural || !continuesAcrossPage(para.text, line.text);
+      else newPara = line.gapBefore || structural;
+      firstBodyLine = false;
+      if (newPara) {
+        flush();
+        para = { page: p, text: line.text };
+      } else {
+        para.text = joinWrappedLine(para.text, line.text);
+      }
+    });
+  });
+  flush();
+
+  const out = [];
+  const emptyPages = [];
+  pages.forEach((lines, p) => {
+    if (!lines.length) emptyPages.push(p + 1);
+    out.push(pageMarkerLine(p + 1));
+    for (const h of headers[p]) out.push(metaLine('hf', h));
+    for (const text of paragraphs[p]) out.push(text);
+    for (const f of footers[p]) out.push(metaLine('hf', f));
+  });
+  return { text: out.join('\n\n'), emptyPages };
+}
+
+/* ── Parsing ───────────────────────────────────────────────────────────── */
+
 function parseIntoBlocks(rawText) {
-  const normalized = rawText.replace(/\r\n/g, '\n').replace(/\u00A0/g, ' ').trim();
+  const normalized = String(rawText || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/ /g, ' ')
+    .trim();
   if (!normalized) return [];
 
   const rawLines = normalized.split(/\n+/);
-  const blocks = [];
-  let currentSectionRef = '';
+  const entries = [];
   let currentPage = 1;
   let hasExplicitPageMarkers = false;
-  let seenContentBlock = false;
 
   for (let i = 0; i < rawLines.length; i++) {
-    let line = rawLines[i].trim();
+    const rawLine = rawLines[i].trim();
+    if (!rawLine) continue;
+
+    if (rawLine.startsWith(DOC_PAGE_MARK)) {
+      const n = parseInt(rawLine.slice(DOC_PAGE_MARK.length), 10);
+      currentPage = Math.max(1, Number.isFinite(n) ? n : currentPage + 1);
+      hasExplicitPageMarkers = true;
+      continue;
+    }
+
+    const { meta, text } = parseLineMeta(rawLine);
+    const line = text.trim();
     if (!line) continue;
+    entries.push({
+      line,
+      page: currentPage,
+      hfMarked: Boolean(meta && meta.hf),
+      indent: meta && meta.lvl ? Math.max(0, Math.min(8, parseInt(meta.lvl, 10) || 0)) : 0,
+    });
+  }
 
-    const pageBreakMatch = line.match(/^===\s*\[(?:SEITE|PAGE)\s*(\d+)\]\s*===$/i);
-    if (pageBreakMatch) {
-      currentPage = Math.max(1, parseInt(pageBreakMatch[1], 10) || currentPage + 1);
-      hasExplicitPageMarkers = true;
-      continue;
+  // Text-only header/footer candidates count only when they repeat within the document.
+  const repeatCounts = new Map();
+  for (const e of entries) {
+    if (!e.hfMarked && isLikelyHeaderOrFooterLine(e.line)) {
+      const key = normalizeHfRepeatKey(e.line);
+      repeatCounts.set(key, (repeatCounts.get(key) || 0) + 1);
     }
-    if (line === '\f') {
-      currentPage++;
-      hasExplicitPageMarkers = true;
-      continue;
-    }
+  }
 
-    let isHeaderFooter = false;
-    if (line.startsWith('[[HF]]')) {
-      isHeaderFooter = true;
-      line = line.replace(/^\[\[HF\]\]\s*/, '').trim();
-      if (!line) continue;
-    } else if (isLikelyHeaderOrFooterLine(line)) {
-      isHeaderFooter = true;
-    }
+  const blocks = [];
+  let currentSectionRef = '';
+  let seenContentBlock = false;
+
+  for (const entry of entries) {
+    let line = entry.line;
+    const isHeaderFooter =
+      entry.hfMarked ||
+      isPageNumberLabel(line) ||
+      (isLikelyHeaderOrFooterLine(line) && (repeatCounts.get(normalizeHfRepeatKey(line)) || 0) >= 2);
 
     const kind = classifyBlockKind(line, !seenContentBlock && !isHeaderFooter, isHeaderFooter);
     if (!isHeaderFooter) {
       seenContentBlock = true;
       line = line.replace(/^#{1,3}\s+/, '').trim();
+      if (!line) continue;
     }
 
     const isHeading = kind === 'h1' || kind === 'h2' || kind === 'h3';
@@ -5284,19 +6035,25 @@ function parseIntoBlocks(rawText) {
     }
 
     const idx = blocks.length + 1;
-    const { words, set } = tokenizeWords(line);
+    const numbering = isHeaderFooter ? null : splitNumberingMarker(line, kind);
+    const alignText = numbering ? numbering.body : line;
+    const { words, set, counts } = tokenizeWords(alignText);
     blocks.push({
       index: idx,
-      pageNum: currentPage,
+      pageNum: entry.page,
       hasExplicitPage: hasExplicitPageMarkers,
       refCode: extractClauseRef(line, idx, currentSectionRef, kind),
       sectionRef: currentSectionRef,
       text: line,
       kind,
+      indent: entry.indent,
       isHeading,
       isHeaderFooter,
+      numberingMarker: numbering ? numbering.marker : '',
+      alignKey: alignText.replace(/\s+/g, ' '),
       words,
       wordSet: set,
+      wordCounts: counts,
     });
   }
 
@@ -5324,9 +6081,38 @@ function parseIntoBlocks(rawText) {
   return blocks;
 }
 
+/**
+ * Parses both documents and applies the header/footer filter.
+ * Returns all blocks, the blocks to compare, and the number of hidden header/footer lines.
+ */
+function prepareComparisonBlocks(leftText, rightText, ignoreHeadersFooters) {
+  const allLeftBlocks = parseIntoBlocks(leftText);
+  const allRightBlocks = parseIntoBlocks(rightText);
+  const hfCount = reconcileHeaderFooterBlocks(allLeftBlocks, allRightBlocks);
+  const keep = b => !(ignoreHeadersFooters && isHiddenHeaderFooter(b));
+  return {
+    allLeftBlocks,
+    allRightBlocks,
+    leftBlocks: allLeftBlocks.filter(keep),
+    rightBlocks: allRightBlocks.filter(keep),
+    hfCount,
+  };
+}
+
+/* ── Alignment ─────────────────────────────────────────────────────────── */
+
+function blockAlignKey(block) {
+  return block.alignKey !== undefined ? block.alignKey : block.text;
+}
+
+function blockWordCounts(block) {
+  if (!block.wordCounts) block.wordCounts = tokenizeWords(blockAlignKey(block)).counts;
+  return block.wordCounts;
+}
+
 function computeBlockSimilarity(blockA, blockB) {
   if (blockA.isHeaderFooter !== blockB.isHeaderFooter) return 0;
-  if (blockA.text === blockB.text) return 1.0;
+  if (blockA.text === blockB.text || blockAlignKey(blockA) === blockAlignKey(blockB)) return 1.0;
   if (blockA.isHeading !== blockB.isHeading) return 0;
   const lenA = blockA.words.length;
   const lenB = blockB.words.length;
@@ -5341,15 +6127,46 @@ function computeBlockSimilarity(blockA, blockB) {
   const maxPossible = (2.0 * Math.min(lenA, lenB)) / (lenA + lenB);
   if (maxPossible < 0.28 && !sameSpecificRef) return 0;
 
+  // Multiset intersection: every occurrence of a word can be matched at most once.
+  const countsA = blockWordCounts(blockA);
+  const countsB = blockWordCounts(blockB);
+  const [small, large] = countsA.size <= countsB.size ? [countsA, countsB] : [countsB, countsA];
   let intersection = 0;
-  const smallerWords = lenA <= lenB ? blockA.words : blockB.words;
-  const largerSet = lenA <= lenB ? blockB.wordSet : blockA.wordSet;
-
-  for (let i = 0; i < smallerWords.length; i++) {
-    if (largerSet.has(smallerWords[i])) intersection++;
+  for (const [word, n] of small) {
+    const m = large.get(word);
+    if (m) intersection += Math.min(n, m);
   }
   const wordSim = (2.0 * intersection) / (lenA + lenB);
   return sameSpecificRef ? Math.max(wordSim, 0.42) : wordSim;
+}
+
+// Minimum length for a deleted/inserted pair to be reported as a move.
+const MIN_MOVE_TEXT_LENGTH = 12;
+
+// Pairs unmatched deleted and inserted blocks with identical text (ignoring whitespace
+// and renumbering) and flags them as moved. Rows keep type 'deleted' / 'inserted', so every
+// consumer that switches on row.type keeps working; `moved` and `movedToRowId` /
+// `movedFromRowId` describe the relocation.
+function markMovedRows(rows) {
+  const deletedByKey = new Map();
+  for (const row of rows) {
+    if (row.type !== 'deleted' || row.leftBlock.isHeaderFooter) continue;
+    const key = blockAlignKey(row.leftBlock).trim();
+    if (key.length < MIN_MOVE_TEXT_LENGTH) continue;
+    if (!deletedByKey.has(key)) deletedByKey.set(key, []);
+    deletedByKey.get(key).push(row);
+  }
+  for (const row of rows) {
+    if (row.type !== 'inserted' || row.rightBlock.isHeaderFooter) continue;
+    const candidates = deletedByKey.get(blockAlignKey(row.rightBlock).trim());
+    if (!candidates || !candidates.length) continue;
+    const from = candidates.shift();
+    from.moved = true;
+    from.movedToRowId = row.id;
+    row.moved = true;
+    row.movedFromRowId = from.id;
+  }
+  return rows;
 }
 
 function alignDocumentBlocks(leftBlocks, rightBlocks) {
@@ -5357,11 +6174,13 @@ function alignDocumentBlocks(leftBlocks, rightBlocks) {
   const totalM = rightBlocks.length;
   if (totalN === 0 && totalM === 0) return [];
 
+  const sameKey = (a, b) => a.text === b.text || blockAlignKey(a) === blockAlignKey(b);
+
   let prefixLen = 0;
   while (
     prefixLen < totalN &&
     prefixLen < totalM &&
-    leftBlocks[prefixLen].text === rightBlocks[prefixLen].text
+    sameKey(leftBlocks[prefixLen], rightBlocks[prefixLen])
   ) {
     prefixLen++;
   }
@@ -5370,7 +6189,7 @@ function alignDocumentBlocks(leftBlocks, rightBlocks) {
   while (
     suffixLen < totalN - prefixLen &&
     suffixLen < totalM - prefixLen &&
-    leftBlocks[totalN - 1 - suffixLen].text === rightBlocks[totalM - 1 - suffixLen].text
+    sameKey(leftBlocks[totalN - 1 - suffixLen], rightBlocks[totalM - 1 - suffixLen])
   ) {
     suffixLen++;
   }
@@ -5449,7 +6268,7 @@ function alignDocumentBlocks(leftBlocks, rightBlocks) {
   }
 
   let monotonicPage = 1;
-  return rawPairs.map((pair, idx) => {
+  const rows = rawPairs.map((pair, idx) => {
     const rowId = `row-${idx + 1}`;
     const rawPage =
       (pair.right && pair.right.pageNum) ||
@@ -5468,19 +6287,32 @@ function alignDocumentBlocks(leftBlocks, rightBlocks) {
           rightBlock: pair.right,
           wordDiffs: [{ value: pair.left.text }],
         };
-      } else {
-        const wordDiffs = computeCleanWordDiff(pair.left.text, pair.right.text);
-
+      }
+      if (blockAlignKey(pair.left) === blockAlignKey(pair.right) && pair.left.kind === pair.right.kind) {
+        // Only the list marker / heading number differs (renumbering). Such rows are not
+        // counted as changes; the renderer shows the old and new marker in a muted style.
         return {
           id: rowId,
           rowNumber: idx + 1,
           pageNum: monotonicPage,
-          type: 'modified',
+          type: 'equal',
+          markerOnly: true,
+          oldMarker: pair.left.numberingMarker,
+          newMarker: pair.right.numberingMarker,
           leftBlock: pair.left,
           rightBlock: pair.right,
-          wordDiffs,
+          wordDiffs: computeCleanWordDiff(pair.left.text, pair.right.text),
         };
       }
+      return {
+        id: rowId,
+        rowNumber: idx + 1,
+        pageNum: monotonicPage,
+        type: 'modified',
+        leftBlock: pair.left,
+        rightBlock: pair.right,
+        wordDiffs: computeCleanWordDiff(pair.left.text, pair.right.text),
+      };
     } else if (pair.left && !pair.right) {
       return {
         id: rowId,
@@ -5503,6 +6335,8 @@ function alignDocumentBlocks(leftBlocks, rightBlocks) {
       };
     }
   });
+
+  return markMovedRows(rows);
 }
 
 function escapeHtml(str) {
@@ -5514,16 +6348,39 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+/* ── Word diff ─────────────────────────────────────────────────────────── */
+
+// Invariant of every word diff: the unchanged + removed parts spell the old text exactly,
+// and the unchanged + added parts spell the new text exactly.
+function wordDiffPreservesTexts(parts, oldText, newText) {
+  let oldOut = '';
+  let newOut = '';
+  for (const part of parts) {
+    if (!part.added) oldOut += part.value;
+    if (!part.removed) newOut += part.value;
+  }
+  return oldOut === oldText && newOut === newText;
+}
+
+function getDiffLibrary() {
+  if (typeof Diff !== 'undefined' && Diff && typeof Diff.diffWordsWithSpace === 'function') return Diff;
+  if (typeof window !== 'undefined' && window.Diff) return window.Diff;
+  return null;
+}
+
 function computeCleanWordDiff(oldText, newText) {
-  if (!window.Diff) {
+  const diffLib = getDiffLibrary();
+  if (!diffLib) {
     return [
       { value: oldText, removed: true },
       { value: newText, added: true },
     ];
   }
 
-  const raw = window.Diff.diffWordsWithSpace(oldText, newText);
+  const raw = diffLib.diffWordsWithSpace(oldText, newText);
 
+  // An unchanged number sandwiched between two changes is shown as replaced as well, so
+  // "1.000 EUR" -> "2.000 USD" reads as one change instead of three fragments.
   const mergedNums = [];
   for (let i = 0; i < raw.length; i++) {
     const cur = raw[i];
@@ -5542,10 +6399,14 @@ function computeCleanWordDiff(oldText, newText) {
         continue;
       }
     }
-    mergedNums.push({ ...cur });
+    mergedNums.push({ value: cur.value, added: Boolean(cur.added), removed: Boolean(cur.removed) });
   }
 
-  // Expand partial numeric/date diffs (e.g. "0,[5]" -> "[0,5]", "[145.000],00" -> "[145.000,00]", "[12.03].2026" -> "[12.03.2026]")
+  // Expand partial numeric/date replacements to the whole number:
+  // "0,[5]" -> "[0,5]", "[145.000],00" -> "[145.000,00]", "[12.03].2026" -> "[12.03.2026]".
+  // Only for groups that both remove and add text: the unchanged digits are then moved into
+  // BOTH sides, which keeps the invariant. Pure insertions/deletions are left untouched
+  // ("Frist 14 Tage" -> "Frist 7 14 Tage" must show "7 " inserted and "14" unchanged).
   const isChange = tok => Boolean(tok && (tok.removed || tok.added));
   let idx = 0;
   while (idx < mergedNums.length) {
@@ -5558,23 +6419,27 @@ function computeCleanWordDiff(oldText, newText) {
       idx++;
     }
     const end = idx - 1;
-    const groupHasDigit = mergedNums.slice(start, idx).some(t => /\d/.test(t.value));
-    if (!groupHasDigit) continue;
+    const group = mergedNums.slice(start, idx);
+    const firstRem = group.find(tok => tok.removed);
+    const firstAdd = group.find(tok => tok.added);
+    if (!firstRem || !firstAdd) continue;
+    if (!group.some(tok => /\d/.test(tok.value))) continue;
+    // Only expand when both sides of the change start/end with a digit at the boundary.
+    const remText = group.filter(tok => tok.removed).map(tok => tok.value).join('');
+    const addText = group.filter(tok => tok.added).map(tok => tok.value).join('');
 
-    if (start > 0 && !isChange(mergedNums[start - 1])) {
+    if (start > 0 && !isChange(mergedNums[start - 1]) && /^[\d.,]/.test(remText) && /^[\d.,]/.test(addText)) {
       const prevTok = mergedNums[start - 1];
-      const prefixMatch = prevTok.value.match(/(\d+[.,]+\d*|\d*[.,]+\d+)$/);
+      const prefixMatch = prevTok.value.match(/((?:\d+[.,])+\d*|[.,]\d+)$/);
       if (prefixMatch) {
         const numPrefix = prefixMatch[1];
         prevTok.value = prevTok.value.slice(0, prevTok.value.length - numPrefix.length);
-        const firstRem = mergedNums.slice(start, idx).find(t => t.removed);
-        const firstAdd = mergedNums.slice(start, idx).find(t => t.added);
-        if (firstRem) firstRem.value = numPrefix + firstRem.value;
-        if (firstAdd) firstAdd.value = numPrefix + firstAdd.value;
+        firstRem.value = numPrefix + firstRem.value;
+        firstAdd.value = numPrefix + firstAdd.value;
       }
     }
 
-    if (idx < mergedNums.length && !isChange(mergedNums[idx])) {
+    if (idx < mergedNums.length && !isChange(mergedNums[idx]) && /[\d.,]$/.test(remText) && /[\d.,]$/.test(addText)) {
       const nextTok = mergedNums[idx];
       const suffixMatch = nextTok.value.match(/^([.,]\d+(?:[.,]\d+)*|\d+(?:[.,]\d+)*)/);
       if (suffixMatch) {
@@ -5586,13 +6451,21 @@ function computeCleanWordDiff(oldText, newText) {
           if (mergedNums[k].removed) lastRem = mergedNums[k];
           if (mergedNums[k].added) lastAdd = mergedNums[k];
         }
-        if (lastRem) lastRem.value = lastRem.value + numSuffix;
-        if (lastAdd) lastAdd.value = lastAdd.value + numSuffix;
+        lastRem.value = lastRem.value + numSuffix;
+        lastAdd.value = lastAdd.value + numSuffix;
       }
     }
   }
 
-  return mergedNums.filter(t => t.value.length > 0);
+  const cleaned = mergedNums
+    .filter(tok => tok.value.length > 0)
+    .map(tok => (tok.added ? { value: tok.value, added: true } : tok.removed ? { value: tok.value, removed: true } : { value: tok.value }));
+
+  if (wordDiffPreservesTexts(cleaned, oldText, newText)) return cleaned;
+  // Never show a diff that does not reproduce the source texts: fall back to the raw diff.
+  return raw.map(tok =>
+    tok.added ? { value: tok.value, added: true } : tok.removed ? { value: tok.value, removed: true } : { value: tok.value }
+  );
 }
 
 function coalesceSideTokens(sideParts, prop) {
@@ -5653,6 +6526,7 @@ function renderLeftBlockHtml(row, query) {
   const split = extractListMarker(b.text, b.kind);
 
   if (row.type === 'equal') {
+    if (row.markerOnly) return renderMarkerOnlyHtml(row, 'left', query);
     if (split) {
       return wrapMarkerAndBody(
         escapeAndHighlightText(split.marker, query),
@@ -5687,7 +6561,7 @@ function renderLeftBlockHtml(row, query) {
       const markerHtml =
         split.marker === rSplit.marker
           ? escapeAndHighlightText(split.marker, query)
-          : `<del class="tok-del">${escapeAndHighlightText(split.marker, query)}</del>`;
+          : `<del class="tok-del tok-marker">${escapeAndHighlightText(split.marker, query)}</del>`;
       return wrapMarkerAndBody(markerHtml, bodyHtml);
     }
 
@@ -5711,6 +6585,7 @@ function renderRightBlockHtml(row, query) {
   const split = extractListMarker(b.text, b.kind);
 
   if (row.type === 'equal') {
+    if (row.markerOnly) return renderMarkerOnlyHtml(row, 'right', query);
     if (split) {
       return wrapMarkerAndBody(
         escapeAndHighlightText(split.marker, query),
@@ -5745,7 +6620,7 @@ function renderRightBlockHtml(row, query) {
       const markerHtml =
         split.marker === lSplit.marker
           ? escapeAndHighlightText(split.marker, query)
-          : `<ins class="tok-ins">${escapeAndHighlightText(split.marker, query)}</ins>`;
+          : `<ins class="tok-ins tok-marker">${escapeAndHighlightText(split.marker, query)}</ins>`;
       return wrapMarkerAndBody(markerHtml, bodyHtml);
     }
 
@@ -5814,6 +6689,7 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
   const split = allowMarkerGrid && primary ? extractListMarker(primary.text, primary.kind) : null;
 
   if (row.type === 'equal') {
+    if (row.markerOnly) return renderMarkerOnlyHtml(row, 'unified', query, allowMarkerGrid);
     if (split) {
       return wrapMarkerAndBody(
         escapeAndHighlightText(split.marker, query),
@@ -5856,7 +6732,7 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
       const markerHtml =
         lSplit.marker === rSplit.marker
           ? escapeAndHighlightText(rSplit.marker, query)
-          : `<del class="tok-del">${escapeAndHighlightText(lSplit.marker, query)}</del> <ins class="tok-ins">${escapeAndHighlightText(rSplit.marker, query)}</ins>`;
+          : `<del class="tok-del tok-marker">${escapeAndHighlightText(lSplit.marker, query)}</del> <ins class="tok-ins tok-marker">${escapeAndHighlightText(rSplit.marker, query)}</ins>`;
       return wrapMarkerAndBody(markerHtml, bodyHtml);
     }
 
@@ -5870,6 +6746,23 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
       .join('');
   }
   return '';
+}
+
+// Renumbered block (only the list marker / heading number changed): the body is unchanged,
+// the old and new marker are shown in a muted style. Not counted as a change.
+function renderMarkerOnlyHtml(row, side, query, allowMarkerGrid = true) {
+  const oldMarker = row.oldMarker || '';
+  const newMarker = row.newMarker || '';
+  const block = side === 'left' ? row.leftBlock : row.rightBlock;
+  const body = block.text.slice((side === 'left' ? oldMarker : newMarker).length).trim();
+  const delHtml = `<del class="tok-del tok-marker">${escapeAndHighlightText(oldMarker, query)}</del>`;
+  const insHtml = `<ins class="tok-ins tok-marker">${escapeAndHighlightText(newMarker, query)}</ins>`;
+  const markerHtml = side === 'left' ? delHtml : side === 'right' ? insHtml : `${delHtml} ${insHtml}`;
+  const split = extractListMarker(block.text, block.kind);
+  if (split && allowMarkerGrid) {
+    return wrapMarkerAndBody(markerHtml, escapeAndHighlightText(split.body, query));
+  }
+  return `${markerHtml} ${escapeAndHighlightText(body, query)}`;
 }
 
 // The landing page markup is static (src/template.html); this only reflects which
@@ -5972,24 +6865,20 @@ function getClauseTypeClasses(block) {
   if (block.isHeading) classes.push('is-heading');
   if (block.kind) classes.push(`kind-${block.kind}`);
   if (extractListMarker(block.text, block.kind)) classes.push('has-marker');
+  if (block.indent > 0) classes.push(`indent-${Math.min(block.indent, 4)}`);
   return classes.join(' ');
 }
 
 function runComparison() {
-  const allLeftBlocks = parseIntoBlocks(state.leftText);
-  const allRightBlocks = parseIntoBlocks(state.rightText);
+  // Header/footer lines are hidden only when they repeat across pages and are identical
+  // in both versions (apart from page numbers); hfCount = lines hidden in both documents.
+  const { allRightBlocks, leftBlocks, rightBlocks, hfCount } = prepareComparisonBlocks(
+    state.leftText,
+    state.rightText,
+    state.ignoreHeadersFooters
+  );
   state.rightAllBlocks = allRightBlocks;
-
-  const hfLeft = allLeftBlocks.filter(b => b.isHeaderFooter).length;
-  const hfRight = allRightBlocks.filter(b => b.isHeaderFooter).length;
-  state.filteredHfCount = Math.max(hfLeft, hfRight);
-
-  const leftBlocks = state.ignoreHeadersFooters
-    ? allLeftBlocks.filter(b => !b.isHeaderFooter)
-    : allLeftBlocks;
-  const rightBlocks = state.ignoreHeadersFooters
-    ? allRightBlocks.filter(b => !b.isHeaderFooter)
-    : allRightBlocks;
+  state.filteredHfCount = hfCount;
 
   const leftPages = leftBlocks.reduce((m, b) => Math.max(m, b.pageNum || 1), 0);
   const rightPages = rightBlocks.reduce((m, b) => Math.max(m, b.pageNum || 1), 0);
@@ -6049,10 +6938,8 @@ function runComparison() {
   state.alignedRows = alignDocumentBlocks(leftBlocks, rightBlocks);
   state.changeRows = state.alignedRows.filter(r => r.type !== 'equal');
 
-  const modCount = state.alignedRows.filter(r => r.type === 'modified').length;
-  const insCount = state.alignedRows.filter(r => r.type === 'inserted').length;
-  const delCount = state.alignedRows.filter(r => r.type === 'deleted').length;
-  updateHeaderCounts(modCount, insCount, delCount);
+  const counts = getChangeCounts();
+  updateHeaderCounts(counts.mod, counts.ins, counts.del);
 
   const compareHeading = document.getElementById('compare-heading');
   if (compareHeading) {
@@ -6103,6 +6990,17 @@ function runComparison() {
   }
 }
 
+// Single source for the header counts and the sidebar filter counts.
+function getChangeCounts() {
+  const counts = { mod: 0, ins: 0, del: 0 };
+  for (const r of state.changeRows) {
+    if (r.type === 'modified') counts.mod++;
+    else if (r.type === 'inserted') counts.ins++;
+    else if (r.type === 'deleted') counts.del++;
+  }
+  return counts;
+}
+
 // The header shows the same three numbers as the sidebar filters (a modified paragraph
 // counts once, as "modified" – not once as added and once as removed).
 function updateHeaderCounts(modCount, insCount, delCount) {
@@ -6128,6 +7026,7 @@ function loadSampleComparison() {
   state.rightName = t('sampleRightName');
   state.rightFormat = 'DEMO';
   state.rightText = sample.v2;
+  resetEditHistory();
   runComparison();
 }
 
@@ -6211,6 +7110,14 @@ function bindEmptyStateButtons() {
   });
 }
 
+// Moved blocks keep type 'deleted' (old position) / 'inserted' (new position); this note
+// labels them so they are not read as a removal plus an unrelated addition.
+function renderMovedNoteHtml(row) {
+  if (!row.moved) return '';
+  const label = row.type === 'deleted' ? t('movedFromHere') : t('movedToHere');
+  return `<span class="moved-note">${escapeHtml(label)}</span>`;
+}
+
 function renderRightActionsHtml(row) {
   const editLabel = row.rightBlock ? t('editBtn') : t('editInsertBtn');
   const editSvg = row.rightBlock
@@ -6278,6 +7185,7 @@ function renderDocumentPanes() {
 
     for (const { row, idx } of entries) {
       const deferClass = idx > 18 ? 'deferred-block' : '';
+      const movedClass = row.moved ? 'is-moved' : '';
       const rightActionsHtml = renderRightActionsHtml(row);
 
       if (row.leftBlock) {
@@ -6291,7 +7199,7 @@ function renderDocumentPanes() {
 
         leftRowsHtml.push(`
           <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause ${stateClass} ${typeClasses} ${deferClass}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div>
+            <div class="clause ${stateClass} ${typeClasses} ${movedClass} ${deferClass}" data-row-id="${row.id}">${renderMovedNoteHtml(row)}${renderLeftBlockHtml(row, q)}</div>
           </div>
         `);
       } else {
@@ -6313,7 +7221,7 @@ function renderDocumentPanes() {
 
         rightRowsHtml.push(`
           <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause ${stateClass} ${typeClasses} ${deferClass}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}${rightActionsHtml}</div>
+            <div class="clause ${stateClass} ${typeClasses} ${movedClass} ${deferClass}" data-row-id="${row.id}">${renderMovedNoteHtml(row)}${renderRightBlockHtml(row, q)}${rightActionsHtml}</div>
           </div>
         `);
       } else {
@@ -6337,7 +7245,7 @@ function renderDocumentPanes() {
 
       unifiedRowsHtml.push(`
         <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-          <div class="clause ${uStateClass} ${uTypeClasses} ${deferClass}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div>
+          <div class="clause ${uStateClass} ${uTypeClasses} ${movedClass} ${deferClass}" data-row-id="${row.id}">${renderMovedNoteHtml(row)}${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div>
         </div>
       `);
     }
@@ -6511,6 +7419,7 @@ function renderSidebarDeltaHtml(row, query) {
 }
 
 function getChangeTypeLabel(row) {
+  if (row.moved) return t('typeMoved');
   return row.type === 'modified' ? t('statMod') : row.type === 'inserted' ? t('statIns') : t('statDel');
 }
 
@@ -6550,9 +7459,7 @@ function updateSidebarHeaderState() {
     }
   }
 
-  const modCount = state.changeRows.filter(r => r.type === 'modified').length;
-  const insCount = state.changeRows.filter(r => r.type === 'inserted').length;
-  const delCount = state.changeRows.filter(r => r.type === 'deleted').length;
+  const { mod: modCount, ins: insCount, del: delCount } = getChangeCounts();
 
   const cAll = document.getElementById('filter-count-all');
   const cMod = document.getElementById('filter-count-mod');
@@ -6619,7 +7526,8 @@ function renderSidebarList(bothLoaded) {
     filtered
       .map(row => {
         const globalIdx = state.changeRows.indexOf(row) + 1;
-        const cls = row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del';
+        const cls =
+          (row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del') + (row.moved ? ' moved' : '');
         const isActive = row.id === state.activeRowId;
         const typeLabel = getChangeTypeLabel(row);
         const refCode = getDisplayRef(row);
@@ -6656,7 +7564,8 @@ function renderMinimap() {
     state.changeRows
       .map(row => {
         const pct = ((row.rowNumber - 1) / totalRows) * 100;
-        const cls = row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del';
+        const cls =
+          (row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del') + (row.moved ? ' moved' : '');
         return `<div class="minimap-tick ${cls}" style="top: ${pct}%" data-row-id="${row.id}"></div>`;
       })
       .join('')
@@ -6815,6 +7724,15 @@ function updateUndoRedoButtons() {
   if (btnRedo) btnRedo.disabled = state.redoStack.length === 0;
 }
 
+// Undo/redo history belongs to the currently loaded pair of documents. Call this whenever
+// a document is replaced (upload, paste dialog, swap, sample, clear), so Undo can never
+// bring back text from a different document under the new file name.
+function resetEditHistory() {
+  state.undoStack = [];
+  state.redoStack = [];
+  updateUndoRedoButtons();
+}
+
 function pushUndoSnapshot() {
   state.undoStack.push(state.rightText);
   if (state.undoStack.length > 50) state.undoStack.shift();
@@ -6841,10 +7759,10 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
   const hfByPage = new Map();
   if (state.ignoreHeadersFooters && state.rightAllBlocks) {
     for (const b of state.rightAllBlocks) {
-      if (b.isHeaderFooter) {
+      if (isHiddenHeaderFooter(b)) {
         const p = b.pageNum || 1;
         if (!hfByPage.has(p)) hfByPage.set(p, []);
-        hfByPage.get(p).push(`[[HF]] ${b.text}`);
+        hfByPage.get(p).push(serializeBlockLine(b));
       }
     }
   }
@@ -6854,17 +7772,28 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
     const p = r.pageNum || 1;
     if (!pagesMap.has(p)) pagesMap.set(p, []);
     if (r.id === targetRowId) {
-      if (replacementText) pagesMap.get(p).push(replacementText);
+      // Typed text is sanitized so it can never carry page/header-footer metadata;
+      // the edited block keeps its own structural metadata (indent, header/footer).
+      const template = r.rightBlock || r.leftBlock;
+      for (const line of sanitizeExternalText(replacementText || '').split(/\n+/)) {
+        if (!line.trim()) continue;
+        pagesMap.get(p).push(
+          serializeBlockLine({
+            text: line.trim(),
+            kind: template ? template.kind : 'p',
+            indent: template ? template.indent : 0,
+          })
+        );
+      }
     } else if (r.rightBlock) {
-      const prefix = r.rightBlock.isHeaderFooter ? '[[HF]] ' : '';
-      pagesMap.get(p).push(`${prefix}${r.rightBlock.text}`);
+      pagesMap.get(p).push(serializeBlockLine(r.rightBlock));
     }
   }
 
   const outLines = [];
   for (const [pageNum, contentLines] of pagesMap.entries()) {
     if (hasExplicit) {
-      outLines.push(`=== [SEITE ${pageNum}] ===`);
+      outLines.push(pageMarkerLine(pageNum));
     }
     const hfs = hfByPage.get(pageNum) || [];
     if (hfs.length > 0) outLines.push(hfs[0]);
@@ -7132,112 +8061,1079 @@ window.addEventListener('resize', () => {
   }, 60);
 });
 
-/* ── Client-Side Multi-Format Export Engine (PDF, Word .doc, HTML, Markdown) */
+/* ── Word redline export: a real .docx (OOXML) with tracked changes, built in the browser ──
+ * Everything here is dependency-free: a minimal ZIP writer (STORE, CRC-32) plus hand-written
+ * WordprocessingML. Changes are emitted as genuine revisions (<w:ins>/<w:del>), so Word,
+ * LibreOffice and Google Docs offer "Accept / Reject change" on every edit.
+ */
+
+const DOCX_AUTHOR = 'Doc Diff';
+const DOCX_TAB = '\u0000TAB\u0000';
+
+let crc32Table = null;
+function crc32(bytes) {
+  if (!crc32Table) {
+    crc32Table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      crc32Table[n] = c >>> 0;
+    }
+  }
+  let crc = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) crc = crc32Table[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/**
+ * Minimal ZIP writer (method 0 = STORE). `files` is [{ name, data: Uint8Array | string }].
+ * Returns a Uint8Array containing a valid archive with central directory.
+ */
+function buildZipArchive(files, date = new Date()) {
+  const enc = new TextEncoder();
+  const dosTime = ((date.getHours() & 31) << 11) | ((date.getMinutes() & 63) << 5) | ((date.getSeconds() / 2) & 31);
+  const dosDate = (((date.getFullYear() - 1980) & 127) << 9) | (((date.getMonth() + 1) & 15) << 5) | (date.getDate() & 31);
+
+  const entries = files.map(f => {
+    const nameBytes = enc.encode(f.name);
+    const data = typeof f.data === 'string' ? enc.encode(f.data) : f.data;
+    return { nameBytes, data, crc: crc32(data) };
+  });
+
+  let localSize = 0;
+  let centralSize = 0;
+  for (const e of entries) {
+    localSize += 30 + e.nameBytes.length + e.data.length;
+    centralSize += 46 + e.nameBytes.length;
+  }
+  const out = new Uint8Array(localSize + centralSize + 22);
+  const view = new DataView(out.buffer);
+  let pos = 0;
+
+  const writeHeaderCommon = e => {
+    view.setUint16(pos, 0x0800, true); // flags: bit 11 = UTF-8 file names
+    view.setUint16(pos + 2, 0, true); // method: STORE
+    view.setUint16(pos + 4, dosTime, true);
+    view.setUint16(pos + 6, dosDate, true);
+    view.setUint32(pos + 8, e.crc, true);
+    view.setUint32(pos + 12, e.data.length, true); // compressed size
+    view.setUint32(pos + 16, e.data.length, true); // uncompressed size
+    view.setUint16(pos + 20, e.nameBytes.length, true);
+    view.setUint16(pos + 22, 0, true); // extra field length
+    pos += 24;
+  };
+
+  for (const e of entries) {
+    e.offset = pos;
+    view.setUint32(pos, 0x04034b50, true);
+    view.setUint16(pos + 4, 20, true); // version needed
+    pos += 6;
+    writeHeaderCommon(e);
+    out.set(e.nameBytes, pos);
+    pos += e.nameBytes.length;
+    out.set(e.data, pos);
+    pos += e.data.length;
+  }
+
+  const centralStart = pos;
+  for (const e of entries) {
+    view.setUint32(pos, 0x02014b50, true);
+    view.setUint16(pos + 4, 20, true); // version made by
+    view.setUint16(pos + 6, 20, true); // version needed
+    pos += 8;
+    writeHeaderCommon(e);
+    view.setUint16(pos, 0, true); // comment length
+    view.setUint16(pos + 2, 0, true); // disk number start
+    view.setUint16(pos + 4, 0, true); // internal attributes
+    view.setUint32(pos + 6, 0, true); // external attributes
+    view.setUint32(pos + 10, e.offset, true);
+    pos += 14;
+    out.set(e.nameBytes, pos);
+    pos += e.nameBytes.length;
+  }
+
+  view.setUint32(pos, 0x06054b50, true);
+  view.setUint16(pos + 4, 0, true);
+  view.setUint16(pos + 6, 0, true);
+  view.setUint16(pos + 8, entries.length, true);
+  view.setUint16(pos + 10, entries.length, true);
+  view.setUint32(pos + 12, pos - centralStart, true);
+  view.setUint32(pos + 16, centralStart, true);
+  view.setUint16(pos + 20, 0, true);
+  return out;
+}
+
+/** Escapes text for XML and drops characters that are illegal in XML 1.0. */
+function escapeXml(str) {
+  return String(str)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Word dates must be ISO 8601 without milliseconds. */
+function toWordDate(date) {
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+/** Run content (w:t / w:delText with tabs and line breaks) for one text segment. */
+function docxRunContent(text, deleted) {
+  const tag = deleted ? 'w:delText' : 'w:t';
+  const parts = [];
+  const pieces = String(text).split(/(\u0000TAB\u0000|\t|\n)/);
+  for (const piece of pieces) {
+    if (!piece) continue;
+    if (piece === DOCX_TAB || piece === '\t') parts.push('<w:tab/>');
+    else if (piece === '\n') parts.push('<w:br/>');
+    else parts.push(`<${tag} xml:space="preserve">${escapeXml(piece)}</${tag}>`);
+  }
+  return parts.join('');
+}
+
+function docxRun(text, deleted = false, rPr = '') {
+  const content = docxRunContent(text, deleted);
+  if (!content) return '';
+  return `<w:r>${rPr ? `<w:rPr>${rPr}</w:rPr>` : ''}${content}</w:r>`;
+}
+
+/** Maps a parsed block to its paragraph style. */
+function docxStyleForBlock(block) {
+  if (!block) return 'Normal';
+  if (block.isHeaderFooter || block.kind === 'hf') return 'DocDiffHeaderFooter';
+  if (block.kind === 'h1') return 'Heading1';
+  if (block.kind === 'h2') return 'Heading2';
+  if (block.kind === 'h3') return 'Heading3';
+  if (block.kind === 'bullet') return 'DocDiffBullet';
+  if (block.kind === 'clause') return 'DocDiffClause';
+  return 'Normal';
+}
+
+/**
+ * For list-like paragraphs (bullets, numbered clauses) replace the space after the leading marker
+ * with a tab so that the hanging indent of the paragraph style lines up the body text.
+ */
+function docxApplyMarkerTab(tokens, block) {
+  if (!tokens.length || !block || (block.kind !== 'bullet' && block.kind !== 'clause')) return tokens;
+  const first = tokens[0];
+  const m = first.value.match(/^([•‣▪◦–*-]|\(\d+\)|\([a-z]\)|\([ivx]+\)|\d+\)|[a-z]\))[ \t]+/i);
+  if (!m) return tokens;
+  const rest = first.value.slice(m[0].length);
+  const replaced = [{ ...first, value: m[1] + DOCX_TAB }];
+  if (rest) replaced.push({ ...first, value: rest });
+  return replaced.concat(tokens.slice(1));
+}
+
+/**
+ * Builds the WordprocessingML body for the comparison. Pure function of `rows` and `meta`
+ * so it can be unit-tested without a browser.
+ */
+function buildDocxDocumentXml(rows, meta) {
+  const date = toWordDate(meta.date);
+  let revId = 1;
+  const revAttrs = () => `w:id="${revId++}" w:author="${escapeXml(DOCX_AUTHOR)}" w:date="${date}"`;
+  const paragraphs = [];
+
+  const metaPara = (label, value) =>
+    `<w:p><w:pPr><w:pStyle w:val="DocDiffMeta"/></w:pPr>${docxRun(`${label}: `, false, '<w:b/>')}${docxRun(value)}</w:p>`;
+
+  paragraphs.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(meta.title)}</w:p>`);
+  for (const [label, value] of meta.lines) paragraphs.push(metaPara(label, value));
+  paragraphs.push(
+    `<w:p><w:pPr><w:pStyle w:val="DocDiffMeta"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="6" w:color="A6A6A6"/></w:pBdr><w:spacing w:after="360"/></w:pPr>${docxRun(meta.note, false, '<w:i/>')}</w:p>`
+  );
+
+  for (const row of rows) {
+    const block = row.rightBlock || row.leftBlock;
+    const style = docxStyleForBlock(block);
+    const tokens = docxApplyMarkerTab(getExportDiffTokens(row), block);
+    let markRev = '';
+    if (row.type === 'inserted') markRev = `<w:rPr><w:ins ${revAttrs()}/></w:rPr>`;
+    if (row.type === 'deleted') markRev = `<w:rPr><w:del ${revAttrs()}/></w:rPr>`;
+    const pPr = `<w:pPr><w:pStyle w:val="${style}"/>${markRev}</w:pPr>`;
+
+    const runs = tokens
+      .map(tok => {
+        if (tok.removed) {
+          const run = docxRun(tok.value, true);
+          return run ? `<w:del ${revAttrs()}>${run}</w:del>` : '';
+        }
+        if (tok.added) {
+          const run = docxRun(tok.value, false);
+          return run ? `<w:ins ${revAttrs()}>${run}</w:ins>` : '';
+        }
+        return docxRun(tok.value, false);
+      })
+      .join('');
+    paragraphs.push(`<w:p>${pPr}${runs}</w:p>`);
+  }
+
+  const sectPr =
+    '<w:sectPr><w:footerReference w:type="default" r:id="rIdFooter1"/>' +
+    '<w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1417" w:right="1417" w:bottom="1134" w:left="1417" w:header="708" w:footer="567" w:gutter="0"/>' +
+    '</w:sectPr>';
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    `<w:body>${paragraphs.join('')}${sectPr}</w:body></w:document>`
+  );
+}
+
+function buildDocxFooterXml(meta) {
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<w:p><w:pPr><w:pStyle w:val="Footer"/><w:tabs><w:tab w:val="right" w:pos="9072"/></w:tabs></w:pPr>' +
+    docxRun(meta.footer) +
+    '<w:r><w:tab/></w:r>' +
+    docxRun(`${meta.pageLabel} `) +
+    '<w:fldSimple w:instr=" PAGE "><w:r><w:t>1</w:t></w:r></w:fldSimple>' +
+    docxRun(` ${meta.pageOfLabel} `) +
+    '<w:fldSimple w:instr=" NUMPAGES "><w:r><w:t>1</w:t></w:r></w:fldSimple>' +
+    '</w:p></w:ftr>'
+  );
+}
+
+function buildDocxStylesXml(langTag) {
+  const font = '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/>';
+  const heading = (id, name, level, size, before, after) =>
+    `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/>` +
+    `<w:pPr><w:keepNext/><w:keepLines/><w:spacing w:before="${before}" w:after="${after}"/><w:outlineLvl w:val="${level}"/></w:pPr>` +
+    `<w:rPr><w:b/><w:bCs/><w:color w:val="1F2937"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr></w:style>`;
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    `<w:docDefaults><w:rPrDefault><w:rPr>${font}<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="${langTag}"/></w:rPr></w:rPrDefault>` +
+    '<w:pPrDefault><w:pPr><w:spacing w:after="140" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="10"/><w:qFormat/>' +
+    '<w:pPr><w:spacing w:after="160"/></w:pPr><w:rPr><w:b/><w:color w:val="111827"/><w:sz w:val="34"/><w:szCs w:val="34"/></w:rPr></w:style>' +
+    heading('Heading1', 'heading 1', 0, 30, 360, 160) +
+    heading('Heading2', 'heading 2', 1, 25, 300, 120) +
+    heading('Heading3', 'heading 3', 2, 23, 240, 100) +
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="DocDiffClause"><w:name w:val="Doc Diff Clause"/><w:basedOn w:val="Normal"/><w:qFormat/>' +
+    '<w:pPr><w:tabs><w:tab w:val="left" w:pos="567"/></w:tabs><w:ind w:left="567" w:hanging="567"/></w:pPr></w:style>' +
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="DocDiffBullet"><w:name w:val="Doc Diff Bullet"/><w:basedOn w:val="Normal"/><w:qFormat/>' +
+    '<w:pPr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs><w:spacing w:after="80"/><w:ind w:left="720" w:hanging="360"/></w:pPr></w:style>' +
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="DocDiffMeta"><w:name w:val="Doc Diff Metadata"/><w:basedOn w:val="Normal"/>' +
+    '<w:pPr><w:spacing w:after="40"/></w:pPr><w:rPr><w:color w:val="4B5563"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>' +
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="DocDiffHeaderFooter"><w:name w:val="Doc Diff Header/Footer Line"/><w:basedOn w:val="Normal"/>' +
+    '<w:rPr><w:i/><w:color w:val="6B7280"/><w:sz w:val="17"/><w:szCs w:val="17"/></w:rPr></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Footer"><w:name w:val="footer"/><w:basedOn w:val="Normal"/>' +
+    '<w:pPr><w:spacing w:after="0"/></w:pPr><w:rPr><w:color w:val="6B7280"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:style>' +
+    '</w:styles>'
+  );
+}
+
+/** Returns the list of files that make up the .docx package. */
+function buildDocxPackageFiles(rows, meta) {
+  const langTag = meta.lang === 'de' ? 'de-DE' : 'en-US';
+  const created = toWordDate(meta.date);
+  return [
+    {
+      name: '[Content_Types].xml',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
+        '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' +
+        '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+        '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>' +
+        '</Types>',
+    },
+    {
+      name: '_rels/.rels',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' +
+        '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>' +
+        '</Relationships>',
+    },
+    {
+      name: 'docProps/core.xml',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" ' +
+        'xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" ' +
+        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
+        `<dc:title>${escapeXml(meta.title)}</dc:title>` +
+        `<dc:subject>${escapeXml(meta.subject)}</dc:subject>` +
+        `<dc:creator>${DOCX_AUTHOR}</dc:creator>` +
+        `<cp:lastModifiedBy>${DOCX_AUTHOR}</cp:lastModifiedBy>` +
+        `<dc:language>${langTag}</dc:language>` +
+        `<dcterms:created xsi:type="dcterms:W3CDTF">${created}</dcterms:created>` +
+        `<dcterms:modified xsi:type="dcterms:W3CDTF">${created}</dcterms:modified>` +
+        '</cp:coreProperties>',
+    },
+    {
+      name: 'docProps/app.xml',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">' +
+        '<Application>Doc Diff</Application></Properties>',
+    },
+    {
+      name: 'word/_rels/document.xml.rels',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rIdSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>' +
+        '<Relationship Id="rIdFooter1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>' +
+        '</Relationships>',
+    },
+    { name: 'word/document.xml', data: buildDocxDocumentXml(rows, meta) },
+    { name: 'word/styles.xml', data: buildDocxStylesXml(langTag) },
+    {
+      name: 'word/settings.xml',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:defaultTabStop w:val="708"/><w:characterSpacingControl w:val="doNotCompress"/>' +
+        '<w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat>' +
+        '</w:settings>',
+    },
+    { name: 'word/footer1.xml', data: buildDocxFooterXml(meta) },
+  ];
+}
+
+/** Builds the complete .docx file (Uint8Array) for the current comparison state. */
+function buildDocxRedline(date = new Date()) {
+  const counts = getExportCounts();
+  const meta = {
+    lang: state.lang,
+    date,
+    title: getExportTitle(),
+    subject: t('docxSubject'),
+    lines: [
+      [t('exportLabelOriginal'), getDisplayDocName('left')],
+      [t('exportLabelRevised'), getDisplayDocName('right')],
+      [t('exportLabelCreated'), formatExportDate(date)],
+      [t('exportLabelChanges'), formatExportCountsLine(counts)],
+      [t('exportLabelHf'), state.ignoreHeadersFooters ? t('exportHfIgnored') : t('exportHfIncluded')],
+    ],
+    note: t('docxNote'),
+    footer: `${getDisplayDocName('right')} ${t('exportVs')} ${getDisplayDocName('left')}`,
+    pageLabel: t('pageLabel'),
+    pageOfLabel: t('pageOf'),
+  };
+  // The redline always contains the full document so that "Accept all" yields the new version.
+  return buildZipArchive(buildDocxPackageFiles(state.alignedRows, meta), date);
+}
+
+/* ── Client-Side Multi-Format Export Engine (copy, .txt, .docx, print/PDF, HTML, Markdown) ── */
+
 function downloadBlob(content, mimeType, filename) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-function buildExportHtmlDocument(forWord = false) {
-  const rows = state.onlyChanges ? state.changeRows : state.alignedRows;
-  const title = `Doc Diff — ${state.leftName || 'Original'} vs. ${state.rightName || 'Revised'}`;
-  const bodyRows = rows
-    .map(row => {
-      const primaryBlock = row.rightBlock || row.leftBlock;
-      const isHeading = primaryBlock && primaryBlock.isHeading;
-      const tag = isHeading ? 'h3' : 'p';
-      const borderColor =
-        row.type === 'modified'
-          ? '#0058b8'
-          : row.type === 'inserted'
-          ? '#2a9d4e'
-          : row.type === 'deleted'
-          ? '#b30027'
-          : 'transparent';
-      const bgColor =
-        row.type === 'inserted'
-          ? '#f2fbf5'
-          : row.type === 'deleted'
-          ? '#fff5f7'
-          : 'transparent';
-      return `<${tag} style="margin:0 0 8px 0;padding:4px 10px;border-left:3px solid ${borderColor};background:${bgColor};font-size:${
-        isHeading ? '13px' : '11.5px'
-      };line-height:1.5;">${renderUnifiedBlockHtml(row, '')}</${tag}>`;
+/** Simple `{name}` placeholder formatting for translated strings. */
+function tf(key, vars) {
+  return t(key).replace(/\{(\w+)\}/g, (m, name) => (vars && name in vars ? String(vars[name]) : m));
+}
+
+/* ── File names ───────────────────────────────────────────────────────────── */
+
+const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+
+/**
+ * Turns an arbitrary document name into a safe file-name fragment: strips the extension,
+ * path separators, characters invalid on Windows/macOS/Linux and control characters,
+ * avoids reserved device names, and caps the length. Returns `fallback` if nothing remains.
+ */
+function sanitizeFileNamePart(name, fallback = '', maxLen = 60) {
+  let s = String(name || '').normalize('NFC');
+  s = s.split(/[\\/]/).pop();
+  s = s.replace(/\.[A-Za-z0-9]{1,5}$/, '');
+  s = s
+    .replace(/[\u0000-\u001f\u007f-\u009f<>:"|?*\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]+/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^[._\-]+|[._\-]+$/g, '');
+  const chars = Array.from(s);
+  if (chars.length > maxLen) s = chars.slice(0, maxLen).join('').replace(/[._\-]+$/, '');
+  if (WINDOWS_RESERVED_NAME.test(s.split('.')[0])) s = `_${s}`;
+  return s || fallback;
+}
+
+/**
+ * Short, readable base name that contains both documents, newest first, e.g.
+ * "Vertrag_v1.pdf" + "Vertrag_v2.pdf" -> "Vertrag_v2_vs_v1".
+ */
+function buildExportBaseName(leftName, rightName) {
+  const left = sanitizeFileNamePart(leftName);
+  const right = sanitizeFileNamePart(rightName);
+  if (!left && !right) return 'DocDiff';
+  if (!left || !right || left.toLowerCase() === right.toLowerCase()) return right || left;
+
+  let common = 0;
+  while (common < left.length && common < right.length && left[common] === right[common]) common++;
+  const boundary = Math.max(left.lastIndexOf('_', common - 1), left.lastIndexOf('-', common - 1));
+  const leftShort = boundary >= 2 ? left.slice(boundary + 1) : left;
+  return `${right}_vs_${leftShort || left}`;
+}
+
+function buildExportFileName(suffixKey, ext) {
+  const base = buildExportBaseName(state.leftName, state.rightName);
+  const suffix = sanitizeFileNamePart(t(suffixKey), 'Export');
+  const name = `${base}_${suffix}`;
+  const chars = Array.from(name);
+  const capped = chars.length > 140 ? chars.slice(0, 140).join('').replace(/[._\-]+$/, '') : name;
+  return `${capped}.${ext}`;
+}
+
+/* ── Shared export model ──────────────────────────────────────────────────── */
+
+function getDisplayDocName(side) {
+  const name = side === 'left' ? state.leftName : state.rightName;
+  return name || t(side === 'left' ? 'exportFallbackLeft' : 'exportFallbackRight');
+}
+
+function getExportTitle() {
+  return tf('exportTitleFmt', { left: getDisplayDocName('left'), right: getDisplayDocName('right') });
+}
+
+function getExportCounts(rows = state.changeRows) {
+  const counts = { modified: 0, inserted: 0, deleted: 0, total: 0 };
+  for (const row of rows) {
+    if (row.type in counts) {
+      counts[row.type]++;
+      counts.total++;
+    }
+  }
+  return counts;
+}
+
+function formatExportCountsLine(c) {
+  return tf('exportCountsFmt', { total: c.total, mod: c.modified, ins: c.inserted, del: c.deleted });
+}
+
+function formatExportDate(date) {
+  try {
+    return date.toLocaleString(state.lang === 'de' ? 'de-DE' : 'en-GB', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    });
+  } catch (e) {
+    return date.toISOString().slice(0, 16).replace('T', ' ');
+  }
+}
+
+function getRowRefCode(row) {
+  const b = row.rightBlock || row.leftBlock;
+  return (b && b.refCode) || '';
+}
+
+function getRowTypeLabel(row) {
+  return row.type === 'modified'
+    ? t('typeMod')
+    : row.type === 'inserted'
+    ? t('typeIns')
+    : row.type === 'deleted'
+    ? t('typeDel')
+    : '';
+}
+
+/** Rows that go into a report body: honours the "changes only" filter. */
+function getExportBodyRows() {
+  return state.onlyChanges ? state.changeRows : state.alignedRows;
+}
+
+function getExportScopeText() {
+  return state.onlyChanges ? t('exportScopeChanges') : t('exportScopeFull');
+}
+
+function getExportHfText() {
+  if (!state.ignoreHeadersFooters) return t('exportHfIncluded');
+  return state.filteredHfCount > 0
+    ? tf('exportHfIgnoredCount', { n: state.filteredHfCount })
+    : t('exportHfIgnored');
+}
+
+/**
+ * Internal intake markers (page separators and the header/footer tag) must never leak into an
+ * export, even if a future intake path forgets to strip them.
+ */
+const INTERNAL_PAGE_MARKER = /^\s*===\s*\[(?:SEITE|PAGE)\s*\d+\]\s*===\s*$/i;
+function isInternalMarkerLine(text) {
+  return INTERNAL_PAGE_MARKER.test(text || '');
+}
+function cleanExportText(text) {
+  return String(text || '')
+    .replace(/===\s*\[(?:SEITE|PAGE)\s*\d+\]\s*===/gi, '')
+    .replace(/\[\[HF\]\]\s*/g, '');
+}
+
+/**
+ * Normalised diff tokens for one row: `{ value, removed?, added? }`. Change runs (including the
+ * single spaces that bridge them) are grouped into one deletion followed by one insertion. The
+ * tokens are guaranteed to reproduce the old text (all non-added) and the new text (all
+ * non-removed) exactly; if the word diff ever disagrees, the row falls back to a whole-paragraph
+ * replacement so that "Accept all" / "Reject all" in Word are always correct.
+ */
+function getExportDiffTokens(row) {
+  const leftText = cleanExportText(row.leftBlock ? row.leftBlock.text : '');
+  const rightText = cleanExportText(row.rightBlock ? row.rightBlock.text : '');
+  if (row.type === 'equal') return [{ value: rightText }];
+  if (row.type === 'inserted') return [{ value: rightText, added: true }];
+  if (row.type === 'deleted') return [{ value: leftText, removed: true }];
+
+  const diffs = row.wordDiffs || [];
+  const isChange = tok => Boolean(tok && (tok.removed || tok.added));
+  const isBridge = idx =>
+    idx > 0 &&
+    idx + 1 < diffs.length &&
+    !isChange(diffs[idx]) &&
+    /^\s+$/.test(diffs[idx].value) &&
+    isChange(diffs[idx - 1]) &&
+    isChange(diffs[idx + 1]);
+
+  const out = [];
+  let i = 0;
+  while (i < diffs.length) {
+    if (!isChange(diffs[i])) {
+      const last = out[out.length - 1];
+      const value = cleanExportText(diffs[i].value);
+      if (last && !last.removed && !last.added) last.value += value;
+      else out.push({ value });
+      i++;
+      continue;
+    }
+    let del = '';
+    let ins = '';
+    while (i < diffs.length && (isChange(diffs[i]) || isBridge(i))) {
+      const value = cleanExportText(diffs[i].value);
+      if (!diffs[i].added) del += value;
+      if (!diffs[i].removed) ins += value;
+      i++;
+    }
+    if (del) out.push({ value: del, removed: true });
+    if (ins) out.push({ value: ins, added: true });
+  }
+
+  const oldJoined = out.filter(tok => !tok.added).map(tok => tok.value).join('');
+  const newJoined = out.filter(tok => !tok.removed).map(tok => tok.value).join('');
+  if (oldJoined !== leftText || newJoined !== rightText) {
+    return [
+      { value: leftText, removed: true },
+      { value: rightText, added: true },
+    ];
+  }
+  return out;
+}
+
+/** Short "old → new" summary of a change, used by the change lists. */
+function getRowChangeSummary(row, maxLen = 70) {
+  if (row.type === 'inserted') return { pairs: [{ del: '', ins: truncateClean(row.rightBlock.text, maxLen * 2) }], more: 0 };
+  if (row.type === 'deleted') return { pairs: [{ del: truncateClean(row.leftBlock.text, maxLen * 2), ins: '' }], more: 0 };
+  const pairs = extractDeltaPairs(row.wordDiffs || []);
+  const visible = pairs.slice(0, 3).map(p => ({ del: truncateClean(p.del, maxLen), ins: truncateClean(p.ins, maxLen) }));
+  return { pairs: visible, more: Math.max(0, pairs.length - visible.length) };
+}
+
+/* ── Final text (copy / .txt) ─────────────────────────────────────────────── */
+
+/**
+ * The new version as plain text, including all inline edits. Header/footer lines are page
+ * furniture and are always left out, whether or not the header/footer filter is active.
+ */
+function buildFinalText() {
+  const blocks = state.alignedRows.length
+    ? state.alignedRows.filter(r => r.rightBlock).map(r => r.rightBlock)
+    : parseIntoBlocks(state.rightText || '');
+  return blocks
+    .filter(b => !b.isHeaderFooter && !isInternalMarkerLine(b.text))
+    .map(b => cleanExportText(b.text).trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+/* ── HTML report ──────────────────────────────────────────────────────────── */
+
+function renderReportTokensHtml(tokens) {
+  return tokens
+    .map(tok => {
+      const content = escapeHtml(tok.value);
+      if (tok.removed) {
+        return `<del><span class="sr">${escapeHtml(t('a11yRemovedStart'))} </span>${content}<span class="sr"> ${escapeHtml(t('a11yRemovedEnd'))}</span></del>`;
+      }
+      if (tok.added) {
+        return `<ins><span class="sr">${escapeHtml(t('a11yAddedStart'))} </span>${content}<span class="sr"> ${escapeHtml(t('a11yAddedEnd'))}</span></ins>`;
+      }
+      return content;
     })
-    .join('\n');
+    .join('');
+}
+
+function renderReportSummaryPairsHtml(row) {
+  const { pairs, more } = getRowChangeSummary(row);
+  const items = pairs.map(p => {
+    if (p.del && p.ins) {
+      return `${renderReportTokensHtml([{ value: p.del, removed: true }])} <span aria-hidden="true">→</span> ${renderReportTokensHtml([{ value: p.ins, added: true }])}`;
+    }
+    if (p.ins) return renderReportTokensHtml([{ value: p.ins, added: true }]);
+    return renderReportTokensHtml([{ value: p.del, removed: true }]);
+  });
+  if (more) items.push(`<span class="more">+${more} ${escapeHtml(t('moreDeltas'))}</span>`);
+  return items.map(html => `<div>${html}</div>`).join('');
+}
+
+const REPORT_CSS = `
+:root { color-scheme: light dark; --bg:#fff; --fg:#1f2937; --muted:#6b7280; --line:#e5e7eb; --card:#f9fafb;
+  --del-fg:#9f1239; --del-bg:#ffe4e6; --ins-fg:#14532d; --ins-bg:#dcfce7; --mod:#1d4ed8; --link:#1d4ed8; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#111418; --fg:#e5e7eb; --muted:#9ca3af; --line:#2d333b; --card:#181c21;
+    --del-fg:#fda4af; --del-bg:#4c0519; --ins-fg:#86efac; --ins-bg:#052e16; --mod:#93c5fd; --link:#93c5fd; }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color: var(--fg); }
+body { margin: 0 auto; max-width: 860px; padding: 32px 24px 64px; font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow-wrap: anywhere; }
+a { color: var(--link); }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 12px; }
+h2 { font-size: 1.15rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.meta { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: .9rem; }
+.meta dt { color: var(--muted); }
+.meta dd { margin: 0; }
+.counts { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 16px 0 0; }
+.counts li { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 8px 14px; min-width: 120px; }
+.counts strong { display: block; font-size: 1.35rem; line-height: 1.2; }
+.counts span { color: var(--muted); font-size: .85rem; }
+.legend { font-size: .85rem; color: var(--muted); margin: 8px 0 16px; }
+del { color: var(--del-fg); background: var(--del-bg); text-decoration: line-through; text-decoration-thickness: 1.5px; border-radius: 2px; padding: 0 2px; }
+ins { color: var(--ins-fg); background: var(--ins-bg); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 2px; border-radius: 2px; padding: 0 2px; }
+del + ins { margin-left: .25em; }
+.sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+caption { text-align: left; color: var(--muted); font-size: .85rem; padding-bottom: 6px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+td.num { white-space: nowrap; color: var(--muted); }
+td.ref { white-space: nowrap; }
+.badge { display: inline-block; font-size: .75rem; font-weight: 600; border: 1px solid currentColor; border-radius: 999px; padding: 0 8px; white-space: nowrap; }
+.badge.modified { color: var(--mod); } .badge.inserted { color: var(--ins-fg); } .badge.deleted { color: var(--del-fg); }
+.more { color: var(--muted); font-size: .8rem; }
+.empty { padding: 16px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
+.doc { margin-top: 8px; }
+.row { margin: 0 0 10px; padding: 2px 0 2px 14px; border-left: 3px solid transparent; }
+.row.modified { border-left-color: var(--mod); } .row.inserted { border-left-color: var(--ins-fg); } .row.deleted { border-left-color: var(--del-fg); }
+.row.kind-bullet, .row.kind-clause { padding-left: calc(14px + 2.2em); text-indent: -2.2em; }
+.row.kind-hf { font-size: .8rem; color: var(--muted); font-style: italic; }
+.row h3, .row h4, .row h5 { margin: 18px 0 4px; line-height: 1.35; }
+.row h3 { font-size: 1.15rem; } .row h4 { font-size: 1.05rem; } .row h5 { font-size: 1rem; }
+.row p { margin: 0; }
+.row-tag { display: block; text-indent: 0; font-size: .75rem; color: var(--muted); margin-bottom: 2px; }
+.row-tag a { color: inherit; }
+.row:target { outline: 2px solid var(--link); outline-offset: 4px; border-radius: 2px; }
+footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
+@media print {
+  :root { --bg:#fff; --fg:#000; --muted:#444; --line:#bbb; --card:#fff; --del-fg:#7f1d1d; --del-bg:transparent; --ins-fg:#14532d; --ins-bg:transparent; --mod:#1e3a8a; --link:#000; }
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  body { max-width: none; padding: 0; font-size: 10.5pt; }
+  a { text-decoration: none; }
+  h2 { break-after: avoid; }
+  tr, .row, .counts li { break-inside: avoid; }
+  thead { display: table-header-group; }
+  .row-tag a::after { content: none; }
+}
+`;
+
+function buildExportHtmlReport(date = new Date()) {
+  const counts = getExportCounts();
+  const title = getExportTitle();
+  const changeIndex = new Map(state.changeRows.map((row, i) => [row.id, i + 1]));
+  const anchorFor = row => `c${changeIndex.get(row.id)}`;
+
+  const changeListHtml = state.changeRows.length
+    ? `<table>
+<caption>${escapeHtml(t('exportChangeListCaption'))}</caption>
+<thead><tr><th scope="col">#</th><th scope="col">${escapeHtml(t('exportColRef'))}</th><th scope="col">${escapeHtml(t('exportColType'))}</th><th scope="col">${escapeHtml(t('exportColChange'))}</th></tr></thead>
+<tbody>
+${state.changeRows
+  .map(row => {
+    const n = changeIndex.get(row.id);
+    const ref = getRowRefCode(row) || `#${n}`;
+    return `<tr><td class="num">${n}</td><td class="ref"><a href="#${anchorFor(row)}">${escapeHtml(ref)}</a><div class="more">${escapeHtml(t('pageShort'))} ${row.pageNum || 1}</div></td><td><span class="badge ${row.type}">${escapeHtml(getRowTypeLabel(row))}</span></td><td>${renderReportSummaryPairsHtml(row)}</td></tr>`;
+  })
+  .join('\n')}
+</tbody>
+</table>`
+    : `<p class="empty">${escapeHtml(t('exportNoChanges'))}</p>`;
+
+  const bodyRows = getExportBodyRows();
+  const redlineHtml = bodyRows.length
+    ? bodyRows
+        .map(row => {
+          const block = row.rightBlock || row.leftBlock;
+          const kind = (block && block.kind) || 'p';
+          const inner = renderReportTokensHtml(getExportDiffTokens(row));
+          const tag = kind === 'h1' ? 'h3' : kind === 'h2' ? 'h4' : kind === 'h3' ? 'h5' : 'p';
+          const isChange = row.type !== 'equal';
+          const idAttr = isChange ? ` id="${anchorFor(row)}"` : '';
+          const tagHtml = isChange
+            ? `<span class="row-tag"><a href="#changes">${escapeHtml(getRowTypeLabel(row))} · ${escapeHtml(getRowRefCode(row))}</a></span>`
+            : '';
+          return `<div class="row ${row.type} kind-${kind}"${idAttr}>${tagHtml}<${tag}>${inner}</${tag}></div>`;
+        })
+        .join('\n')
+    : `<p class="empty">${escapeHtml(t('exportNoChanges'))}</p>`;
+
+  const csp =
+    "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
   return `<!DOCTYPE html>
-<html lang="${state.lang}">
+<html lang="${state.lang === 'de' ? 'de' : 'en'}">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="${csp}">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="generator" content="Doc Diff">
 <title>${escapeHtml(title)}</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; max-width: 820px; margin: 32px auto; padding: 0 20px; font-size: 12px; line-height: 1.5; }
-  header { border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px; }
-  h1 { font-size: 16px; margin: 0 0 4px 0; }
-  .meta { font-size: 11px; color: #64748b; }
-  del.tok-del { background: #ffe4e8; color: #b30027; text-decoration: line-through; padding: 1px 3px; border-radius: 2px; }
-  ins.tok-ins { background: #dcfce7; color: #166534; text-decoration: none; font-weight: 600; padding: 1px 3px; border-radius: 2px; }
-</style>
+<style>${REPORT_CSS}</style>
 </head>
 <body>
-  <header>
+<header>
 <h1>${escapeHtml(title)}</h1>
-<div class="meta">${escapeHtml(t('colLeft'))}: ${escapeHtml(state.leftName || '-')} · ${escapeHtml(t('colRight'))}: ${escapeHtml(state.rightName || '-')} · ${state.changeRows.length} ${escapeHtml(t('changesLabel'))}</div>
-  </header>
-  <main>
-${bodyRows}
-  </main>
+<dl class="meta">
+<dt>${escapeHtml(t('exportLabelOriginal'))}</dt><dd>${escapeHtml(getDisplayDocName('left'))}</dd>
+<dt>${escapeHtml(t('exportLabelRevised'))}</dt><dd>${escapeHtml(getDisplayDocName('right'))}</dd>
+<dt>${escapeHtml(t('exportLabelCreated'))}</dt><dd><time datetime="${date.toISOString()}">${escapeHtml(formatExportDate(date))}</time></dd>
+<dt>${escapeHtml(t('exportLabelScope'))}</dt><dd>${escapeHtml(getExportScopeText())}</dd>
+<dt>${escapeHtml(t('exportLabelHf'))}</dt><dd>${escapeHtml(getExportHfText())}</dd>
+</dl>
+</header>
+<main>
+<section aria-labelledby="summary">
+<h2 id="summary">${escapeHtml(t('exportSummaryHeading'))}</h2>
+<ul class="counts">
+<li><strong>${counts.total}</strong><span>${escapeHtml(t('exportCountTotal'))}</span></li>
+<li><strong>${counts.modified}</strong><span>${escapeHtml(t('typeMod'))}</span></li>
+<li><strong>${counts.inserted}</strong><span>${escapeHtml(t('typeIns'))}</span></li>
+<li><strong>${counts.deleted}</strong><span>${escapeHtml(t('typeDel'))}</span></li>
+</ul>
+</section>
+<section aria-labelledby="changes">
+<h2 id="changes">${escapeHtml(t('exportChangesHeading'))}</h2>
+${changeListHtml}
+</section>
+<section aria-labelledby="redline">
+<h2 id="redline">${escapeHtml(t('exportRedlineHeading'))}</h2>
+<p class="legend">${escapeHtml(t('exportLegendLabel'))}: <ins>${escapeHtml(t('exportLegendIns'))}</ins> · <del>${escapeHtml(t('exportLegendDel'))}</del>${state.onlyChanges ? ` · ${escapeHtml(t('exportScopeChanges'))}` : ''}</p>
+<div class="doc">
+${redlineHtml}
+</div>
+</section>
+</main>
+<footer>${escapeHtml(t('exportFooterNote'))}</footer>
 </body>
-</html>`;
+</html>
+`;
 }
 
-function buildExportMarkdown() {
-  const rows = state.onlyChanges ? state.changeRows : state.alignedRows;
+/* ── Markdown report ──────────────────────────────────────────────────────── */
+
+/** Escapes inline Markdown syntax so document text can never be parsed as markup. */
+function escapeMarkdownInline(text) {
+  return String(text)
+    .replace(/[\\`*_~[\]<>|]/g, '\\$&')
+    .replace(/&(?=#?[A-Za-z0-9]+;)/g, '\\&');
+}
+
+/** Escapes characters that would start a block construct when they begin a line. */
+function escapeMarkdownLineStart(line) {
+  return line
+    .replace(/^(\s*)([-+=>])/, '$1\\$2')
+    .replace(/^(\s*\d+)([.)])(?=\s|$)/, '$1\\$2');
+}
+
+const MD_PUNCT = /[!-/:-@[-`{-~\p{P}\p{S}]/u;
+function mdCharClass(ch) {
+  if (!ch || /\s/.test(ch)) return 'space';
+  return MD_PUNCT.test(ch) ? 'punct' : 'word';
+}
+
+/**
+ * Renders diff tokens as Markdown: deletions as ~~strike~~ and insertions as **bold**.
+ * Leading/trailing whitespace is moved outside the delimiters, and where CommonMark's
+ * flanking rules would make `~~`/`**` fail (e.g. punctuation glued to a word), the
+ * equivalent inline HTML <del>/<ins> is used instead.
+ */
+function renderMarkdownTokens(tokens) {
+  const pieces = tokens.map(tok => ({ ...tok, text: escapeMarkdownInline(tok.value) }));
+  let out = '';
+  for (let i = 0; i < pieces.length; i++) {
+    const p = pieces[i];
+    if (!p.removed && !p.added) {
+      out += p.text;
+      continue;
+    }
+    const m = p.text.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    const lead = m[1];
+    const core = m[2];
+    const trail = m[3];
+    if (!core) {
+      if (p.added) out += p.text;
+      continue;
+    }
+    const prevChar = (out + lead).slice(-1);
+    let nextChar = '';
+    if (trail) nextChar = ' ';
+    else if (i + 1 < pieces.length) {
+      const next = pieces[i + 1];
+      nextChar = next.removed || next.added ? (/^\s/.test(next.text) ? ' ' : '*') : next.text.charAt(0);
+    }
+    const first = mdCharClass(core.charAt(0));
+    const last = mdCharClass(core.charAt(core.length - 1));
+    const opens = first !== 'punct' || mdCharClass(prevChar) !== 'word';
+    const closes = last !== 'punct' || mdCharClass(nextChar) !== 'word';
+    const wrapped =
+      opens && closes
+        ? p.removed
+          ? `~~${core}~~`
+          : `**${core}**`
+        : p.removed
+        ? `<del>${core}</del>`
+        : `<ins>${core}</ins>`;
+    // Keep a replaced passage readable: "~~old~~ **new**" rather than "~~old~~**new**".
+    const gap = p.added && i > 0 && pieces[i - 1].removed && !lead && !/\s$/.test(out) ? ' ' : '';
+    out += gap + lead + wrapped + trail;
+  }
+  return out;
+}
+
+function escapeMarkdownTableCell(text) {
+  return String(text).replace(/\s*\n\s*/g, ' ');
+}
+
+function buildExportMarkdown(date = new Date()) {
+  const counts = getExportCounts();
+  const changeIndex = new Map(state.changeRows.map((row, i) => [row.id, i + 1]));
   const lines = [
-    `# Doc Diff: ${state.leftName || 'Original'} vs. ${state.rightName || 'Revised'}`,
+    `# ${escapeMarkdownInline(getExportTitle())}`,
     '',
-    `- **${t('colLeft')}:** ${state.leftName || '-'}`,
-    `- **${t('colRight')}:** ${state.rightName || '-'}`,
-    `- **${t('sidebarTitle')}:** ${state.changeRows.length}`,
+    `| ${escapeMarkdownInline(t('exportLabelDetail'))} | |`,
+    '| --- | --- |',
+    `| ${escapeMarkdownInline(t('exportLabelOriginal'))} | ${escapeMarkdownInline(getDisplayDocName('left'))} |`,
+    `| ${escapeMarkdownInline(t('exportLabelRevised'))} | ${escapeMarkdownInline(getDisplayDocName('right'))} |`,
+    `| ${escapeMarkdownInline(t('exportLabelCreated'))} | ${escapeMarkdownInline(formatExportDate(date))} |`,
+    `| ${escapeMarkdownInline(t('exportLabelChanges'))} | ${escapeMarkdownInline(formatExportCountsLine(counts))} |`,
+    `| ${escapeMarkdownInline(t('exportLabelScope'))} | ${escapeMarkdownInline(getExportScopeText())} |`,
+    `| ${escapeMarkdownInline(t('exportLabelHf'))} | ${escapeMarkdownInline(getExportHfText())} |`,
     '',
-    '---',
+    `## ${escapeMarkdownInline(t('exportChangesHeading'))}`,
     '',
   ];
 
-  for (const row of rows) {
-    const primaryBlock = row.rightBlock || row.leftBlock;
-    const prefix = primaryBlock && primaryBlock.isHeading ? '### ' : '';
-    if (row.type === 'equal') {
-      lines.push(`${prefix}${row.rightBlock.text}`);
-    } else if (row.type === 'deleted') {
-      lines.push(`${prefix}~~${row.leftBlock.text}~~`);
-    } else if (row.type === 'inserted') {
-      lines.push(`${prefix}**${row.rightBlock.text}**`);
-    } else if (row.type === 'modified') {
-      const mdDiff = coalesceUnifiedTokens(row.wordDiffs)
-        .map(p => (p.removed ? `~~${p.value}~~` : p.added ? `**${p.value}**` : p.value))
-        .join('');
-      lines.push(`${prefix}${mdDiff}`);
+  if (state.changeRows.length) {
+    lines.push(
+      `| # | ${escapeMarkdownInline(t('exportColRef'))} | ${escapeMarkdownInline(t('pageShort'))} | ${escapeMarkdownInline(t('exportColType'))} | ${escapeMarkdownInline(t('exportColChange'))} |`,
+      '| ---: | --- | ---: | --- | --- |'
+    );
+    for (const row of state.changeRows) {
+      const n = changeIndex.get(row.id);
+      const { pairs, more } = getRowChangeSummary(row, 60);
+      const summary = pairs
+        .map(p => {
+          if (p.del && p.ins) return `${renderMarkdownTokens([{ value: p.del, removed: true }])} → ${renderMarkdownTokens([{ value: p.ins, added: true }])}`;
+          if (p.ins) return renderMarkdownTokens([{ value: p.ins, added: true }]);
+          return renderMarkdownTokens([{ value: p.del, removed: true }]);
+        })
+        .concat(more ? [`+${more} ${escapeMarkdownInline(t('moreDeltas'))}`] : [])
+        .join('<br>');
+      lines.push(
+        `| ${n} | ${escapeMarkdownInline(getRowRefCode(row) || `#${n}`)} | ${row.pageNum || 1} | ${escapeMarkdownInline(getRowTypeLabel(row))} | ${escapeMarkdownTableCell(summary)} |`
+      );
     }
-    lines.push('');
+  } else {
+    lines.push(escapeMarkdownInline(t('exportNoChanges')));
   }
+
+  lines.push(
+    '',
+    `## ${escapeMarkdownInline(t('exportRedlineHeading'))}`,
+    '',
+    `> ${escapeMarkdownInline(t('exportLegendLabel'))}: **${escapeMarkdownInline(t('exportLegendIns'))}** · ~~${escapeMarkdownInline(t('exportLegendDel'))}~~${state.onlyChanges ? ` · ${escapeMarkdownInline(t('exportScopeChanges'))}` : ''}`,
+    ''
+  );
+
+  for (const row of getExportBodyRows()) {
+    const block = row.rightBlock || row.leftBlock;
+    const kind = (block && block.kind) || 'p';
+    const body = renderMarkdownTokens(getExportDiffTokens(row));
+    if (!body.trim()) continue;
+    const prefix = kind === 'h1' ? '### ' : kind === 'h2' ? '#### ' : kind === 'h3' ? '##### ' : '';
+    const line = prefix ? prefix + body : escapeMarkdownLineStart(body);
+    if (row.type !== 'equal') {
+      const n = changeIndex.get(row.id);
+      lines.push(`<sub>[${n}] ${escapeMarkdownInline(getRowTypeLabel(row))} · ${escapeMarkdownInline(getRowRefCode(row))}</sub>`, '');
+    }
+    lines.push(kind === 'hf' ? `<small>${line}</small>` : line, '');
+  }
+
+  lines.push('---', '', `*${escapeMarkdownInline(t('exportFooterNote'))}*`, '');
   return lines.join('\n');
 }
 
+/* ── Print / PDF ──────────────────────────────────────────────────────────── */
+
+function cssString(str) {
+  return `"${String(str).replace(/[\\"]/g, '\\$&').replace(/[\n\r\f]/g, ' ')}"`;
+}
+
+function renderPrintCellHtml(html, block) {
+  if (!block) return '<td class="pv-cell pv-empty"></td>';
+  const kind = block.kind || 'p';
+  return `<td class="pv-cell kind-${kind}">${html}</td>`;
+}
+
+/** Builds a print-only, paginated rendering of the comparison for the current view mode. */
+function buildPrintViewHtml(date = new Date()) {
+  const rows = getExportBodyRows();
+  const counts = getExportCounts();
+  const mode = state.viewMode;
+  const head = `
+    <header class="pv-head">
+      <div class="pv-title">${escapeHtml(getExportTitle())}</div>
+      <div class="pv-meta">
+        <span><strong>${escapeHtml(t('exportLabelOriginal'))}:</strong> ${escapeHtml(getDisplayDocName('left'))}</span>
+        <span><strong>${escapeHtml(t('exportLabelRevised'))}:</strong> ${escapeHtml(getDisplayDocName('right'))}</span>
+        <span><strong>${escapeHtml(t('exportLabelCreated'))}:</strong> ${escapeHtml(formatExportDate(date))}</span>
+      </div>
+      <div class="pv-meta">
+        <span>${escapeHtml(formatExportCountsLine(counts))}</span>
+        <span>${escapeHtml(getExportScopeText())}</span>
+        <span>${escapeHtml(t('exportLabelHf'))}: ${escapeHtml(getExportHfText())}</span>
+      </div>
+      <div class="pv-legend">${escapeHtml(t('exportLegendLabel'))}: <ins class="tok-ins">${escapeHtml(t('exportLegendIns'))}</ins> <del class="tok-del">${escapeHtml(t('exportLegendDel'))}</del></div>
+    </header>`;
+
+  const rowClass = row => `pv-row pv-${row.type}`;
+  const tagHtml = row =>
+    row.type === 'equal'
+      ? ''
+      : `<span class="pv-tag">${escapeHtml(getRowTypeLabel(row))} · ${escapeHtml(getRowRefCode(row))}</span>`;
+
+  const groups = [];
+  if (mode === 'pages') {
+    const byPage = new Map();
+    for (const row of rows) {
+      const p = row.pageNum || 1;
+      if (!byPage.has(p)) byPage.set(p, []);
+      byPage.get(p).push(row);
+    }
+    const totalPages = new Set(state.alignedRows.map(r => r.pageNum || 1)).size || 1;
+    for (const [p, list] of byPage) {
+      groups.push({ label: `${t('pageLabel')} ${p} ${t('pageOf')} ${totalPages}`, rows: list });
+    }
+  } else {
+    groups.push({ label: '', rows });
+  }
+
+  let body;
+  if (mode === 'inline') {
+    body = groups
+      .map(
+        g => `<div class="pv-inline">${g.rows
+          .map(row => {
+            const block = row.rightBlock || row.leftBlock;
+            return `<div class="${rowClass(row)} kind-${(block && block.kind) || 'p'}">${tagHtml(row)}${renderUnifiedBlockHtml(row, '', true)}</div>`;
+          })
+          .join('')}</div>`
+      )
+      .join('');
+  } else {
+    const thead = `<thead><tr><th scope="col">${escapeHtml(t('colLeft'))} · ${escapeHtml(getDisplayDocName('left'))}</th><th scope="col">${escapeHtml(t('colRight'))} · ${escapeHtml(getDisplayDocName('right'))}</th></tr></thead>`;
+    // One table (the column header repeats on every printed page); in "pages" mode each original
+    // page becomes its own <tbody> introduced by a page label that is kept with its first row.
+    body = `<table class="pv-table">${thead}${groups
+      .map(
+        g => `<tbody>${
+          g.label ? `<tr class="pv-page-head"><th colspan="2" scope="colgroup">${escapeHtml(g.label)}</th></tr>` : ''
+        }${g.rows
+          .map(
+            row =>
+              `<tr class="${rowClass(row)}">${renderPrintCellHtml(
+                (row.type === 'deleted' || row.type === 'modified' ? tagHtml(row) : '') + renderLeftBlockHtml(row, ''),
+                row.leftBlock
+              )}${renderPrintCellHtml(
+                (row.type === 'inserted' || row.type === 'modified' ? tagHtml(row) : '') + renderRightBlockHtml(row, ''),
+                row.rightBlock
+              )}</tr>`
+          )
+          .join('')}</tbody>`
+      )
+      .join('')}</table>`;
+  }
+
+  const emptyHtml = rows.length ? '' : `<p class="pv-empty-note">${escapeHtml(t('exportNoChanges'))}</p>`;
+  return `${head}<main class="pv-body pv-mode-${mode}">${body}${emptyHtml}</main>`;
+}
+
+function preparePrintView() {
+  if (!state.alignedRows.length) return;
+  const date = new Date();
+  let view = document.getElementById('print-view');
+  if (!view) {
+    view = document.createElement('div');
+    view.id = 'print-view';
+    view.className = 'print-view';
+    view.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(view);
+  }
+  setSafeContainerHtml(view, buildPrintViewHtml(date));
+
+  let pageStyle = document.getElementById('print-page-style');
+  if (!pageStyle) {
+    pageStyle = document.createElement('style');
+    pageStyle.id = 'print-page-style';
+    document.head.appendChild(pageStyle);
+  }
+  const footerLeft = `${getDisplayDocName('right')} ${t('exportVs')} ${getDisplayDocName('left')}`;
+  const orientation = state.viewMode === 'inline' ? 'portrait' : 'landscape';
+  pageStyle.textContent = `@media print { @page { size: A4 ${orientation}; margin: 14mm 12mm 16mm;
+    @bottom-left { content: ${cssString(footerLeft)}; font: 7.5pt sans-serif; color: #444; }
+    @bottom-right { content: ${cssString(`${t('pageLabel')} `)} counter(page) ${cssString(` ${t('pageOf')} `)} counter(pages); font: 7.5pt sans-serif; color: #444; } } }`;
+  document.body.classList.add('has-print-view');
+}
+
+function cleanupPrintView() {
+  document.body.classList.remove('has-print-view');
+  const view = document.getElementById('print-view');
+  if (view) view.remove();
+}
+
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('beforeprint', preparePrintView);
+  window.addEventListener('afterprint', cleanupPrintView);
+}
+
+/* ── Copy to clipboard ────────────────────────────────────────────────────── */
+
 let copyLabelTimer = null;
 function copyFinalTextToClipboard() {
-  const finalText = state.alignedRows
-    .filter(r => r.rightBlock && !r.rightBlock.isHeaderFooter)
-    .map(r => r.rightBlock.text)
-    .join('\n\n');
+  const finalText = buildFinalText();
 
   const flashCopied = () => {
     const labelEl = document.getElementById('i18n-btn-export');
@@ -7251,243 +9147,813 @@ function copyFinalTextToClipboard() {
     }, 1800);
   };
 
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(finalText).then(flashCopied).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = finalText;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      flashCopied();
-    });
-  } else {
+  const legacyCopy = () => {
     const ta = document.createElement('textarea');
     ta.value = finalText;
+    ta.setAttribute('readonly', '');
     ta.style.position = 'fixed';
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
+    try {
+      document.execCommand('copy');
+    } finally {
+      document.body.removeChild(ta);
+    }
     flashCopied();
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(finalText).then(flashCopied).catch(legacyCopy);
+  } else {
+    legacyCopy();
   }
 }
 
+/* ── Dispatcher ───────────────────────────────────────────────────────────── */
+
 function handleExportAction(type) {
+  // Commit an inline edit that is still open so the export reflects it.
+  const openEditor = document.querySelector('.clause-inline-editor');
+  if (openEditor) openEditor.blur();
+
   if (type === 'print') {
+    if (!state.alignedRows.length) return;
+    preparePrintView();
     window.print();
     return;
   }
-  if (!state.alignedRows.length) {
-    const sample = SAMPLES[state.lang] || SAMPLES.de;
-    state.leftName = t('sampleLeftName');
-    state.leftFormat = 'DEMO';
-    state.leftText = sample.v1;
-    state.rightName = t('sampleRightName');
-    state.rightFormat = 'DEMO';
-    state.rightText = sample.v2;
-    runComparison();
-  }
+
+  // Exports need a finished comparison. The menu is disabled until then; never substitute
+  // sample content for (or overwrite) a document the user has loaded.
+  if (!state.alignedRows.length) return;
+
   if (type === 'copy') {
     copyFinalTextToClipboard();
-    return;
-  }
-  const baseName = `DocDiff_${(state.rightName || 'Comparison').replace(/\.[^.]+$/, '')}`;
-  if (type === 'txt') {
-    const finalText = state.alignedRows
-      .filter(r => r.rightBlock && !r.rightBlock.isHeaderFooter)
-      .map(r => r.rightBlock.text)
-      .join('\n\n');
-    downloadBlob(finalText, 'text/plain;charset=utf-8', `${baseName}_Neu.txt`);
+  } else if (type === 'txt') {
+    downloadBlob(`${buildFinalText()}\n`, 'text/plain;charset=utf-8', buildExportFileName('exportFileFinal', 'txt'));
   } else if (type === 'word') {
-    const html = buildExportHtmlDocument(true);
-    downloadBlob('\ufeff' + html, 'application/msword;charset=utf-8', `${baseName}_Redline.doc`);
+    downloadBlob(
+      buildDocxRedline(),
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      buildExportFileName('exportFileRedline', 'docx')
+    );
   } else if (type === 'html') {
-    const html = buildExportHtmlDocument(false);
-    downloadBlob(html, 'text/html;charset=utf-8', `${baseName}_Report.html`);
+    downloadBlob(buildExportHtmlReport(), 'text/html;charset=utf-8', buildExportFileName('exportFileReport', 'html'));
   } else if (type === 'md') {
-    const md = buildExportMarkdown();
-    downloadBlob(md, 'text/markdown;charset=utf-8', `${baseName}_Report.md`);
+    downloadBlob(buildExportMarkdown(), 'text/markdown;charset=utf-8', buildExportFileName('exportFileReport', 'md'));
   }
 }
+
+/* ── Export menu: availability and keyboard support ──────────────────────── */
+
+/** Really disables the export triggers (not just visually) while no comparison is available. */
+function syncExportAvailability() {
+  const available = document.body.classList.contains('is-comparing') && state.alignedRows.length > 0;
+  for (const id of ['btn-export-menu', 'mob-btn-export']) {
+    const btn = document.getElementById(id);
+    if (!btn) continue;
+    btn.disabled = !available;
+    btn.setAttribute('aria-disabled', String(!available));
+  }
+  if (!available) closeExportMenu(false);
+}
+
+function getExportMenuTrigger() {
+  const mob = document.getElementById('mob-btn-export');
+  if (mob && mob.getAttribute('aria-expanded') === 'true') return mob;
+  return document.getElementById('btn-export-menu');
+}
+
+function closeExportMenu(returnFocus) {
+  const menu = document.getElementById('export-menu');
+  if (!menu || !menu.classList.contains('is-open')) return;
+  const trigger = getExportMenuTrigger();
+  menu.classList.remove('is-open');
+  for (const id of ['btn-export-menu', 'mob-btn-export']) {
+    const btn = document.getElementById(id);
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+  document.body.classList.remove('mobile-sheet-open');
+  if (returnFocus && trigger) trigger.focus();
+}
+
+function initExportMenuKeyboard() {
+  const menu = document.getElementById('export-menu');
+  if (!menu) return;
+  const items = () => Array.from(menu.querySelectorAll('[role="menuitem"]:not([disabled])'));
+  items().forEach(item => item.setAttribute('tabindex', '-1'));
+
+  // Menu-button pattern: opening the menu moves focus to the first item.
+  for (const id of ['btn-export-menu', 'mob-btn-export']) {
+    const trigger = document.getElementById(id);
+    if (!trigger) continue;
+    trigger.setAttribute('aria-haspopup', 'menu');
+    trigger.setAttribute('aria-controls', 'export-menu');
+    trigger.addEventListener('click', () => {
+      setTimeout(() => {
+        if (menu.classList.contains('is-open')) {
+          const first = items()[0];
+          if (first) first.focus();
+        }
+      }, 0);
+    });
+    trigger.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      if (!menu.classList.contains('is-open')) trigger.click();
+      setTimeout(() => {
+        const list = items();
+        const target = e.key === 'ArrowUp' ? list[list.length - 1] : list[0];
+        if (target) target.focus();
+      }, 0);
+    });
+  }
+
+  menu.addEventListener('keydown', e => {
+    const list = items();
+    if (!list.length) return;
+    const idx = list.indexOf(document.activeElement);
+    let next = null;
+    if (e.key === 'ArrowDown') next = list[(idx + 1) % list.length];
+    else if (e.key === 'ArrowUp') next = list[(idx - 1 + list.length) % list.length];
+    else if (e.key === 'Home') next = list[0];
+    else if (e.key === 'End') next = list[list.length - 1];
+    else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeExportMenu(true);
+      return;
+    } else if (e.key === 'Tab') {
+      closeExportMenu(false);
+      return;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    next.focus();
+  });
+}
+
+if (typeof document !== 'undefined' && document.body && typeof MutationObserver !== 'undefined') {
+  initExportMenuKeyboard();
+  syncExportAvailability();
+  new MutationObserver(syncExportAvailability).observe(document.body, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+}
+
+/* ── Import errors & notices ───────────────────────────────────────────── */
+
+// Error with a translatable message key (shown to the user instead of a raw exception).
+class ImportError extends Error {
+  constructor(messageKey, detail = '') {
+    super(messageKey);
+    this.messageKey = messageKey;
+    this.detail = detail;
+  }
+}
+
+function describeImportError(err) {
+  if (err && err.messageKey) return `${t(err.messageKey)}${err.detail ? ` ${err.detail}` : ''}`;
+  return (err && err.message) || String(err);
+}
+
+// Accessible, bilingual notice region (role="alert") for import errors and warnings.
+const importNotice = (() => {
+  const el = document.createElement('div');
+  el.id = 'import-notice';
+  el.className = 'import-notice';
+  el.setAttribute('role', 'alert');
+  el.setAttribute('aria-live', 'assertive');
+  el.hidden = true;
+  const msg = document.createElement('p');
+  msg.className = 'import-notice-msg';
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'import-notice-close';
+  close.textContent = '×';
+  close.addEventListener('click', () => clearImportNotice());
+  el.append(msg, close);
+  document.body.appendChild(el);
+  return { el, msg, close };
+})();
+
+function showImportNotice(message, kind = 'error') {
+  importNotice.msg.textContent = message;
+  importNotice.close.setAttribute('aria-label', t('noticeClose'));
+  importNotice.el.classList.toggle('is-warning', kind === 'warning');
+  importNotice.el.hidden = false;
+}
+
+function clearImportNotice() {
+  importNotice.el.hidden = true;
+  importNotice.msg.textContent = '';
+}
+
+/* ── PDF ───────────────────────────────────────────────────────────────── */
 
 async function extractPdfText(arrayBuffer) {
   const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
-  const pageSections = [];
-
+  const pages = [];
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 1.0 });
-    const pageHeight = viewport.height || 842;
     const textContent = await page.getTextContent();
-
-    let lastY = null;
-    let currentLine = '';
-    let currentLineY = 0;
-    const rawLines = [];
-
-    for (const item of textContent.items) {
-      const str = item.str;
-      if (!str) continue;
-      const y = item.transform ? item.transform[5] : 0;
-
-      if (lastY !== null && Math.abs(y - lastY) > 5.5) {
-        if (currentLine.trim()) {
-          rawLines.push({ text: currentLine.trim(), y: currentLineY });
-        }
-        if (Math.abs(y - lastY) > 15) {
-          rawLines.push({ text: '', y });
-        }
-        currentLine = str;
-        currentLineY = y;
-      } else {
-        if (!currentLine) currentLineY = y;
-        currentLine += (currentLine && !currentLine.endsWith(' ') && !str.startsWith(' ') ? ' ' : '') + str;
-      }
-      lastY = y;
-    }
-    if (currentLine.trim()) {
-      rawLines.push({ text: currentLine.trim(), y: currentLineY });
-    }
-
-    const paragraphs = [`=== [SEITE ${pageNum}] ===`];
-    let buffer = '';
-
-    for (let i = 0; i < rawLines.length; i++) {
-      const entry = rawLines[i];
-      const line = entry.text;
-      if (!line) {
-        if (buffer) {
-          paragraphs.push(buffer);
-          buffer = '';
-        }
-        continue;
-      }
-
-      const inTopOrBottomMargin =
-        pdf.numPages > 1 &&
-        (entry.y > pageHeight * 0.91 || entry.y < pageHeight * 0.085) &&
-        line.length < 120;
-
-      if (inTopOrBottomMargin || isLikelyHeaderOrFooterLine(line)) {
-        if (buffer) {
-          paragraphs.push(buffer);
-          buffer = '';
-        }
-        paragraphs.push(`[[HF]] ${line}`);
-        continue;
-      }
-
-      const isNewStructuralBlock =
-        /^(§\s*\d+|\(\d+\)|\d+\.\d+|\d+\.|[•‣▪◦–*-]\s|\([a-z]\)|[a-z]\)|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i.test(
-          line
-        );
-      if (isNewStructuralBlock && buffer) {
-        paragraphs.push(buffer);
-        buffer = line;
-      } else {
-        buffer = buffer ? `${buffer} ${line}` : line;
-      }
-    }
-    if (buffer) paragraphs.push(buffer);
-    pageSections.push(paragraphs.join('\n\n'));
+    pages.push(buildPdfPageLines(textContent.items, page.view));
   }
-  return pageSections.join('\n\n');
+  const { text, emptyPages } = assemblePdfText(pages);
+  if (pages.length === 0 || emptyPages.length === pages.length) {
+    // No text layer at all: a scan or an image-only PDF. OCR is not available.
+    throw new ImportError('errScannedPdf');
+  }
+  const warnings = emptyPages.length
+    ? [`${t('warnPdfPagesWithoutText')} ${emptyPages.join(', ')}`]
+    : [];
+  return { text, warnings };
+}
+
+/* ── DOCX ──────────────────────────────────────────────────────────────── */
+
+// Minimal ZIP reader (central directory + stored/deflate entries) for the few XML parts
+// Mammoth does not expose. Returns null when the archive cannot be read this way.
+async function readZipTextEntries(arrayBuffer, wantedNames) {
+  try {
+    const bytes = new Uint8Array(arrayBuffer);
+    const dv = new DataView(arrayBuffer);
+    let eocd = -1;
+    for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) {
+        eocd = i;
+        break;
+      }
+    }
+    if (eocd < 0) return null;
+    const count = dv.getUint16(eocd + 10, true);
+    let p = dv.getUint32(eocd + 16, true);
+    const utf8 = new TextDecoder('utf-8');
+    const out = {};
+    for (let n = 0; n < count; n++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) return null;
+      const method = dv.getUint16(p + 10, true);
+      const compSize = dv.getUint32(p + 20, true);
+      const nameLen = dv.getUint16(p + 28, true);
+      const extraLen = dv.getUint16(p + 30, true);
+      const commentLen = dv.getUint16(p + 32, true);
+      const localOffset = dv.getUint32(p + 42, true);
+      const name = utf8.decode(bytes.subarray(p + 46, p + 46 + nameLen));
+      p += 46 + nameLen + extraLen + commentLen;
+      if (!wantedNames.includes(name)) continue;
+      const dataStart =
+        localOffset + 30 + dv.getUint16(localOffset + 26, true) + dv.getUint16(localOffset + 28, true);
+      const data = bytes.subarray(dataStart, dataStart + compSize);
+      if (method === 0) {
+        out[name] = utf8.decode(data);
+      } else if (method === 8 && typeof DecompressionStream !== 'undefined') {
+        const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        out[name] = utf8.decode(await new Response(stream).arrayBuffer());
+      } else {
+        return null;
+      }
+    }
+    return out;
+  } catch (err) {
+    return null;
+  }
+}
+
+const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+const MC_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
+
+function wChild(el, localName) {
+  if (!el) return null;
+  for (const c of el.children) if (c.namespaceURI === W_NS && c.localName === localName) return c;
+  return null;
+}
+
+function wVal(el, attr = 'val') {
+  if (!el) return undefined;
+  const v = el.getAttributeNS(W_NS, attr);
+  return v === null || v === '' ? (el.hasAttributeNS(W_NS, attr) ? '' : undefined) : v;
+}
+
+function formatListNumber(value, numFmt) {
+  const toLetters = (n, upper) => {
+    // Word repeats the letter after z: a..z, aa..zz, aaa..
+    const letter = String.fromCharCode(97 + ((n - 1) % 26));
+    const s = letter.repeat(Math.floor((n - 1) / 26) + 1);
+    return upper ? s.toUpperCase() : s;
+  };
+  const toRoman = n => {
+    const map = [[1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'], [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
+    let out = '';
+    for (const [v, s] of map) while (n >= v) { out += s; n -= v; }
+    return out;
+  };
+  switch (numFmt || 'decimal') {
+    case 'decimal': return String(value);
+    case 'decimalZero': return value < 10 ? `0${value}` : String(value);
+    case 'lowerLetter': return value > 0 ? toLetters(value, false) : null;
+    case 'upperLetter': return value > 0 ? toLetters(value, true) : null;
+    case 'lowerRoman': return value > 0 ? toRoman(value) : null;
+    case 'upperRoman': return value > 0 ? toRoman(value).toUpperCase() : null;
+    default: return null; // unknown format: do not guess
+  }
+}
+
+/**
+ * Computes the visible list marker ("(1)", "1.2", "a)", "•") of every paragraph the way
+ * Word numbers them: counters per abstract numbering definition (so a list interrupted
+ * by other paragraphs continues), deeper levels restart below a higher level, and a
+ * w:startOverride restarts the list when its w:num is first used.
+ * Returns an array (document order of w:p, as Mammoth reads them) of
+ * { numbered, ilvl, marker, text } — marker is null when it cannot be determined reliably;
+ * text is the paragraph's plain text, used to verify the alignment with Mammoth's paragraphs.
+ */
+function computeDocxListMarkers(documentXml, numberingXml, stylesXml) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(documentXml, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) return null;
+  const numDoc = numberingXml ? parser.parseFromString(numberingXml, 'application/xml') : null;
+  const styleDoc = stylesXml ? parser.parseFromString(stylesXml, 'application/xml') : null;
+
+  const abstracts = {};
+  const nums = {};
+  const lvlStyleLinks = {};
+  const readLvl = lvl => ({
+    numFmt: wVal(wChild(lvl, 'numFmt')) || 'decimal',
+    lvlText: wVal(wChild(lvl, 'lvlText')),
+    start: parseInt(wVal(wChild(lvl, 'start')) || '1', 10),
+    isLgl: Boolean(wChild(lvl, 'isLgl')),
+  });
+  if (numDoc) {
+    for (const an of numDoc.getElementsByTagNameNS(W_NS, 'abstractNum')) {
+      const id = wVal(an, 'abstractNumId');
+      const levels = {};
+      for (const lvl of an.getElementsByTagNameNS(W_NS, 'lvl')) {
+        const ilvl = wVal(lvl, 'ilvl');
+        levels[ilvl] = readLvl(lvl);
+        const pStyle = wVal(wChild(lvl, 'pStyle'));
+        if (pStyle) lvlStyleLinks[pStyle] = { abstractNumId: id, ilvl };
+      }
+      abstracts[id] = { levels, numStyleLink: wVal(wChild(an, 'numStyleLink')) };
+    }
+    for (const num of numDoc.getElementsByTagNameNS(W_NS, 'num')) {
+      const overrides = {};
+      for (const ov of num.getElementsByTagNameNS(W_NS, 'lvlOverride')) {
+        const ilvl = wVal(ov, 'ilvl');
+        const so = wVal(wChild(ov, 'startOverride'));
+        const lvl = wChild(ov, 'lvl');
+        overrides[ilvl] = {
+          startOverride: so !== undefined ? parseInt(so, 10) : null,
+          lvl: lvl ? readLvl(lvl) : null,
+        };
+      }
+      nums[wVal(num, 'numId')] = { abstractNumId: wVal(wChild(num, 'abstractNumId')), overrides };
+    }
+  }
+
+  const styles = {};
+  if (styleDoc) {
+    for (const st of styleDoc.getElementsByTagNameNS(W_NS, 'style')) {
+      const numPr = wChild(wChild(st, 'pPr'), 'numPr');
+      styles[wVal(st, 'styleId')] = {
+        basedOn: wVal(wChild(st, 'basedOn')),
+        numId: wVal(wChild(numPr, 'numId')),
+        ilvl: wVal(wChild(numPr, 'ilvl')),
+      };
+    }
+  }
+
+  const resolveAbstractId = absId => {
+    const abs = abstracts[absId];
+    if (abs && abs.numStyleLink && !Object.keys(abs.levels).length) {
+      const st = styles[abs.numStyleLink];
+      const linked = st && nums[st.numId];
+      if (linked) return linked.abstractNumId;
+    }
+    return absId;
+  };
+
+  const resolveParagraph = p => {
+    const pPr = wChild(p, 'pPr');
+    const numPr = wChild(pPr, 'numPr');
+    const styleId = wVal(wChild(pPr, 'pStyle'));
+    let numId = wVal(wChild(numPr, 'numId'));
+    let ilvl = wVal(wChild(numPr, 'ilvl'));
+    let sid = styleId;
+    for (let guard = 0; sid && guard < 12 && (numId === undefined || ilvl === undefined); guard++) {
+      const st = styles[sid];
+      if (!st) break;
+      if (numId === undefined && st.numId !== undefined) numId = st.numId;
+      if (ilvl === undefined && st.ilvl !== undefined) ilvl = st.ilvl;
+      sid = st.basedOn;
+    }
+    if (numId === undefined && styleId && lvlStyleLinks[styleId]) {
+      // Numbering attached through the abstract definition's w:pStyle (e.g. heading numbering).
+      const link = lvlStyleLinks[styleId];
+      const numIdForAbs = Object.keys(nums).find(id => nums[id].abstractNumId === link.abstractNumId);
+      if (numIdForAbs === undefined) return null;
+      numId = numIdForAbs;
+      if (ilvl === undefined) ilvl = link.ilvl;
+    }
+    if (numId === undefined || numId === '0') return null;
+    return { numId, ilvl: ilvl === undefined ? '0' : ilvl };
+  };
+
+  // Paragraphs in the order Mammoth reads them: depth-first, mc:AlternateContent -> mc:Fallback.
+  const paragraphs = [];
+  const walk = el => {
+    for (const c of el.children) {
+      if (c.namespaceURI === MC_NS && c.localName === 'AlternateContent') {
+        const fallback = Array.from(c.children).find(x => x.localName === 'Fallback');
+        if (fallback) walk(fallback);
+        continue;
+      }
+      if (c.namespaceURI === W_NS && c.localName === 'p') paragraphs.push(c);
+      walk(c);
+    }
+  };
+  const body = doc.getElementsByTagNameNS(W_NS, 'body')[0];
+  if (!body) return null;
+  walk(body);
+
+  const paragraphText = p => {
+    let text = '';
+    const collect = el => {
+      for (const c of el.children) {
+        if (c.namespaceURI === MC_NS && c.localName === 'Choice') continue;
+        if (c.namespaceURI === W_NS && c.localName === 't') text += c.textContent;
+        else collect(c);
+      }
+    };
+    collect(p);
+    return text;
+  };
+
+  const counters = new Map();
+  const seenNums = new Set();
+  return paragraphs.map(p => ({ ...numberParagraph(p), text: paragraphText(p) }));
+
+  function numberParagraph(p) {
+    const info = resolveParagraph(p);
+    if (!info) return { numbered: false, ilvl: null, marker: null };
+    const num = nums[info.numId];
+    if (!num) return { numbered: true, ilvl: info.ilvl, marker: null };
+    const absId = resolveAbstractId(num.abstractNumId);
+    const abs = abstracts[absId];
+    const ilvl = parseInt(info.ilvl, 10) || 0;
+    const levelDef = k => (num.overrides[k] && num.overrides[k].lvl) || (abs && abs.levels[k]) || null;
+    const def = levelDef(ilvl);
+    if (!def) return { numbered: true, ilvl: info.ilvl, marker: null };
+
+    if (!counters.has(absId)) counters.set(absId, new Array(9).fill(null));
+    const arr = counters.get(absId);
+    if (!seenNums.has(info.numId)) {
+      seenNums.add(info.numId);
+      for (const [k, ov] of Object.entries(num.overrides)) {
+        if (ov.startOverride !== null && !Number.isNaN(ov.startOverride)) arr[parseInt(k, 10)] = ov.startOverride - 1;
+      }
+    }
+    arr[ilvl] = (arr[ilvl] === null ? def.start - 1 : arr[ilvl]) + 1;
+    for (let k = ilvl + 1; k < arr.length; k++) arr[k] = null;
+
+    if (def.numFmt === 'bullet') return { numbered: true, ilvl: info.ilvl, marker: '•', bullet: true };
+    if (def.numFmt === 'none') return { numbered: true, ilvl: info.ilvl, marker: '' };
+    if (def.lvlText === undefined) return { numbered: true, ilvl: info.ilvl, marker: null };
+    let reliable = true;
+    const marker = def.lvlText.replace(/%([1-9])/g, (_, d) => {
+      const k = parseInt(d, 10) - 1;
+      const kDef = levelDef(k);
+      const value = arr[k] === null ? (kDef ? kDef.start : 1) : arr[k];
+      const fmt = def.isLgl && k < ilvl ? 'decimal' : kDef ? kDef.numFmt : 'decimal';
+      const s = formatListNumber(value, fmt);
+      if (s === null) reliable = false;
+      return s || '';
+    });
+    return { numbered: true, ilvl: info.ilvl, marker: reliable ? marker.trim() : null };
+  }
+}
+
+// Mammoth does not output list numbers. Sentinels used to carry the computed marker and
+// list level of a paragraph through Mammoth's HTML conversion
+// (SENTINEL + ilvl + LEVEL_SEP + marker + SENTINEL; removed again when the HTML is read).
+const DOCX_MARKER_SENTINEL = '\u001D';
+const DOCX_LEVEL_SEP = '\u001C';
+
+function mammothParagraphText(element) {
+  let text = '';
+  for (const child of element.children || []) {
+    if (child.type === 'text' && typeof child.value === 'string') text += child.value;
+    else text += mammothParagraphText(child);
+  }
+  return text;
+}
+
+function collectMammothParagraphs(element, out = []) {
+  if (!element) return out;
+  if (element.type === 'paragraph') out.push(element);
+  for (const child of element.children || []) collectMammothParagraphs(child, out);
+  return out;
+}
+
+function prefixFirstText(element, prefix) {
+  for (const child of element.children || []) {
+    if (child.type === 'text' && typeof child.value === 'string') {
+      child.value = prefix + child.value;
+      return true;
+    }
+    if (prefixFirstText(child, prefix)) return true;
+  }
+  return false;
 }
 
 async function extractDocxText(arrayBuffer) {
-  if (window.mammoth && typeof window.mammoth.convertToHtml === 'function') {
-    const htmlResult = await window.mammoth.convertToHtml({ arrayBuffer });
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlResult.value || '', 'text/html');
-    const out = [];
-
-    const walkNodes = root => {
-      for (const node of root.children) {
-        const tag = node.tagName.toLowerCase();
-        if (tag === 'h1') {
-          const txt = (node.textContent || '').trim();
-          if (txt) out.push(`# ${txt}`);
-        } else if (tag === 'h2') {
-          const txt = (node.textContent || '').trim();
-          if (txt) out.push(`## ${txt}`);
-        } else if (tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') {
-          const txt = (node.textContent || '').trim();
-          if (txt) out.push(`### ${txt}`);
-        } else if (tag === 'ul') {
-          node.querySelectorAll(':scope > li').forEach(li => {
-            const txt = (li.textContent || '').replace(/\s+/g, ' ').trim();
-            if (txt) out.push(`• ${txt}`);
-          });
-        } else if (tag === 'ol') {
-          let idx = 1;
-          node.querySelectorAll(':scope > li').forEach(li => {
-            const txt = (li.textContent || '').replace(/\s+/g, ' ').trim();
-            if (txt) out.push(`(${idx++}) ${txt}`);
-          });
-        } else if (tag === 'table') {
-          node.querySelectorAll('tr').forEach(tr => {
-            const cells = Array.from(tr.querySelectorAll('th, td'))
-              .map(c => (c.textContent || '').replace(/\s+/g, ' ').trim())
-              .filter(Boolean);
-            if (cells.length) out.push(cells.join(' · '));
-          });
-        } else if (tag === 'p') {
-          const txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
-          if (txt) out.push(txt);
-        } else if (node.children && node.children.length > 0) {
-          walkNodes(node);
-        } else {
-          const txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
-          if (txt) out.push(txt);
-        }
-      }
-    };
-
-    walkNodes(doc.body);
-    if (out.length > 0) return out.join('\n\n');
+  if (!window.mammoth || typeof window.mammoth.convertToHtml !== 'function') {
+    throw new ImportError('errUnsupportedType');
   }
 
+  // Word list numbering (best effort; when anything does not match, no markers are shown
+  // rather than invented ones).
+  let listMarkers = null;
+  const parts = await readZipTextEntries(arrayBuffer, [
+    'word/document.xml',
+    'word/numbering.xml',
+    'word/styles.xml',
+  ]);
+  if (parts && parts['word/document.xml']) {
+    try {
+      listMarkers = computeDocxListMarkers(
+        parts['word/document.xml'],
+        parts['word/numbering.xml'],
+        parts['word/styles.xml']
+      );
+    } catch (err) {
+      listMarkers = null;
+    }
+  }
+
+  let markersInjected = false;
+  const transformDocument = documentElement => {
+    if (!listMarkers) return documentElement;
+    const paras = collectMammothParagraphs(documentElement);
+    if (paras.length !== listMarkers.length) return documentElement;
+    // Verify that both readers see the same paragraphs: every numbered paragraph must have
+    // the same text, and nearly all others too. Otherwise show no numbers at all.
+    const norm = s => String(s || '').replace(/\s+/g, '');
+    let same = 0;
+    for (let i = 0; i < paras.length; i++) {
+      const equalText = norm(mammothParagraphText(paras[i])) === norm(listMarkers[i].text);
+      if (equalText) same++;
+      else if (listMarkers[i].numbered || paras[i].numbering) return documentElement;
+    }
+    if (paras.length && same / paras.length < 0.9) return documentElement;
+    paras.forEach((para, i) => {
+      const mine = listMarkers[i];
+      if (mine.numbered && mine.marker !== null) {
+        prefixFirstText(
+          para,
+          `${DOCX_MARKER_SENTINEL}${mine.ilvl}${DOCX_LEVEL_SEP}${mine.marker}${DOCX_MARKER_SENTINEL}`
+        );
+      }
+    });
+    markersInjected = true;
+    return documentElement;
+  };
+
+  const htmlResult = await window.mammoth.convertToHtml({ arrayBuffer }, { transformDocument });
+  const doc = new DOMParser().parseFromString(htmlResult.value || '', 'text/html');
+  const out = [];
+  const S = DOCX_MARKER_SENTINEL;
+  const L = DOCX_LEVEL_SEP;
+  const sentinelRe = new RegExp(`^\\s*${S}(\\d*)${L}([^${S}]*)${S}\\s*`);
+  const anySentinelRe = new RegExp(`${S}\\d*${L}([^${S}]*)${S}\\s*`, 'g');
+  const clean = s => sanitizeExternalText(String(s || '').replace(/\s+/g, ' ')).trim();
+  const takeMarker = raw => {
+    const m = String(raw || '').match(sentinelRe);
+    if (!m) return { marker: null, level: null, text: clean(String(raw || '').replace(anySentinelRe, '$1 ')) };
+    return {
+      marker: clean(m[2]),
+      level: m[1] === '' ? null : parseInt(m[1], 10),
+      text: clean(String(raw).slice(m[0].length).replace(anySentinelRe, '$1 ')),
+    };
+  };
+  const withMarker = (marker, text) => (marker ? `${marker} ${text}` : text);
+  const push = (line, depth = 0) => {
+    if (line) out.push(metaLine(depth > 0 ? `lvl=${depth}` : '', line));
+  };
+
+  const walkList = (listEl, depth) => {
+    const isBulletList = listEl.tagName.toLowerCase() === 'ul';
+    for (const li of listEl.children) {
+      if (li.tagName.toLowerCase() !== 'li') continue;
+      const own = li.cloneNode(true);
+      own.querySelectorAll('ul, ol').forEach(n => n.remove());
+      const { marker, level, text } = takeMarker(own.textContent);
+      // Bullets are known to be bullets; numbers are only shown when read from the document.
+      const shownMarker = marker !== null ? marker : isBulletList ? '•' : '';
+      if (text) push(withMarker(shownMarker, text), level !== null ? level : depth);
+      for (const child of li.querySelectorAll(':scope > ul, :scope > ol')) walkList(child, depth + 1);
+    }
+  };
+
+  const walkNodes = root => {
+    for (const node of root.children) {
+      const tag = node.tagName.toLowerCase();
+      if (/^h[1-6]$/.test(tag)) {
+        const { marker, text } = takeMarker(node.textContent);
+        const prefix = tag === 'h1' ? '# ' : tag === 'h2' ? '## ' : '### ';
+        if (text) push(prefix + withMarker(marker, text));
+      } else if (tag === 'ul' || tag === 'ol') {
+        walkList(node, 0);
+      } else if (tag === 'table') {
+        node.querySelectorAll('tr').forEach(tr => {
+          const cells = Array.from(tr.querySelectorAll('th, td'))
+            .map(c => clean(String(c.textContent || '').replace(anySentinelRe, (m, mk) => (mk ? `${mk} ` : ''))))
+            .filter(Boolean);
+          if (cells.length) push(cells.join(' · '));
+        });
+      } else if (tag === 'p') {
+        const { marker, level, text } = takeMarker(node.textContent);
+        if (text) push(withMarker(marker, text), level || 0);
+      } else if (node.children && node.children.length > 0) {
+        walkNodes(node);
+      } else {
+        const { text } = takeMarker(node.textContent);
+        if (text) push(text);
+      }
+    }
+  };
+
+  walkNodes(doc.body);
+  if (out.length > 0) return { text: out.join('\n\n'), warnings: [], markersInjected };
+
   const result = await window.mammoth.extractRawText({ arrayBuffer });
-  return result.value;
+  const raw = sanitizeExternalText(result.value).trim();
+  if (!raw) throw new ImportError('errDocxEmpty');
+  return { text: raw, warnings: [], markersInjected: false };
 }
 
-async function handleFileUpload(file, side) {
-  if (!file) return;
+/* ── HTML & plain text ─────────────────────────────────────────────────── */
+
+// Extracts readable text from an HTML file. DOMParser documents are inert: scripts are not
+// executed and no resources are loaded.
+function extractHtmlText(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc.querySelectorAll('script, style, noscript, template, head, svg, iframe, object').forEach(n => n.remove());
+  const BLOCK = /^(p|div|section|article|header|footer|main|aside|nav|h[1-6]|li|tr|blockquote|pre|dd|dt|figcaption|address|table|ul|ol|dl|br|hr)$/;
+  const out = [];
+  let buf = '';
+  const flush = () => {
+    const line = sanitizeExternalText(buf.replace(/\s+/g, ' ')).trim();
+    if (line) out.push(line);
+    buf = '';
+  };
+  const walk = node => {
+    for (const c of node.childNodes) {
+      if (c.nodeType === 3) {
+        buf += c.nodeValue;
+      } else if (c.nodeType === 1) {
+        const tag = c.tagName.toLowerCase();
+        if (BLOCK.test(tag)) {
+          flush();
+          if (/^h[1-3]$/.test(tag)) buf += `${'#'.repeat(Number(tag[1]))} `;
+          else if (tag === 'li' && c.parentElement && c.parentElement.tagName.toLowerCase() === 'ul') buf += '• ';
+          walk(c);
+          flush();
+        } else if (tag === 'td' || tag === 'th') {
+          if (buf.trim()) buf += ' · ';
+          walk(c);
+        } else {
+          walk(c);
+        }
+      }
+    }
+  };
+  walk(doc.body || doc.documentElement);
+  flush();
+  return out.join('\n\n');
+}
+
+function decodeTextFile(bytes) {
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+  }
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch (err) {
+    throw new ImportError('errNotText');
+  }
+  if (text.includes('\u0000')) throw new ImportError('errNotText');
+  return text.replace(/^﻿/, '');
+}
+
+/* ── File intake ───────────────────────────────────────────────────────── */
+
+const TEXT_EXTENSIONS = ['txt', 'md', 'markdown', 'text', 'csv', 'log', ''];
+const HTML_EXTENSIONS = ['html', 'htm', 'xhtml'];
+
+// Determines the real file type from its content (the `accept` attribute is only a hint and
+// is ignored for drag & drop). Throws an ImportError for unsupported files.
+function sniffFileKind(bytes, ext) {
+  const startsWith = sig => sig.every((b, i) => bytes[i] === b);
+  const head = String.fromCharCode(...bytes.subarray(0, 1024));
+  if (head.includes('%PDF-')) return 'pdf';
+  if (startsWith([0x50, 0x4b, 0x03, 0x04])) {
+    if (['docx', 'docm', 'dotx', 'dotm'].includes(ext) || head.includes('word/')) return 'docx';
+    throw new ImportError('errUnsupportedType');
+  }
+  if (startsWith([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])) throw new ImportError('errLegacyDoc');
+  if (head.startsWith('{\\rtf')) throw new ImportError('errRtf');
+  if (
+    startsWith([0x89, 0x50, 0x4e, 0x47]) ||
+    startsWith([0xff, 0xd8, 0xff]) ||
+    head.startsWith('GIF8') ||
+    startsWith([0x49, 0x49, 0x2a, 0x00]) ||
+    startsWith([0x4d, 0x4d, 0x00, 0x2a]) ||
+    (head.startsWith('RIFF') && head.slice(8, 12) === 'WEBP')
+  ) {
+    throw new ImportError('errImage');
+  }
+  if (ext === 'pdf' || ext === 'docx' || ext === 'doc') {
+    throw new ImportError(ext === 'doc' ? 'errLegacyDoc' : 'errUnsupportedType');
+  }
+  if (HTML_EXTENSIONS.includes(ext)) return 'html';
+  if (TEXT_EXTENSIONS.includes(ext)) return 'text';
+  // Unknown extension: accepted only if it decodes as text (checked by the caller).
+  return 'text';
+}
+
+/**
+ * Reads a dropped or picked file into the internal document encoding.
+ * Returns { text, format, warnings }.
+ */
+async function readDocumentFile(file) {
+  const ext = (file.name.includes('.') ? file.name.split('.').pop() : '').toLowerCase();
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  if (!bytes.length) throw new ImportError('errEmptyFile');
+  const kind = sniffFileKind(bytes, ext);
+
+  let result;
+  if (kind === 'pdf') {
+    result = await extractPdfText(buffer);
+    result.format = 'PDF';
+  } else if (kind === 'docx') {
+    result = await extractDocxText(buffer);
+    result.format = 'DOCX';
+  } else {
+    const text = decodeTextFile(bytes);
+    const looksLikeHtml = /^\s*(?:<!doctype html|<html[\s>])/i.test(text.slice(0, 2048));
+    if (kind === 'html' || looksLikeHtml) {
+      result = { text: extractHtmlText(text), warnings: [], format: 'HTML' };
+    } else {
+      result = { text: sanitizeExternalText(text), warnings: [], format: ext ? ext.toUpperCase() : 'TEXT' };
+    }
+  }
+  if (!docTextToPlainText(result.text).trim()) throw new ImportError('errEmptyFile');
+  return result;
+}
+
+// opts.keepNotice: do not clear an earlier notice on success (multi-file drops).
+async function handleFileUpload(file, side, opts = {}) {
+  if (!file) return false;
   const fnLabel = document.getElementById(side === 'left' ? 'filename-left' : 'filename-right');
   const prevName = fnLabel.textContent;
   fnLabel.textContent = `${t('readingFile')} ${file.name}…`;
 
   try {
-    const ext = (file.name.split('.').pop() || '').toLowerCase();
-    let extractedText = '';
-
-    if (ext === 'pdf') {
-      const buffer = await file.arrayBuffer();
-      extractedText = await extractPdfText(buffer);
-    } else if (ext === 'docx') {
-      const buffer = await file.arrayBuffer();
-      extractedText = await extractDocxText(buffer);
-    } else {
-      extractedText = await file.text();
-    }
+    const { text, format, warnings } = await readDocumentFile(file);
 
     if (side === 'left') {
       state.leftName = file.name;
-      state.leftFormat = ext.toUpperCase() || 'TEXT';
-      state.leftText = extractedText;
+      state.leftFormat = format;
+      state.leftText = text;
     } else {
       state.rightName = file.name;
-      state.rightFormat = ext.toUpperCase() || 'TEXT';
-      state.rightText = extractedText;
+      state.rightFormat = format;
+      state.rightText = text;
+    }
+    resetEditHistory();
+    if (warnings && warnings.length) {
+      showImportNotice(`${file.name}: ${warnings.join(' ')}`, 'warning');
+    } else if (!opts.keepNotice) {
+      clearImportNotice();
     }
     runComparison();
+    return true;
   } catch (err) {
     fnLabel.textContent = prevName;
-    alert(`${t('readError')} "${file.name}": ${err.message}`);
+    showImportNotice(`${t('readError')} „${file.name}“: ${describeImportError(err)}`, 'error');
+    return false;
+  } finally {
+    const input = document.getElementById(side === 'left' ? 'file-input-left' : 'file-input-right');
+    if (input) input.value = '';
   }
 }
 
@@ -7512,8 +9978,9 @@ window.addEventListener('drop', e => {
 async function handleDropFiles(files, targetSide) {
   if (!files || !files.length) return;
   if (files.length >= 2) {
-    await handleFileUpload(files[0], 'left');
-    await handleFileUpload(files[1], 'right');
+    clearImportNotice();
+    await handleFileUpload(files[0], 'left', { keepNotice: true });
+    await handleFileUpload(files[1], 'right', { keepNotice: true });
   } else {
     await handleFileUpload(files[0], targetSide);
   }
@@ -7557,6 +10024,7 @@ document.getElementById('btn-clear-left').addEventListener('click', () => {
   state.leftText = '';
   state.leftName = '';
   state.leftFormat = '';
+  resetEditHistory();
   fileInputLeft.value = '';
   runComparison();
 });
@@ -7565,8 +10033,7 @@ document.getElementById('btn-clear-right').addEventListener('click', () => {
   state.rightText = '';
   state.rightName = '';
   state.rightFormat = '';
-  state.undoStack = [];
-  state.redoStack = [];
+  resetEditHistory();
   fileInputRight.value = '';
   runComparison();
 });
@@ -7749,8 +10216,7 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
   state.searchQuery = '';
-  state.undoStack = [];
-  state.redoStack = [];
+  resetEditHistory();
   searchInput.value = '';
   fileInputLeft.value = '';
   fileInputRight.value = '';
@@ -7765,6 +10231,7 @@ document.getElementById('btn-lang').addEventListener('click', () => {
     state.leftText = sample.v1;
     state.rightName = t('sampleRightName');
     state.rightText = sample.v2;
+    resetEditHistory();
   }
   applyTranslationsToStaticDom();
   runComparison();
@@ -7829,6 +10296,7 @@ document.getElementById('btn-swap-docs').addEventListener('click', () => {
   [state.leftText, state.rightText] = [state.rightText, state.leftText];
   [state.leftName, state.rightName] = [state.rightName, state.leftName];
   [state.leftFormat, state.rightFormat] = [state.rightFormat, state.leftFormat];
+  resetEditHistory();
   runComparison();
 });
 
@@ -7850,9 +10318,17 @@ const pasteModal = document.getElementById('paste-modal');
 const textareaLeft = document.getElementById('textarea-left');
 const textareaRight = document.getElementById('textarea-right');
 
+// The dialog shows plain text only: page breaks and header/footer metadata of loaded
+// documents are removed for display. If a side is applied unchanged, the loaded document
+// (with its metadata) is kept; edited or new text is sanitized, so typed text can never be
+// interpreted as metadata.
+const pasteModalShown = { left: '', right: '' };
+
 function openPasteModal() {
-  textareaLeft.value = state.leftText;
-  textareaRight.value = state.rightText;
+  pasteModalShown.left = docTextToPlainText(state.leftText);
+  pasteModalShown.right = docTextToPlainText(state.rightText);
+  textareaLeft.value = pasteModalShown.left;
+  textareaRight.value = pasteModalShown.right;
   pasteModal.showModal();
 }
 
@@ -7860,8 +10336,19 @@ document.getElementById('btn-paste-modal').addEventListener('click', openPasteMo
 document.getElementById('btn-close-modal').addEventListener('click', () => pasteModal.close());
 document.getElementById('btn-cancel-modal').addEventListener('click', () => pasteModal.close());
 document.getElementById('btn-apply-modal').addEventListener('click', () => {
-  state.leftText = textareaLeft.value;
-  state.rightText = textareaRight.value;
+  const leftChanged = textareaLeft.value !== pasteModalShown.left;
+  const rightChanged = textareaRight.value !== pasteModalShown.right;
+  if (leftChanged) {
+    state.leftText = sanitizeExternalText(textareaLeft.value);
+    state.leftName = '';
+    state.leftFormat = '';
+  }
+  if (rightChanged) {
+    state.rightText = sanitizeExternalText(textareaRight.value);
+    state.rightName = '';
+    state.rightFormat = '';
+  }
+  if (leftChanged || rightChanged) resetEditHistory();
   if (state.leftText.trim() && !state.leftName) {
     state.leftName = t('manualLeft');
     state.leftFormat = 'TEXT';

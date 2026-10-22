@@ -69,16 +69,23 @@ Doc Diff is built so that any data protection officer or security auditor can ve
 - **Cross-Format Comparison:** Compare `PDF ↔ PDF`, `DOCX ↔ DOCX`, `PDF ↔ DOCX`, or pasted raw text side by side or in a unified inline view.
 - **Responsive Across Desktop, Laptop, Tablet & Mobile:** Switch between the **Pages**, **Side by side** and **Inline** views. Automatically adapts on tablets (slide-over change drawer) and smartphones (single-column inline redline with `100dvh` viewport sizing).
 - **Clause-Aware Alignment:** Pre-tokenized Needleman-Wunsch dynamic programming with $O(N)$ prefix/suffix trimming aligns moved, inserted, or deleted contract clauses (`§`, `(1)`, `1.1`, `Section`) and coalesces adjacent word, number, and date changes into clean red/green inline highlights.
+- **Faithful Diff Semantics:**
+  - The word diff never alters the source: unchanged + deleted parts always spell the old text exactly, unchanged + inserted parts the new text (enforced by tests).
+  - Running headers/footers are hidden only when their text repeats on at least half of the pages at the same position; a header/footer whose text differs between the versions (beyond page numbers) is always shown once.
+  - Renumbering (`(1)` → `(2)`, `§ 4` → `§ 5`) with an unchanged clause body is shown as a muted marker change and not counted; identical paragraphs that moved are labelled **Verschoben / Moved** at both positions.
+  - PDF intake joins hyphenated line breaks and derives word spaces from glyph geometry; DOCX list numbers are computed from the document's own numbering definitions (shown only when they can be determined reliably).
+  - Supported inputs: PDF with a text layer, `.docx`, `.html` (text only, scripts never run), and UTF-8/UTF-16 text. Scanned PDFs, images, legacy `.doc` and `.rtf` are rejected with a clear message (no OCR).
 - **Frosted Glass Floating Action Bar & Single-Scrollbar Sync:** A translucent bottom-mid HUD dock (`backdrop-filter: saturate(190%) blur(18px)`) keeps the change stepper (`↑ 1 / 17 ↓`), "Changes only" (`Nur Änderungen`) filter, and Undo/Redo controls within immediate reach. Both panes stay 100% locked in synchronized scroll with a single outer scrollbar and bi-directional Bezier connectors across the symmetric center gutter.
 - **Delta-Only Change Inspector & Click-to-Jump Rail:** The right side rail extracts only the exact modified tokens (`145.000,00 → 168.500,00`, `12.03.2026 → 18.04.2026`, `schriftlich → in Textform`) with section-aware clause references (`§ 1 (1)`, `§ 2 (1)`), category filter tabs (`Alle`, `Geändert`, `Neu`, `Entfernt`), 1-click jump-to-clause, and inline edit/revert actions.
 - **Direct Inline Clause Editing, 1-Click Revert & Undo/Redo:** Double-click or click **Bearbeiten** (`Edit`) on any clause in the revised or unified pane to edit its text directly in place (`Enter` to apply, `Esc` to cancel) and re-run the diff in `< 5 ms`. Click **Alte Fassung übernehmen** (`Use old version`) to revert any clause back to the baseline version, with full **Undo / Redo** history (`Cmd+Z` / `Shift+Cmd+Z` or toolbar buttons).
 - **Multi-Format Client-Side Export:** Export comparisons locally without any server roundtrip:
-  - **Copy Final Text:** 1-click copy of the clean, edited target text to the clipboard
+  - **Copy Final Text:** 1-click copy of the clean, edited target text to the clipboard (header/footer lines left out)
   - **Save Clean Text (`.txt`):** Download the final revised document text
-  - **PDF / Print (`Cmd+P` / `Ctrl+P`):** Clean two-column or unified redline print layout
-  - **Word Redline (`.doc`):** Formatted Word-compatible redline document with `<del>` strikethroughs and `<ins>` insertions
-  - **HTML Report (`.html`):** Standalone, read-only HTML diff report for archiving or sharing
-  - **Markdown (`.md`):** Clean Markdown diff summary (`~~deleted~~` / `**inserted**`)
+  - **PDF / Print (`Cmd+P` / `Ctrl+P`):** Dedicated print layout for all three view modes, with both file names, date, page numbers, and greyscale-safe marks (strike-through / underline)
+  - **Word Redline (`.docx`):** A genuine Word document generated in the browser, with every difference recorded as a tracked change (author "Doc Diff"), so you can **Accept / Reject** each change in Word or LibreOffice
+  - **HTML Report (`.html`):** Self-contained, accessible, read-only report with summary counts, a linked change list, and the full redline; strict CSP, print- and dark-mode-friendly
+  - **Markdown (`.md`):** Summary table with clause references plus the redline (`~~deleted~~` / `**inserted**`), with document text safely escaped
+  - File names combine both documents, e.g. `Vertrag_v2_vs_v1_Redline.docx`, and are sanitized for Windows, macOS, and Linux
 - **Keyboard-First Navigation & System-Aware Theme:**
   - `J` / `K` — Jump to next / previous change
   - `/` — Focus full-text search
@@ -113,6 +120,7 @@ node scripts/check.mjs
 - `src/template.html` holds the page shell and markup, `src/styles.css` the styles, and `src/js/*.js` the app code (concatenated in file-name order).
 - `scripts/build.py` bundles them with the pinned libraries and fonts in `vendor/` to produce `site/index.html` and `DocDiff.html`.
 - `scripts/check.mjs` verifies CSP headers, zero external URLs, zero storage APIs, and 1:1 `de`/`en` translation key parity.
+- `scripts/test-core.mjs` (run by `check.mjs`) unit-tests the diff core in `node:vm`: the word-diff invariant, alignment of the built-in samples, header/footer detection, PDF line joining, renumbering, and moves.
 
 ---
 

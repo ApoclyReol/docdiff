@@ -24,7 +24,6 @@ const state = {
   changeRows: [],
   hoveredRowId: null,
   activeRowId: null,
-  syncScroll: true,
   onlyChanges: false,
   ignoreHeadersFooters: true,
   filteredHfCount: 0,
