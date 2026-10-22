@@ -342,11 +342,13 @@ function blocksEquivalent(a, b, ignoreText) {
 
 const MOVE_KEYS = ['moved', 'movedToRowId', 'movedFromRowId'];
 
-// Fast path for edits, reverts, undo and redo: when the left text and the options are unchanged
+// Fast path for edits, reverts, undo and redo of long documents: when the left text and the
+// options are unchanged
 // and the new right text differs from the previous one in exactly one block (same block count;
 // every other block identical, including page, section and header/footer metadata), the previous
 // alignment is kept and only that row is re-diffed. Returns { result, changedRowIds } or null
-// when a full re-alignment is required.
+// when a full re-alignment is required. This is an approximation of a full comparison, so the
+// page re-checks it with a full comparison in the worker (see runComparison).
 function computeIncrementalComparison(prev, request) {
   if (!prev || !prev.request || !prev.result) return null;
   const pr = prev.request;
@@ -398,10 +400,13 @@ function computeIncrementalComparison(prev, request) {
 
   const changedBlock = changedIdx === -1 ? null : allRightBlocks[changedIdx];
   let changedRowId = null;
+  let unmatchedEdit = false;
   const alignedRows = old.alignedRows.map((row, idx) => {
     const left = row.leftBlock ? blockMap.get(row.leftBlock) : null;
     const right = row.rightBlock ? blockMap.get(row.rightBlock) : null;
     if (changedBlock && right === changedBlock) {
+      // Only a matched pair keeps its row; an edited insertion may now match a deleted block.
+      if (!left) unmatchedEdit = true;
       changedRowId = row.id;
       return buildAlignedRow({ left, right }, idx, row.pageNum);
     }
@@ -412,7 +417,7 @@ function computeIncrementalComparison(prev, request) {
 
   if (changedBlock) {
     const changedRow = alignedRows.find(r => r.id === changedRowId);
-    if (!changedRow) return null; // the edited block is a hidden header/footer
+    if (!changedRow || unmatchedEdit) return null; // hidden header/footer, or unmatched block
     // Keep the old pairing only if the alignment would still consider the blocks a match.
     if (
       changedRow.leftBlock &&

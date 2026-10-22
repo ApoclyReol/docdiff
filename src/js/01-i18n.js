@@ -1,4 +1,4 @@
-// PDF.js worker is inlined via globalThis.pdfjsWorker (100% offline & file:// compatible)
+// PDF.js and the diff engine run in Blob Web Workers built from inlined sources (offline, file:// compatible)
 
 const I18N = {
   de: {

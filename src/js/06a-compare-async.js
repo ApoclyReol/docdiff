@@ -163,17 +163,30 @@ function runComparisonInWorker(request, onProgress) {
 function runComparison(options = {}) {
   const seq = ++compareSeq;
   const request = buildComparisonRequest();
+  const size = request.leftText.length + request.rightText.length;
+  const useWorker = !options.sync && size > SYNC_COMPARE_MAX_CHARS && canUseDiffWorker();
 
-  const incremental = computeIncrementalComparison(lastComparison, request);
+  // Long documents: an edit / revert / undo that touches one row is shown immediately by
+  // re-diffing only that row; a full comparison then runs in the worker and replaces the
+  // result in the rare case that the complete alignment differs.
+  const incremental = useWorker ? computeIncrementalComparison(lastComparison, request) : null;
   if (incremental) {
     cancelDiffWorkerJob();
     hideCompareStatus();
     applyComparisonResult(request, incremental.result, { changedRowIds: incremental.changedRowIds });
-    return Promise.resolve();
+    return runComparisonInWorker(request)
+      .then(result => {
+        if (seq !== compareSeq) return;
+        if (alignmentSignature(result.alignedRows) !== alignmentSignature(state.alignedRows)) {
+          applyComparisonResult(request, result);
+        } else {
+          lastComparison = { request, result };
+        }
+      })
+      .catch(() => {});
   }
 
-  const size = request.leftText.length + request.rightText.length;
-  if (options.sync || size <= SYNC_COMPARE_MAX_CHARS || !canUseDiffWorker()) {
+  if (!useWorker) {
     cancelDiffWorkerJob();
     hideCompareStatus();
     applyComparisonResult(request, computeComparison(request));
@@ -196,6 +209,23 @@ function runComparison(options = {}) {
       applyComparisonResult(request, result);
       showCompareDone(seq, wasComparing);
     });
+}
+
+// Everything that is visible about an alignment: pairing, type, word diffs and move links.
+function alignmentSignature(rows) {
+  return JSON.stringify(
+    rows.map(r => [
+      r.id,
+      r.type,
+      r.leftBlock ? r.leftBlock.index : 0,
+      r.rightBlock ? r.rightBlock.index : 0,
+      r.rightBlock ? r.rightBlock.text : '',
+      r.pageNum,
+      r.markerOnly || false,
+      r.movedToRowId || r.movedFromRowId || '',
+      r.wordDiffs,
+    ])
+  );
 }
 
 /* ── Accessible progress status ─────────────────────────────────────────── */
