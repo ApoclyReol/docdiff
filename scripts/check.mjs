@@ -22,8 +22,22 @@ assert.ok(fs.existsSync(rootHtmlPath), 'DocDiff.html must exist');
 const siteHtml = fs.readFileSync(siteHtmlPath, 'utf8');
 const rootHtml = fs.readFileSync(rootHtmlPath, 'utf8');
 
-// 1. Both output files must be identical
-assert.equal(siteHtml, rootHtml, 'site/index.html and DocDiff.html must be identical');
+// 1. The offline file equals the hosted German page, except that it follows the browser language
+assert.ok(siteHtml.includes('<html lang="de" data-page-lang="de">'), 'site/index.html must pin its language to German');
+assert.ok(rootHtml.includes('<html lang="de">'), 'DocDiff.html must follow the browser language (no data-page-lang)');
+const websiteOnlyLinks = [
+  '  <link rel="icon" href="favicon.ico" sizes="any" />\n',
+  '  <link rel="apple-touch-icon" href="apple-touch-icon.png" />\n',
+  '  <link rel="manifest" href="manifest.webmanifest" />\n',
+];
+assert.equal(
+  websiteOnlyLinks.reduce(
+    (html, line) => html.replace(line, ''),
+    siteHtml.replace('<html lang="de" data-page-lang="de">', '<html lang="de">')
+  ),
+  rootHtml,
+  'DocDiff.html must equal site/index.html apart from data-page-lang and website-only icon/manifest links'
+);
 
 // 2. Unreplaced template placeholders must not exist
 for (const placeholder of [
@@ -121,6 +135,135 @@ for (const siteFile of ['CNAME', 'og-image.png', 'impressum.html', 'datenschutz.
   assert.ok(fs.existsSync(p), `Missing required site file: site/${siteFile}`);
 }
 assert.equal(fs.readFileSync(path.join(root, 'site', 'CNAME'), 'utf8').trim(), 'docdiff.app', 'CNAME must be docdiff.app');
+
+// 7. Search engines and assistants: both language pages, head metadata, structured data, crawl files
+for (const siteFile of ['en/index.html', 'llms.txt', 'llms-full.txt', 'manifest.webmanifest', 'favicon.ico', 'apple-touch-icon.png']) {
+  assert.ok(fs.existsSync(path.join(root, 'site', siteFile)), `Missing required site file: site/${siteFile}`);
+}
+const enHtmlPath = path.join(root, 'site', 'en', 'index.html');
+const enHtml = fs.readFileSync(enHtmlPath, 'utf8');
+const SITE = 'https://docdiff.app/';
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', '#x27': "'", '#39': "'", nbsp: ' ' };
+const decodeEntities = s => s.replace(/&(amp|lt|gt|quot|#x27|#39|nbsp);/g, (_, e) => ENTITIES[e]);
+// Visible text of a small HTML fragment; mirrors plain_text() in scripts/build.py.
+const plainText = s => decodeEntities(s.replace(/<\/p>\s*<p>/g, ' ').replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
+const metaContent = (head, attr, name) => {
+  const all = [...head.matchAll(new RegExp(`<meta ${attr}="${name}" content="([^"]*)"`, 'g'))];
+  assert.equal(all.length, 1, `Expected exactly one <meta ${attr}="${name}">`);
+  return decodeEntities(all[0][1]);
+};
+
+for (const page of [
+  { lang: 'de', file: siteHtmlPath, html: siteHtml, url: SITE, assetBase: '' },
+  { lang: 'en', file: enHtmlPath, html: enHtml, url: `${SITE}en/`, assetBase: '../' },
+]) {
+  const { lang, html, url } = page;
+  const where = path.relative(root, page.file);
+  const strings = I18N[lang];
+  const bodyStart = html.indexOf('<body');
+  const head = html.slice(0, bodyStart);
+  const firstScript = html.indexOf('<script>');
+  const staticMarkup = html.slice(bodyStart, firstScript);
+
+  // Security invariants hold for every page, with the same CSP.
+  assert.equal(html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]*)"/)[1], shippedCsp, `${where}: CSP must match`);
+  assert.ok(html.includes('<meta name="referrer" content="no-referrer" />'), `${where}: no-referrer meta missing`);
+  assert.ok(!html.includes('<script src='), `${where}: must not load external scripts`);
+  assert.ok(!/__[A-Z][A-Z0-9_]*(?::\w+)?__/.test(head + staticMarkup), `${where}: unreplaced placeholder in page markup`);
+
+  // Language, canonical and alternates
+  const htmlTag = html.match(/<html [^>]*>/)[0];
+  assert.ok(htmlTag.includes(`lang="${lang}"`), `${where}: <html lang="${lang}"> expected`);
+  assert.equal(htmlTag.includes('data-page-lang="en"'), lang === 'en', `${where}: only /en/ fixes the start language`);
+  const canonicals = [...head.matchAll(/<link rel="canonical" href="([^"]*)"/g)].map(m => m[1]);
+  assert.deepEqual(canonicals, [url], `${where}: canonical must be ${url}`);
+  const alternates = Object.fromEntries([...head.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map(m => [m[1], m[2]]));
+  assert.deepEqual(alternates, { de: SITE, en: `${SITE}en/`, 'x-default': SITE }, `${where}: hreflang alternates`);
+  assert.equal(metaContent(head, 'property', 'og:url'), url, `${where}: og:url`);
+  assert.equal(metaContent(head, 'property', 'og:image'), `${SITE}og-image.png?v=2`, `${where}: og:image`);
+
+  // Title and description: from i18n, sensible lengths
+  const title = decodeEntities(head.match(/<title>([^<]*)<\/title>/)[1]);
+  assert.equal(title, strings.metaTitle, `${where}: <title> must be i18n metaTitle`);
+  assert.ok(title.length >= 20 && title.length <= 65, `${where}: title length ${title.length} (20–65)`);
+  const description = metaContent(head, 'name', 'description');
+  assert.equal(description, strings.metaDescription, `${where}: meta description must be i18n metaDescription`);
+  assert.ok(description.length >= 70 && description.length <= 160, `${where}: description length ${description.length} (70–160)`);
+  assert.equal(metaContent(head, 'name', 'application-name'), 'Doc Diff');
+  assert.ok(head.includes('<meta name="theme-color"'), `${where}: theme-color missing`);
+
+  // Same-site assets resolve from the page's folder (e.g. ../favicon.ico from /en/)
+  for (const asset of ['favicon.ico', 'apple-touch-icon.png', 'manifest.webmanifest']) {
+    const href = head.match(new RegExp(`href="([^"]*${asset.replace('.', '\\.')})"`))[1];
+    assert.equal(href, page.assetBase + asset, `${where}: ${asset} href`);
+    assert.ok(fs.existsSync(path.resolve(path.dirname(page.file), href)), `${where}: ${href} does not exist`);
+  }
+
+  // Performance: the landing markup comes before the ~2.5 MB of inline scripts
+  assert.ok(!/<script>/.test(head), `${where}: executable scripts must not sit in <head>`);
+  assert.ok(firstScript > html.indexOf('id="faq-title"'), `${where}: scripts must follow the landing content`);
+  assert.ok(html.indexOf('id="pdfjs-worker-source"') > bodyStart, `${where}: PDF.js worker source must be present`);
+
+  // Static landing text is rendered in the page language from i18n (what crawlers and no-JS visitors see)
+  let rendered = 0;
+  for (const m of staticMarkup.matchAll(/<(\w+)[^>]*?\sdata-i18n(-html)?="(\w+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
+    const [, , isHtml, key, inner] = m;
+    assert.ok(key in strings, `${where}: unknown i18n key ${key}`);
+    if (isHtml) assert.equal(inner, strings[key], `${where}: data-i18n-html="${key}" not rendered for ${lang}`);
+    else assert.equal(decodeEntities(inner), strings[key], `${where}: data-i18n="${key}" not rendered for ${lang}`);
+    rendered++;
+  }
+  assert.ok(rendered > 40, `${where}: expected the landing text to be rendered (${rendered} elements)`);
+  const h1s = [...staticMarkup.matchAll(/<h1\b([^>]*)>([\s\S]*?)<\/h1>/g)].filter(m => !m[1].includes('compare-only'));
+  assert.equal(h1s.length, 1, `${where}: exactly one landing <h1>`);
+  assert.equal(plainText(h1s[0][2]), plainText(strings.heroTitle), `${where}: landing <h1> text`);
+  assert.ok(!/<img(?![^>]*\balt=)[^>]*>/.test(staticMarkup), `${where}: every <img> needs alt text`);
+
+  // Structured data: valid JSON-LD, app facts, and an FAQPage that matches the visible FAQ word for word
+  const ldBlocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+  assert.equal(ldBlocks.length, 1, `${where}: exactly one JSON-LD block`);
+  assert.ok(ldBlocks[0].index < bodyStart, `${where}: JSON-LD belongs in <head>`);
+  const ld = JSON.parse(ldBlocks[0][1]);
+  const node = type => ld['@graph'].find(n => n['@type'] === type);
+  const app = node('WebApplication');
+  assert.ok(app, `${where}: WebApplication missing`);
+  assert.equal(app.url, url);
+  assert.equal(app.offers.price, '0');
+  assert.equal(app.isAccessibleForFree, true);
+  assert.equal(app.operatingSystem, 'Any (web browser)');
+  assert.ok(/LICENSE$/.test(app.license) && app.sameAs.includes('https://github.com/tschnorpfeil/docdiff'));
+  assert.ok(node('SoftwareSourceCode')?.codeRepository === 'https://github.com/tschnorpfeil/docdiff', `${where}: codeRepository`);
+  const visibleFaq = [...staticMarkup.matchAll(/<details class="faq-item">\s*<summary[^>]*>([\s\S]*?)<\/summary>\s*<div class="faq-answer"[^>]*>([\s\S]*?)<\/div>\s*<\/details>/g)]
+    .map(m => ({ q: plainText(m[1]), a: plainText(m[2]) }));
+  const ldFaq = node('FAQPage').mainEntity.map(e => ({ q: e.name, a: e.acceptedAnswer.text }));
+  assert.ok(visibleFaq.length >= 3, `${where}: visible FAQ not found`);
+  assert.deepEqual(ldFaq, visibleFaq, `${where}: FAQPage JSON-LD must match the visible FAQ exactly`);
+}
+
+// Crawl files
+const robotsTxt = fs.readFileSync(path.join(root, 'site', 'robots.txt'), 'utf8');
+assert.ok(robotsTxt.includes(`Sitemap: ${SITE}sitemap.xml`), 'robots.txt must reference the sitemap');
+assert.ok(!/^Disallow:\s*\S/m.test(robotsTxt), 'robots.txt must not block crawlers (including AI crawlers)');
+const sitemapXml = fs.readFileSync(path.join(root, 'site', 'sitemap.xml'), 'utf8');
+assert.deepEqual([...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]), [SITE, `${SITE}en/`], 'sitemap.xml must list / and /en/');
+for (const m of sitemapXml.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)) {
+  assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(m[1]) && !Number.isNaN(Date.parse(m[1])), `sitemap.xml: invalid lastmod ${m[1]}`);
+}
+assert.equal((sitemapXml.match(/hreflang="/g) || []).length, 6, 'sitemap.xml: hreflang alternates for both pages');
+const llmsTxt = fs.readFileSync(path.join(root, 'site', 'llms.txt'), 'utf8');
+assert.ok(/^# Doc Diff\n\n> \S/.test(llmsTxt), 'llms.txt must start with "# Doc Diff" and a "> " summary');
+for (const file of ['llms.txt', 'llms-full.txt']) {
+  const text = fs.readFileSync(path.join(root, 'site', file), 'utf8');
+  for (const m of text.matchAll(/https:\/\/docdiff\.app\/([^\s)]*)/g)) {
+    const target = path.join(root, 'site', m[1] === '' || m[1].endsWith('/') ? `${m[1]}index.html` : m[1]);
+    assert.ok(fs.existsSync(target), `${file}: link ${m[0]} has no file in site/`);
+  }
+}
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'site', 'manifest.webmanifest'), 'utf8'));
+for (const icon of manifest.icons) {
+  assert.ok(fs.existsSync(path.join(root, 'site', icon.src)), `manifest icon ${icon.src} missing`);
+}
+console.log('✓ SEO checks passed (de + en pages, metadata, JSON-LD FAQ, robots, sitemap, llms.txt).');
 
 // 6. The comparison Web Worker must produce exactly the main-thread results
 await import('./check-diff-worker.mjs');
