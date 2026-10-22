@@ -4808,6 +4808,7 @@ const I18N = {
     expCopy: 'Neuen Stand kopieren',
     expTxt: 'Neuen Stand speichern',
     copiedLabel: 'Kopiert',
+    copyFailed: 'Kopieren in die Zwischenablage ist hier nicht möglich. Bitte nutzen Sie stattdessen den Export als .txt.',
     expPdf: 'PDF / Druckansicht',
     expWord: 'Word-Redline (Änderungen nachverfolgen)',
     expHtml: 'HTML-Vergleichsbericht',
@@ -5126,6 +5127,7 @@ const I18N = {
     expCopy: 'Copy new version text',
     expTxt: 'Save new version (.txt)',
     copiedLabel: 'Copied',
+    copyFailed: 'Copying to the clipboard is not possible here. Please use the .txt export instead.',
     expPdf: 'PDF / Print view',
     expWord: 'Word redline (tracked changes)',
     expHtml: 'HTML Diff Report',
@@ -7896,6 +7898,10 @@ function applyComparisonResult(request, result, opts = {}) {
   const focusWasLost = !active || active === document.body;
   const focusInLanding = Boolean(emptyLaunchpad && active && emptyLaunchpad.contains(active));
   const focusInCompareChrome = Boolean(active && active.closest && active.closest('.compare-only'));
+  // Focus inside a document pane or the change list is lost when they are re-rendered.
+  const focusInDocument = Boolean(
+    active && active.closest && active.closest('#sheet-left, #sheet-right, #sheet-unified, #sidebar-list')
+  );
 
   document.body.classList.toggle('has-docs', leftBlocks.length > 0 || rightBlocks.length > 0);
   document.body.classList.toggle('is-comparing', bothLoaded);
@@ -7906,6 +7912,9 @@ function applyComparisonResult(request, result, opts = {}) {
   }
 
   if (!bothLoaded) {
+    pendingRowFocus = null;
+    state.activeRowId = null;
+    state.hoveredRowId = null;
     cancelPaneRender();
     resetRowLayoutRegistry();
     state.alignedRows = [];
@@ -7928,7 +7937,7 @@ function applyComparisonResult(request, result, opts = {}) {
     minimapTrack.innerHTML = '';
     connectorSvg.innerHTML = '';
 
-    if (wasComparing && (focusWasLost || focusInCompareChrome)) {
+    if (wasComparing && (focusWasLost || focusInCompareChrome || focusInDocument)) {
       const heading = document.getElementById('landing-title');
       if (emptyLaunchpad) emptyLaunchpad.scrollTop = 0;
       if (heading) heading.focus({ preventScroll: true });
@@ -7938,6 +7947,9 @@ function applyComparisonResult(request, result, opts = {}) {
 
   state.alignedRows = result.alignedRows;
   state.changeRows = state.alignedRows.filter(r => r.type !== 'equal');
+  // The selected / hovered row may be gone after an edit that removed paragraphs.
+  if (state.activeRowId && !state.alignedRows.some(r => r.id === state.activeRowId)) state.activeRowId = null;
+  if (state.hoveredRowId && !state.alignedRows.some(r => r.id === state.hoveredRowId)) state.hoveredRowId = null;
 
   const counts = getChangeCounts();
   updateHeaderCounts(counts.mod, counts.ins, counts.del);
@@ -7966,6 +7978,11 @@ function applyComparisonResult(request, result, opts = {}) {
   }
 
   scheduleGutterDraw();
+  applyPendingRowFocus();
+  const focusNow = document.activeElement;
+  if (focusInDocument && wasComparing && (!focusNow || focusNow === document.body || !focusNow.isConnected)) {
+    (state.viewMode === 'inline' ? paneUnified : paneRight).focus({ preventScroll: true });
+  }
 
   if (!wasComparing) {
     const total = state.changeRows.length;
@@ -9401,6 +9418,47 @@ function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true) {
   }
 }
 
+// Edits, reverts and undo re-render the row (or the whole pane) and remove the control that
+// had keyboard focus. A request made right before such an action puts focus back on the
+// same row once it is rendered, instead of leaving it on <body>.
+let pendingRowFocus = null;
+
+function requestRowFocus(rowId, fromSidebar) {
+  const items = Array.from(sidebarList.querySelectorAll('.nav-item[data-row-id]'));
+  const sidebarIndex = items.findIndex(el => el.getAttribute('data-row-id') === rowId);
+  pendingRowFocus = { rowId, fromSidebar: Boolean(fromSidebar), sidebarIndex };
+}
+
+// A request that was not consumed by a re-render (no-op revert, comparison still running in
+// the worker) must not move focus later; the worker path consumes it when its result lands.
+function applyPendingRowFocusIfIdle() {
+  if (isShownComparisonCurrent()) applyPendingRowFocus();
+}
+
+function applyPendingRowFocus() {
+  const req = pendingRowFocus;
+  pendingRowFocus = null;
+  if (!req || !document.body.classList.contains('is-comparing')) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && active.isConnected) return;
+  let target = null;
+  if (req.fromSidebar) {
+    target = sidebarList.querySelector(`.nav-item[data-row-id="${req.rowId}"] .nav-item-main`);
+    if (!target && req.sidebarIndex >= 0) {
+      const items = sidebarList.querySelectorAll('.nav-item[data-row-id] .nav-item-main');
+      target = items[Math.min(req.sidebarIndex, items.length - 1)] || null;
+    }
+  }
+  const pane = state.viewMode === 'inline' ? paneUnified : paneRight;
+  if (!target) {
+    const sheet = state.viewMode === 'inline' ? sheetUnified : sheetRight;
+    target = sheet.querySelector(`.clause[data-row-id="${req.rowId}"] [data-edit-row]`);
+  }
+  if (target) target.focus({ preventScroll: true });
+  // Hidden controls (e.g. row actions on narrow screens) cannot take focus: use the pane.
+  if (document.activeElement !== target) pane.focus({ preventScroll: true });
+}
+
 function updateUndoRedoButtons() {
   const btnUndo = document.getElementById('btn-undo');
   const btnRedo = document.getElementById('btn-redo');
@@ -9414,6 +9472,9 @@ function updateUndoRedoButtons() {
 function resetEditHistory() {
   state.undoStack = [];
   state.redoStack = [];
+  // A row id of the previous document would select an unrelated row in the new one.
+  state.activeRowId = null;
+  state.hoveredRowId = null;
   updateUndoRedoButtons();
 }
 
@@ -9428,6 +9489,7 @@ function performUndo() {
   if (!state.undoStack.length) return;
   state.redoStack.push(state.rightText);
   state.rightText = state.undoStack.pop();
+  updateUndoRedoButtons();
   runComparison();
 }
 
@@ -9435,7 +9497,26 @@ function performRedo() {
   if (!state.redoStack.length) return;
   state.undoStack.push(state.rightText);
   state.rightText = state.redoStack.pop();
+  updateUndoRedoButtons();
   runComparison();
+}
+
+// True when the rows on screen (state.alignedRows) were computed from the current texts.
+// While a long document is re-compared in the worker they are not: an edit or revert built
+// from those rows would silently drop the change that started the comparison.
+function isShownComparisonCurrent() {
+  const req = typeof lastComparison !== 'undefined' && lastComparison && lastComparison.request;
+  return Boolean(
+    req &&
+      req.leftText === (state.leftText || '') &&
+      req.rightText === (state.rightText || '') &&
+      req.ignoreHeadersFooters === state.ignoreHeadersFooters
+  );
+}
+
+// Exports and printing read state.alignedRows: bring them up to date first (synchronously).
+function ensureComparisonCurrent() {
+  if (!isShownComparisonCurrent()) runComparison({ sync: true });
 }
 
 function rebuildRightTextFromRows(targetRowId, replacementText) {
@@ -9492,7 +9573,7 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
 function revertRowToOriginal(targetRowId) {
   if (!state.alignedRows.length) return;
   const targetRow = state.alignedRows.find(r => r.id === targetRowId);
-  if (!targetRow) return;
+  if (!targetRow || !isShownComparisonCurrent()) return;
   pushUndoSnapshot();
   const revertedText = targetRow.leftBlock ? targetRow.leftBlock.text : '';
   state.rightText = rebuildRightTextFromRows(targetRowId, revertedText);
@@ -9501,10 +9582,16 @@ function revertRowToOriginal(targetRowId) {
 
 function startInlineClauseEdit(clauseEl, rowId) {
   if (!clauseEl || clauseEl.classList.contains('is-editing')) return;
+  // Not while the shown rows are being re-compared (the sheet is dimmed meanwhile).
+  if (!isShownComparisonCurrent()) return;
   const row = state.alignedRows.find(r => r.id === rowId);
   if (!row) return;
+  const rightTextAtOpen = state.rightText;
 
   hideTooltip();
+  // Where keyboard focus returns once the edit is saved or cancelled with the keyboard.
+  const opener = document.activeElement;
+  const openerInSidebar = Boolean(opener && opener.closest && opener.closest('#sidebar-list'));
 
   const initialText = row.rightBlock
     ? row.rightBlock.text
@@ -9544,30 +9631,45 @@ function startInlineClauseEdit(clauseEl, rowId) {
   editor.setSelectionRange(editor.value.length, editor.value.length);
 
   let finished = false;
-  const commit = () => {
+  // Saving or cancelling from the keyboard (Enter, Esc, the editor buttons) keeps focus on
+  // this row; a commit by blur leaves focus wherever the user moved it.
+  const restoreFocus = () => {
+    if (opener && opener !== document.body && opener.isConnected && opener !== editor) {
+      opener.focus({ preventScroll: true });
+    } else {
+      requestRowFocus(rowId, openerInSidebar);
+      applyPendingRowFocus();
+    }
+  };
+  const closeUnchanged = keepFocus => {
+    clauseEl.classList.remove('is-editing');
+    clauseEl.innerHTML = originalHtml;
+    resetEqualizedRowHeights(rowId);
+    scheduleGutterDraw();
+    if (keepFocus) restoreFocus();
+  };
+  const commit = keepFocus => {
     if (finished) return;
     finished = true;
     const newText = editor.value.replace(/\r\n/g, '\n').trim();
     const oldText = row.rightBlock ? row.rightBlock.text : '';
-    if (newText === oldText) {
-      clauseEl.classList.remove('is-editing');
-      clauseEl.innerHTML = originalHtml;
-      resetEqualizedRowHeights(rowId);
-      scheduleGutterDraw();
+    // The document was replaced or re-compared while the editor was open (e.g. a file
+    // dropped meanwhile): this row may no longer exist, so the edit cannot be applied.
+    const stale = state.rightText !== rightTextAtOpen || !isShownComparisonCurrent();
+    if (newText === oldText || stale) {
+      closeUnchanged(keepFocus && !stale);
       return;
     }
     pushUndoSnapshot();
     state.rightText = rebuildRightTextFromRows(rowId, newText);
+    if (keepFocus) requestRowFocus(rowId, openerInSidebar);
     runComparison();
   };
 
   const cancel = () => {
     if (finished) return;
     finished = true;
-    clauseEl.classList.remove('is-editing');
-    clauseEl.innerHTML = originalHtml;
-    resetEqualizedRowHeights(rowId);
-    scheduleGutterDraw();
+    closeUnchanged(true);
   };
 
   helperBar.querySelector('[data-editor-cancel]').addEventListener('mousedown', ev => {
@@ -9578,7 +9680,7 @@ function startInlineClauseEdit(clauseEl, rowId) {
   helperBar.querySelector('[data-editor-save]').addEventListener('mousedown', ev => {
     ev.preventDefault();
     ev.stopPropagation();
-    commit();
+    commit(true);
   });
 
   editor.addEventListener('keydown', ev => {
@@ -9589,11 +9691,11 @@ function startInlineClauseEdit(clauseEl, rowId) {
     } else if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey || !ev.shiftKey)) {
       ev.preventDefault();
       ev.stopPropagation();
-      commit();
+      commit(true);
     }
   });
   editor.addEventListener('blur', () => {
-    commit();
+    commit(false);
   });
 }
 
@@ -9637,7 +9739,10 @@ function closeMobileSheets() {
     if (revertBtn) {
       e.stopPropagation();
       hideTooltip();
-      revertRowToOriginal(revertBtn.getAttribute('data-revert-row'));
+      const revertId = revertBtn.getAttribute('data-revert-row');
+      requestRowFocus(revertId, container === sidebarList);
+      revertRowToOriginal(revertId);
+      applyPendingRowFocusIfIdle();
       return;
     }
     if (e.target.closest('.clause-inline-editor') || e.target.closest('.clause-editor-bar')) return;
@@ -9675,8 +9780,25 @@ if (sidebarFilterBar) {
   });
 }
 
-document.getElementById('btn-undo').addEventListener('click', () => performUndo());
-document.getElementById('btn-redo').addEventListener('click', () => performRedo());
+// When Undo (Redo) empties its stack the button gets disabled and would drop keyboard focus:
+// hand it to the other history button.
+function keepFocusOnHistoryButtons(selfId, otherId) {
+  updateUndoRedoButtons();
+  const self = document.getElementById(selfId);
+  const other = document.getElementById(otherId);
+  const active = document.activeElement;
+  if (self.disabled && (active === self || active === document.body) && !other.disabled) {
+    other.focus();
+  }
+}
+document.getElementById('btn-undo').addEventListener('click', () => {
+  performUndo();
+  keepFocusOnHistoryButtons('btn-undo', 'btn-redo');
+});
+document.getElementById('btn-redo').addEventListener('click', () => {
+  performRedo();
+  keepFocusOnHistoryButtons('btn-redo', 'btn-undo');
+});
 
 // Editing in the Right ("Nachher / Neuer Stand") pane and Unified ("Kompakt") pane
 [sheetRight, sheetUnified].forEach(editableSheet => {
@@ -10776,6 +10898,7 @@ function buildPrintViewHtml(date = new Date()) {
 }
 
 function preparePrintView() {
+  if (typeof ensureComparisonCurrent === 'function') ensureComparisonCurrent();
   if (!state.alignedRows.length) return;
   const date = new Date();
   let view = document.getElementById('print-view');
@@ -10839,12 +10962,17 @@ function copyFinalTextToClipboard() {
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
+    let copied = false;
     try {
-      document.execCommand('copy');
+      copied = document.execCommand('copy') === true;
+    } catch (e) {
+      copied = false;
     } finally {
       document.body.removeChild(ta);
     }
-    flashCopied();
+    // Never claim "Copied" when nothing reached the clipboard.
+    if (copied) flashCopied();
+    else if (typeof showImportNotice === 'function') showImportNotice(t('copyFailed'), 'warning');
   };
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -10860,6 +10988,9 @@ function handleExportAction(type) {
   // Commit an inline edit that is still open so the export reflects it.
   const openEditor = document.querySelector('.clause-inline-editor');
   if (openEditor) openEditor.blur();
+  // A long document may still be re-compared in the worker after an edit or undo: export
+  // the current text, not the rows from before.
+  ensureComparisonCurrent();
 
   if (type === 'print') {
     if (!state.alignedRows.length) return;
@@ -11019,13 +11150,36 @@ const importNotice = (() => {
   close.type = 'button';
   close.className = 'import-notice-close';
   close.textContent = '×';
-  close.addEventListener('click', () => clearImportNotice());
+  close.addEventListener('click', () => {
+    const hadFocus = el.contains(document.activeElement);
+    clearImportNotice();
+    if (hadFocus) restoreFocusAfterNotice();
+  });
   el.append(msg, close);
   document.body.appendChild(el);
-  return { el, msg, close };
+  return { el, msg, close, returnFocus: null };
 })();
 
+// Closing the notice from the keyboard must not drop focus to <body>: go back to the control
+// that was focused when the notice appeared, or to the start of the current view.
+function restoreFocusAfterNotice() {
+  const prev = importNotice.returnFocus;
+  importNotice.returnFocus = null;
+  if (prev && prev.isConnected && prev !== document.body && prev.getClientRects().length) {
+    prev.focus();
+    if (document.activeElement === prev) return;
+  }
+  const fallback = document.body.classList.contains('is-comparing')
+    ? state.viewMode === 'inline'
+      ? paneUnified
+      : paneRight
+    : document.getElementById('landing-title');
+  if (fallback) fallback.focus({ preventScroll: true });
+}
+
 function showImportNotice(message, kind = 'error') {
+  const active = document.activeElement;
+  if (active && !importNotice.el.contains(active)) importNotice.returnFocus = active;
   importNotice.msg.textContent = message;
   importNotice.close.setAttribute('aria-label', t('noticeClose'));
   importNotice.el.classList.toggle('is-warning', kind === 'warning');
@@ -11882,6 +12036,9 @@ mobBtnExport.addEventListener('click', e => {
 exportMenu.addEventListener('click', e => {
   const item = e.target.closest('[data-export]');
   if (!item) return;
+  // The menu closes: keyboard focus goes back to the button that opened it.
+  const returnFocus = exportMenu.contains(document.activeElement);
+  closeExportMenu(returnFocus);
   closeMobileSheets();
   handleExportAction(item.getAttribute('data-export'));
 });
@@ -12816,14 +12973,18 @@ document.addEventListener('click', e => {
     return;
   }
   if (e.target.closest('[data-session-action="save"]')) {
-    if (typeof closeExportMenu === 'function') closeExportMenu(false);
+    const menu = document.getElementById('export-menu');
+    const returnFocus = Boolean(menu && menu.contains(document.activeElement));
+    if (typeof closeExportMenu === 'function') closeExportMenu(returnFocus);
     if (typeof closeMobileSheets === 'function') closeMobileSheets();
     saveSession();
   }
 });
 
-// Exporting the edited result (any export format, including print) counts as saving it.
-const SESSION_CLEANING_EXPORTS = ['copy', 'txt', 'word', 'html', 'md', 'print'];
+// Downloading the edited result counts as saving it. Copying and printing do not: the
+// clipboard is volatile, and neither a failed copy nor a cancelled print dialog can be
+// detected, so they must not silence the unsaved-changes warning.
+const SESSION_CLEANING_EXPORTS = ['txt', 'word', 'html', 'md'];
 document.addEventListener('click', e => {
   if (!(e.target instanceof Element)) return;
   const item = e.target.closest('#export-menu [data-export]');

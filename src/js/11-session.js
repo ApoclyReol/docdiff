@@ -550,8 +550,10 @@ document.addEventListener('click', e => {
   }
 });
 
-// Exporting the edited result (any export format, including print) counts as saving it.
-const SESSION_CLEANING_EXPORTS = ['copy', 'txt', 'word', 'html', 'md', 'print'];
+// Downloading the edited result counts as saving it. Copying and printing do not: the
+// clipboard is volatile, and neither a failed copy nor a cancelled print dialog can be
+// detected, so they must not silence the unsaved-changes warning.
+const SESSION_CLEANING_EXPORTS = ['txt', 'word', 'html', 'md'];
 document.addEventListener('click', e => {
   if (!(e.target instanceof Element)) return;
   const item = e.target.closest('#export-menu [data-export]');

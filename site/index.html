@@ -4808,6 +4808,7 @@ const I18N = {
     expCopy: 'Neuen Stand kopieren',
     expTxt: 'Neuen Stand speichern',
     copiedLabel: 'Kopiert',
+    copyFailed: 'Kopieren in die Zwischenablage ist hier nicht möglich. Bitte nutzen Sie stattdessen den Export als .txt.',
     expPdf: 'PDF / Druckansicht',
     expWord: 'Word-Redline (Änderungen nachverfolgen)',
     expHtml: 'HTML-Vergleichsbericht',
@@ -5126,6 +5127,7 @@ const I18N = {
     expCopy: 'Copy new version text',
     expTxt: 'Save new version (.txt)',
     copiedLabel: 'Copied',
+    copyFailed: 'Copying to the clipboard is not possible here. Please use the .txt export instead.',
     expPdf: 'PDF / Print view',
     expWord: 'Word redline (tracked changes)',
     expHtml: 'HTML Diff Report',
@@ -10960,12 +10962,17 @@ function copyFinalTextToClipboard() {
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
+    let copied = false;
     try {
-      document.execCommand('copy');
+      copied = document.execCommand('copy') === true;
+    } catch (e) {
+      copied = false;
     } finally {
       document.body.removeChild(ta);
     }
-    flashCopied();
+    // Never claim "Copied" when nothing reached the clipboard.
+    if (copied) flashCopied();
+    else if (typeof showImportNotice === 'function') showImportNotice(t('copyFailed'), 'warning');
   };
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -11143,13 +11150,36 @@ const importNotice = (() => {
   close.type = 'button';
   close.className = 'import-notice-close';
   close.textContent = '×';
-  close.addEventListener('click', () => clearImportNotice());
+  close.addEventListener('click', () => {
+    const hadFocus = el.contains(document.activeElement);
+    clearImportNotice();
+    if (hadFocus) restoreFocusAfterNotice();
+  });
   el.append(msg, close);
   document.body.appendChild(el);
-  return { el, msg, close };
+  return { el, msg, close, returnFocus: null };
 })();
 
+// Closing the notice from the keyboard must not drop focus to <body>: go back to the control
+// that was focused when the notice appeared, or to the start of the current view.
+function restoreFocusAfterNotice() {
+  const prev = importNotice.returnFocus;
+  importNotice.returnFocus = null;
+  if (prev && prev.isConnected && prev !== document.body && prev.getClientRects().length) {
+    prev.focus();
+    if (document.activeElement === prev) return;
+  }
+  const fallback = document.body.classList.contains('is-comparing')
+    ? state.viewMode === 'inline'
+      ? paneUnified
+      : paneRight
+    : document.getElementById('landing-title');
+  if (fallback) fallback.focus({ preventScroll: true });
+}
+
 function showImportNotice(message, kind = 'error') {
+  const active = document.activeElement;
+  if (active && !importNotice.el.contains(active)) importNotice.returnFocus = active;
   importNotice.msg.textContent = message;
   importNotice.close.setAttribute('aria-label', t('noticeClose'));
   importNotice.el.classList.toggle('is-warning', kind === 'warning');
@@ -12951,8 +12981,10 @@ document.addEventListener('click', e => {
   }
 });
 
-// Exporting the edited result (any export format, including print) counts as saving it.
-const SESSION_CLEANING_EXPORTS = ['copy', 'txt', 'word', 'html', 'md', 'print'];
+// Downloading the edited result counts as saving it. Copying and printing do not: the
+// clipboard is volatile, and neither a failed copy nor a cancelled print dialog can be
+// detected, so they must not silence the unsaved-changes warning.
+const SESSION_CLEANING_EXPORTS = ['txt', 'word', 'html', 'md'];
 document.addEventListener('click', e => {
   if (!(e.target instanceof Element)) return;
   const item = e.target.closest('#export-menu [data-export]');

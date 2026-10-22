@@ -721,12 +721,17 @@ function copyFinalTextToClipboard() {
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
+    let copied = false;
     try {
-      document.execCommand('copy');
+      copied = document.execCommand('copy') === true;
+    } catch (e) {
+      copied = false;
     } finally {
       document.body.removeChild(ta);
     }
-    flashCopied();
+    // Never claim "Copied" when nothing reached the clipboard.
+    if (copied) flashCopied();
+    else if (typeof showImportNotice === 'function') showImportNotice(t('copyFailed'), 'warning');
   };
 
   if (navigator.clipboard && navigator.clipboard.writeText) {

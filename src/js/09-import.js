@@ -28,13 +28,36 @@ const importNotice = (() => {
   close.type = 'button';
   close.className = 'import-notice-close';
   close.textContent = '×';
-  close.addEventListener('click', () => clearImportNotice());
+  close.addEventListener('click', () => {
+    const hadFocus = el.contains(document.activeElement);
+    clearImportNotice();
+    if (hadFocus) restoreFocusAfterNotice();
+  });
   el.append(msg, close);
   document.body.appendChild(el);
-  return { el, msg, close };
+  return { el, msg, close, returnFocus: null };
 })();
 
+// Closing the notice from the keyboard must not drop focus to <body>: go back to the control
+// that was focused when the notice appeared, or to the start of the current view.
+function restoreFocusAfterNotice() {
+  const prev = importNotice.returnFocus;
+  importNotice.returnFocus = null;
+  if (prev && prev.isConnected && prev !== document.body && prev.getClientRects().length) {
+    prev.focus();
+    if (document.activeElement === prev) return;
+  }
+  const fallback = document.body.classList.contains('is-comparing')
+    ? state.viewMode === 'inline'
+      ? paneUnified
+      : paneRight
+    : document.getElementById('landing-title');
+  if (fallback) fallback.focus({ preventScroll: true });
+}
+
 function showImportNotice(message, kind = 'error') {
+  const active = document.activeElement;
+  if (active && !importNotice.el.contains(active)) importNotice.returnFocus = active;
   importNotice.msg.textContent = message;
   importNotice.close.setAttribute('aria-label', t('noticeClose'));
   importNotice.el.classList.toggle('is-warning', kind === 'warning');
