@@ -7,6 +7,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
@@ -124,3 +125,6 @@ console.log(`✓ All security, privacy, legal, standalone, and i18n checks passe
 
 // 6. Unit tests for the pure export builders (docx, HTML, Markdown, file names); fast and dependency-free.
 await import('./test-export.mjs');
+// 6. Diff core unit tests (word-diff invariant, alignment, header/footer, PDF intake helpers)
+execFileSync(process.execPath, [path.join(__dirname, 'test-core.mjs')], { stdio: 'inherit' });
+

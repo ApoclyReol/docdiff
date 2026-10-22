@@ -273,6 +273,17 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
   },
 };
 
+// The samples above are written in a readable notation ("=== [SEITE n] ===" page breaks,
+// "[[HF]]" header/footer lines). Convert it to the internal document encoding
+// (see DOC_PAGE_MARK / DOC_META_MARK in 04-core.js); user input never gets this treatment.
+for (const lang of Object.keys(SAMPLES)) {
+  for (const version of ['v1', 'v2']) {
+    SAMPLES[lang][version] = SAMPLES[lang][version]
+      .replace(/^=== \[SEITE (\d+)\] ===$/gm, '\u001E$1')
+      .replace(/^\[\[HF\]\] /gm, '\u001Fhf\u001F');
+  }
+}
+
 const initialLang =
   typeof navigator !== 'undefined' &&
   navigator.language &&

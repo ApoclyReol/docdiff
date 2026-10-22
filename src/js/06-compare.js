@@ -1,18 +1,13 @@
 function runComparison() {
-  const allLeftBlocks = parseIntoBlocks(state.leftText);
-  const allRightBlocks = parseIntoBlocks(state.rightText);
+  // Header/footer lines are hidden only when they repeat across pages and are identical
+  // in both versions (apart from page numbers); hfCount = lines hidden in both documents.
+  const { allRightBlocks, leftBlocks, rightBlocks, hfCount } = prepareComparisonBlocks(
+    state.leftText,
+    state.rightText,
+    state.ignoreHeadersFooters
+  );
   state.rightAllBlocks = allRightBlocks;
-
-  const hfLeft = allLeftBlocks.filter(b => b.isHeaderFooter).length;
-  const hfRight = allRightBlocks.filter(b => b.isHeaderFooter).length;
-  state.filteredHfCount = Math.max(hfLeft, hfRight);
-
-  const leftBlocks = state.ignoreHeadersFooters
-    ? allLeftBlocks.filter(b => !b.isHeaderFooter)
-    : allLeftBlocks;
-  const rightBlocks = state.ignoreHeadersFooters
-    ? allRightBlocks.filter(b => !b.isHeaderFooter)
-    : allRightBlocks;
+  state.filteredHfCount = hfCount;
 
   const leftPages = leftBlocks.reduce((m, b) => Math.max(m, b.pageNum || 1), 0);
   const rightPages = rightBlocks.reduce((m, b) => Math.max(m, b.pageNum || 1), 0);
@@ -195,9 +190,18 @@ function bindEmptyStateButtons() {
       state.rightName = t('sampleRightName');
       state.rightFormat = 'DEMO';
       state.rightText = sample.v2;
+      resetEditHistory();
       runComparison();
     });
   });
+}
+
+// Moved blocks keep type 'deleted' (old position) / 'inserted' (new position); this note
+// labels them so they are not read as a removal plus an unrelated addition.
+function renderMovedNoteHtml(row) {
+  if (!row.moved) return '';
+  const label = row.type === 'deleted' ? t('movedFromHere') : t('movedToHere');
+  return `<span class="moved-note">${escapeHtml(label)}</span>`;
 }
 
 function renderRightActionsHtml(row) {
@@ -267,6 +271,7 @@ function renderDocumentPanes() {
 
     for (const { row, idx } of entries) {
       const deferClass = idx > 18 ? 'deferred-block' : '';
+      const movedClass = row.moved ? 'is-moved' : '';
       const rightActionsHtml = renderRightActionsHtml(row);
 
       if (row.leftBlock) {
@@ -280,7 +285,7 @@ function renderDocumentPanes() {
 
         leftRowsHtml.push(`
           <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause ${stateClass} ${typeClasses} ${deferClass}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div>
+            <div class="clause ${stateClass} ${typeClasses} ${movedClass} ${deferClass}" data-row-id="${row.id}">${renderMovedNoteHtml(row)}${renderLeftBlockHtml(row, q)}</div>
           </div>
         `);
       } else {
@@ -302,7 +307,7 @@ function renderDocumentPanes() {
 
         rightRowsHtml.push(`
           <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause ${stateClass} ${typeClasses} ${deferClass}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}${rightActionsHtml}</div>
+            <div class="clause ${stateClass} ${typeClasses} ${movedClass} ${deferClass}" data-row-id="${row.id}">${renderMovedNoteHtml(row)}${renderRightBlockHtml(row, q)}${rightActionsHtml}</div>
           </div>
         `);
       } else {
@@ -326,7 +331,7 @@ function renderDocumentPanes() {
 
       unifiedRowsHtml.push(`
         <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-          <div class="clause ${uStateClass} ${uTypeClasses} ${deferClass}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div>
+          <div class="clause ${uStateClass} ${uTypeClasses} ${movedClass} ${deferClass}" data-row-id="${row.id}">${renderMovedNoteHtml(row)}${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div>
         </div>
       `);
     }
@@ -597,10 +602,16 @@ function renderSidebarList(bothLoaded) {
     filtered
       .map(row => {
         const globalIdx = state.changeRows.indexOf(row) + 1;
-        const cls = row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del';
+        const cls =
+          (row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del') + (row.moved ? ' moved' : '');
         const isActive = row.id === state.activeRowId;
-        const typeLabel =
-          row.type === 'modified' ? t('typeMod') : row.type === 'inserted' ? t('typeIns') : t('typeDel');
+        const typeLabel = row.moved
+          ? t('typeMoved')
+          : row.type === 'modified'
+          ? t('typeMod')
+          : row.type === 'inserted'
+          ? t('typeIns')
+          : t('typeDel');
         const refCode = row.rightBlock ? row.rightBlock.refCode : row.leftBlock.refCode;
         const pageNum = row.pageNum || 1;
         const deltaHtml = renderSidebarDeltaHtml(row, state.searchQuery);
