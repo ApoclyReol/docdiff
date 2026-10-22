@@ -5,7 +5,10 @@ function updateStepper() {
   const total = items.length;
   const active = getActiveItem();
   const idx = active ? items.indexOf(active) : -1;
-  const text = formatMsg('stepPos', { i: total ? (idx >= 0 ? idx + 1 : '–') : 0, n: total });
+  // With a filter the count says what it counts: "1 von 1 entfernten".
+  const filterKey = state.sidebarFilter !== 'all' ? state.sidebarFilter : state.statusFilter !== 'all' ? state.statusFilter : '';
+  const pos = { i: total ? (idx >= 0 ? idx + 1 : '–') : 0, n: total };
+  const text = filterKey ? formatMsg('stepPosFiltered', { ...pos, label: t(`stepLabel_${filterKey}`) }) : formatMsg('stepPos', pos);
   document.getElementById('step-pos').textContent = text;
   document.getElementById('mob-step-count').textContent = text;
   document.getElementById('mob-step').setAttribute('aria-label', formatMsg('mobStepLabel', { i: idx >= 0 ? idx + 1 : '–', n: total }));
@@ -92,6 +95,7 @@ function openMenu(id, trigger, focus = 'first') {
 }
 
 function closeMenu(id, returnFocus) {
+  if (id === 'export-menu') setMoreFormats(false);
   if (!openMenuState || openMenuState.id !== id) {
     const menu = document.getElementById(id);
     if (menu) {
@@ -169,6 +173,40 @@ document.getElementById('mob-btn-export').addEventListener('click', e => {
 });
 
 // A click on a menu item runs it and closes the menu (focus back to the menu button).
+// "Weitere Formate": opens the less common formats inside the menu.
+function setMoreFormats(open, focusFirst) {
+  const btn = document.getElementById('btn-more-formats');
+  const sub = document.getElementById('more-formats');
+  btn.setAttribute('aria-expanded', String(open));
+  sub.hidden = !open;
+  if (open && focusFirst) {
+    const first = sub.querySelector('[role="menuitem"]');
+    if (first) {
+      first.tabIndex = -1;
+      first.focus();
+    }
+  }
+}
+document.getElementById('btn-more-formats').addEventListener('click', e => {
+  e.stopPropagation();
+  setMoreFormats(document.getElementById('more-formats').hidden, true);
+});
+document.getElementById('btn-more-formats').addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    e.stopPropagation();
+    setMoreFormats(true, true);
+  }
+});
+document.getElementById('more-formats').addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    e.stopPropagation();
+    setMoreFormats(false);
+    document.getElementById('btn-more-formats').focus();
+  }
+});
+
 document.getElementById('export-menu').addEventListener('click', e => {
   const item = e.target.closest('[data-export]');
   if (!item) return;
@@ -210,14 +248,6 @@ document.getElementById('more-menu').addEventListener('click', e => {
       break;
     case 'btn-paste-modal':
       openPasteModal();
-      break;
-    case 'btn-undo':
-      performUndo();
-      announceHistory('toastUndone');
-      break;
-    case 'btn-redo':
-      performRedo();
-      announceHistory('toastRedone');
       break;
     case 'menu-help':
       openHelp();
@@ -477,6 +507,10 @@ window.addEventListener('keydown', e => {
   } else if (key === 'r') {
     e.preventDefault();
     runReviewAction('reject', Boolean(activeEl && activeEl.closest && activeEl.closest('#sidebar-list')));
+  } else if (key === 'e') {
+    e.preventDefault();
+    if (isTabletOrSmaller()) closeListSheet(false);
+    runReviewAction('edit', false);
   } else if (e.key === '/') {
     e.preventDefault();
     openSearch();
@@ -497,6 +531,7 @@ function clearComparison() {
   state.activeRowId = null;
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
+  state.statusFilter = 'all';
   state.searchQuery = '';
   state.pageBreaks = null;
   resetEditHistory();
@@ -744,9 +779,60 @@ toastEl.addEventListener('focusin', () => clearTimeout(toastTimer));
   if (typeof original !== 'function') return;
   window.showImportNotice = function showImportNoticeWithScanWording(message, kind) {
     const m = typeof message === 'string' && message.match(/^.*?[„“"]([^“”"]+)[“”"]: (.*)$/);
-    if (m && m[2] === t('errScannedPdf')) message = formatMsg('errScannedPdfFile', { name: m[1] });
-    return original.call(this, message, kind);
+    // A scanned PDF and an image (also one renamed to .pdf) get the same message.
+    if (m && (m[2] === t('errScannedPdf') || m[2] === t('errImage'))) message = formatMsg('errScannedPdfFile', { name: m[1] });
+    // English text uses English quotation marks.
+    else if (m && state.lang === 'en') message = message.replace(`„${m[1]}“`, `“${m[1]}”`);
+    const result = original.call(this, message, kind);
+    placeImportNotice();
+    return result;
   };
+})();
+
+// Errors on the start page appear in the flow under the two file slots (the affected one gets
+// an error border), never floating over the page.
+let lastImportSide = null;
+(function trackImportSide() {
+  const upload = window.handleFileUpload;
+  if (typeof upload === 'function') {
+    window.handleFileUpload = function trackedFileUpload(file, side) {
+      lastImportSide = side === 'left' || side === 'right' ? side : null;
+      return upload.apply(this, arguments);
+    };
+  }
+  const drop = window.handleDropFiles;
+  if (typeof drop === 'function') {
+    window.handleDropFiles = function trackedDropFiles(files, side) {
+      lastImportSide = files && files.length === 1 && (side === 'left' || side === 'right') ? side : null;
+      return drop.apply(this, arguments);
+    };
+  }
+  const clear = window.clearImportNotice;
+  if (typeof clear === 'function') {
+    window.clearImportNotice = function clearImportNoticeAndSlots() {
+      document.querySelectorAll('.drop-slot.has-error').forEach(el => el.classList.remove('has-error'));
+      return clear.apply(this, arguments);
+    };
+  }
+})();
+
+function placeImportNotice() {
+  const el = document.getElementById('import-notice');
+  if (!el) return;
+  const slots = document.querySelector('.drop-slots');
+  const onLanding = !document.body.classList.contains('is-comparing') && slots && slots.getClientRects().length;
+  document.querySelectorAll('.drop-slot.has-error').forEach(s => s.classList.remove('has-error'));
+  if (onLanding) {
+    if (el.previousElementSibling !== slots) slots.after(el);
+    el.classList.add('is-inline');
+    const slot = lastImportSide && document.getElementById(`lp-slot-${lastImportSide}`);
+    if (slot && !el.classList.contains('is-warning')) slot.classList.add('has-error');
+  } else {
+    if (el.parentElement !== document.body) document.body.appendChild(el);
+    el.classList.remove('is-inline');
+  }
+}
+(function () {
 })();
 
 /* ── Tooltip (mouse hover and keyboard focus only; never after a tap) ──── */

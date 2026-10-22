@@ -234,6 +234,8 @@
   --kante-200: rgb(0 0 0 / 0.082);
   --kante-300: rgb(0 0 0 / 0.12);
   --kante-500: rgb(0 0 0 / 0.212);
+  /* Edges that identify a control (≥ 3:1 against the page, WCAG 1.4.11) */
+  --control-edge: rgb(0 0 0 / 0.5);
 
   --primary: 212.8 100% 36%;
   --primary-hover: 212.8 100% 31%;
@@ -283,6 +285,7 @@
   --kante-200: rgb(255 255 255 / 0.09);
   --kante-300: rgb(255 255 255 / 0.14);
   --kante-500: rgb(255 255 255 / 0.24);
+  --control-edge: rgb(255 255 255 / 0.45);
 
   --primary: 212.4 100% 35.7%;
   --primary-hover: 212.4 100% 41%;
@@ -414,7 +417,7 @@ svg.icon {
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
 .btn {
-  height: 36px;
+  height: 44px;
   padding: 0 12px;
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
@@ -428,7 +431,7 @@ svg.icon {
   border: 0;
   background: hsl(var(--card));
   color: hsl(var(--foreground));
-  box-shadow: inset 0 0 0 1px var(--kante-300), var(--elev-1);
+  box-shadow: inset 0 0 0 1px var(--control-edge), var(--elev-1);
   transition: background-color 100ms ease-out, box-shadow 100ms ease-out, color 100ms ease-out;
   white-space: nowrap;
   flex-shrink: 0;
@@ -458,7 +461,7 @@ svg.icon {
   box-shadow: inset 0 0 0 1px hsl(var(--destructive) / 0.55);
 }
 .btn-icon {
-  width: 36px;
+  width: 44px;
   padding: 0;
 }
 @media (hover: hover) {
@@ -538,7 +541,7 @@ body:not(.is-comparing) .topbar {
   gap: 6px;
   min-width: 0;
   max-width: 100%;
-  height: 36px;
+  height: 44px;
   padding: 0 8px 0 10px;
   border: 0;
   border-radius: var(--radius-md);
@@ -548,7 +551,7 @@ body:not(.is-comparing) .topbar {
   font-size: var(--text-ui);
   font-weight: 500;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px var(--kante-200);
+  box-shadow: inset 0 0 0 1px var(--control-edge);
 }
 .tb-file {
   white-space: nowrap;
@@ -569,8 +572,8 @@ body:not(.is-comparing) .topbar {
   opacity: 0.85;
 }
 .tb-icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
@@ -590,7 +593,7 @@ body:not(.is-comparing) .topbar {
   cursor: default;
 }
 .tb-btn {
-  height: 36px;
+  height: 44px;
   padding: 0 10px 0 12px;
 }
 .tb-compact-icon {
@@ -627,10 +630,10 @@ body:not(.is-comparing) .topbar {
 .stepper {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
+  gap: 0;
+  padding: 0;
   border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--kante-200);
+  box-shadow: inset 0 0 0 1px var(--control-edge);
 }
 .step-pos {
   min-width: 76px;
@@ -856,19 +859,16 @@ body:not(.is-comparing) .topbar {
   white-space: nowrap;
 }
 mark.tok-search {
-  background: hsl(var(--warning-ton-2));
+  background: hsl(var(--primary) / 0.1);
   color: inherit;
   border-radius: 2px;
   padding: 0 1px;
+  box-shadow: inset 0 -2px 0 hsl(var(--primary-ink) / 0.55);
 }
 mark.tok-search.is-current {
-  background: hsl(var(--search-current));
-  color: hsl(0 0% 5%);
-  box-shadow: 0 0 0 2px hsl(var(--search-current));
-}
-del.tok-del mark.tok-search.is-current,
-ins.tok-ins mark.tok-search.is-current {
-  color: hsl(0 0% 5%);
+  background: hsl(var(--primary) / 0.16);
+  color: inherit;
+  box-shadow: 0 0 0 2px hsl(var(--primary-ink));
 }
 
 /* ── Landing page (shown until both versions are loaded) ─────────────────── */
@@ -1191,8 +1191,8 @@ body.is-dragging-file .drop-slot-btn {
   height: 26px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: hsl(var(--primary-ton-2));
-  color: hsl(var(--primary-ink));
+  background: hsl(var(--ton-2));
+  color: hsl(var(--foreground));
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 700;
@@ -1606,16 +1606,17 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
   min-height: 24px;
   user-select: none;
 }
+.clause.state-placeholder:has(> .review-status) {
+  display: block;
+}
+.clause.state-placeholder:has(> .review-status)::before {
+  display: none;
+}
 .clause.state-placeholder::before {
   content: "";
   flex: 1;
   height: 1px;
   border-top: 1px dashed hsl(var(--input));
-}
-@media (hover: hover) {
-  .clause.state-equal.is-hovered:not(.is-active) {
-    background: hsl(var(--ton-1));
-  }
 }
 /* The current change: a 2 px ink ring (the review actions sit inside it) */
 .clause.is-active {
@@ -1732,7 +1733,13 @@ ins.tok-ins.tok-marker {
   border-top: 1px solid hsl(var(--border));
   border-bottom: 0;
 }
+.hf-toggle::after {
+  content: "";
+  position: absolute;
+  inset: -10px -4px;
+}
 .hf-toggle {
+  position: relative;
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
@@ -1763,81 +1770,139 @@ ins.tok-ins.tok-marker {
   display: none;
 }
 
-/* ── Review actions, docked under the current paragraph ────────────────── */
+/* ── Review actions: a compact column of icon buttons in the right margin of the current
+   paragraph. Every paragraph of the new version keeps that margin free, so selecting one
+   never moves text or changes a height. ── */
+:root {
+  --rv-btn: 32px;
+  --rv-gutter: 44px;
+}
+@media (pointer: coarse) {
+  :root {
+    --rv-btn: 44px;
+    --rv-gutter: 54px;
+  }
+}
+#sheet-right .clause,
+#sheet-unified .clause {
+  padding-right: var(--rv-gutter);
+}
 .review-bar {
-  grid-column: 1 / -1;
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  z-index: 4;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid hsl(var(--border));
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px hsl(var(--border)), var(--elev-1);
   font-size: var(--text-ui);
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.4;
   color: hsl(var(--foreground));
 }
-.clause.kind-bullet .review-bar {
-  margin-left: -10px;
+.clause.kind-hf .review-bar {
+  top: 0;
 }
 .ra-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 12px;
+  justify-content: center;
+  width: var(--rv-btn);
+  height: var(--rv-btn);
+  padding: 0;
   border: 0;
-  border-radius: var(--radius-md);
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
-  box-shadow: inset 0 0 0 1px var(--kante-500);
-  font: inherit;
-  font-size: var(--text-ui);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.ra-btn.ra-accept {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  box-shadow: none;
-}
-.ra-btn.ra-edit,
-.ra-btn.ra-reopen {
+  border-radius: calc(var(--radius-md) - 2px);
   background: transparent;
-  box-shadow: none;
-  color: hsl(var(--foreground));
+  color: hsl(var(--muted-foreground));
+  font: inherit;
+  cursor: pointer;
 }
 .ra-btn .icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.2;
+}
+@media (pointer: coarse) {
+  .ra-btn .icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+.ra-btn:focus-visible {
+  outline-offset: 0;
+}
+/* Colour only on hover and keyboard focus */
+.ra-btn.ra-accept:focus-visible { color: hsl(var(--success-ink)); background: hsl(var(--success-ton-1)); }
+.ra-btn.ra-reject:focus-visible { color: hsl(var(--destructive-ink)); background: hsl(var(--destructive-ton-1)); }
+.ra-btn.ra-edit:focus-visible { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
+@media (hover: hover) {
+  .ra-btn.ra-accept:hover { color: hsl(var(--success-ink)); background: hsl(var(--success-ton-1)); }
+  .ra-btn.ra-reject:hover { color: hsl(var(--destructive-ink)); background: hsl(var(--destructive-ton-1)); }
+  .ra-btn.ra-edit:hover { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
+}
+
+/* Status line of a reviewed paragraph: "✓ Angenommen · Rückgängig" */
+.review-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 6px;
+  grid-column: 1 / -1;
+  margin: -2px 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.review-status .icon {
   width: 15px;
   height: 15px;
+  stroke-width: 2.4;
+  flex-shrink: 0;
+}
+.review-status.is-accepted { color: hsl(var(--success-ink)); }
+.review-status.is-rejected { color: hsl(var(--foreground)); }
+.review-status-sep {
+  color: hsl(var(--muted-foreground));
+  font-weight: 400;
+}
+.ra-undo {
+  position: relative;
+  min-height: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: hsl(var(--primary-ink));
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+/* 44 × 44 px pointer target without moving the text around it */
+.ra-undo::before {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: max(100%, 44px);
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 @media (hover: hover) {
-  .ra-btn:hover {
-    background: hsl(var(--ton-2));
-  }
-  .ra-btn.ra-accept:hover {
-    background: hsl(var(--primary-hover));
-  }
+  .ra-undo:hover { background: hsl(var(--ton-2)); }
 }
-.ra-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 4px;
-  font-weight: 600;
+.clause.kind-hf .review-status {
+  font-size: 12.5px;
 }
-.ra-status.is-accepted {
-  color: hsl(var(--success-ink));
-}
-.ra-status.is-rejected {
-  color: hsl(var(--destructive-ink));
-}
-.ra-status .icon {
-  width: 15px;
-  height: 15px;
+/* The status line carries the check mark in the new version */
+#sheet-right .clause.is-accepted::after,
+#sheet-unified .clause.is-accepted::after {
+  display: none;
 }
 
 /* Inline editor */
@@ -1928,7 +1993,7 @@ ins.tok-ins.tok-marker {
   height: 0;
   border-radius: 3px;
   background: hsl(var(--foreground) / 0.07);
-  box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.32);
+  box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.6);
   pointer-events: none;
 }
 .ruler.is-dragging .ruler-window {
@@ -1980,7 +2045,7 @@ ins.tok-ins.tok-marker {
   flex: 0 0 72px;
   height: 4px;
   border-radius: 999px;
-  background: hsl(var(--ton-3));
+  background: var(--control-edge);
   overflow: hidden;
 }
 .progress-fill {
@@ -1995,9 +2060,6 @@ ins.tok-ins.tok-marker {
   display: flex;
   flex-wrap: wrap;
   column-gap: 12px;
-}
-.hint-pair {
-  white-space: nowrap;
 }
 .first-hint {
   display: flex;
@@ -2015,8 +2077,8 @@ body.legend-dismissed .first-hint {
   display: none;
 }
 .hint-close {
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   border: 0;
   border-radius: var(--radius-md);
@@ -2027,16 +2089,56 @@ body.legend-dismissed .first-hint {
   justify-content: center;
   cursor: pointer;
 }
+/* Review status: two toggles ("Offen 12", "Geprüft 8"), separate from the kind of change */
+.status-filters {
+  display: flex;
+  margin-top: 10px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--kante-500);
+}
+.status-filter {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: hsl(var(--foreground));
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.status-filter + .status-filter {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  box-shadow: inset 1px 0 0 var(--kante-500);
+}
+.status-filter:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.status-filter[aria-pressed="true"] {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-weight: 650;
+}
+@media (hover: hover) {
+  .status-filter[aria-pressed="false"]:hover {
+    background: hsl(var(--ton-2));
+  }
+}
 .list-filters {
   display: flex;
   gap: 2px;
-  margin: 8px -4px 0;
+  margin: 4px -4px 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .list-filter {
   flex-shrink: 0;
-  height: 38px;
+  height: 44px;
+  min-width: 44px;
   padding: 0 4px;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -2138,7 +2240,13 @@ body.legend-dismissed .first-hint {
   stroke-width: 2.4;
 }
 .nav-status.is-accepted { color: hsl(var(--success-ink)); }
-.nav-status.is-rejected { color: hsl(var(--destructive-ink)); }
+.nav-status.is-rejected { color: hsl(var(--muted-foreground)); }
+.nav-item.is-accepted .nav-item-ref,
+.nav-item.is-rejected .nav-item-ref,
+.nav-item.is-accepted .nav-item-deltas,
+.nav-item.is-rejected .nav-item-deltas {
+  color: hsl(var(--muted-foreground));
+}
 .nav-item.is-accepted .tok-del,
 .nav-item.is-accepted .tok-ins,
 .nav-item.is-rejected .tok-del,
@@ -2149,18 +2257,17 @@ body.legend-dismissed .first-hint {
 .nav-item-deltas {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-}
-.nav-delta-row {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
   gap: 4px;
-  word-break: break-word;
 }
-.nav-delta-arrow {
+/* One change in its sentence: grey context, struck / underlined words, in normal text flow */
+.nav-delta-row {
+  display: block;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.nav-ctx,
+.nav-ctx-label {
   color: hsl(var(--muted-foreground));
-  flex-shrink: 0;
 }
 .nav-delta-more {
   font-size: 13px;
@@ -2172,32 +2279,6 @@ body.legend-dismissed .first-hint {
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
-}
-.nav-item-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 12px 12px 13px;
-}
-.nav-item-actions .ra-btn {
-  height: 32px;
-  padding: 0 10px;
-}
-.nav-item-actions .ra-edit,
-.nav-item-actions .ra-reopen {
-  width: 32px;
-  padding: 0;
-  justify-content: center;
-  margin-left: auto;
-}
-.nav-item-actions .ra-edit .ra-label,
-.nav-item-actions .ra-reopen .ra-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
 }
 .empty-state {
   margin: auto;
@@ -2389,7 +2470,7 @@ dialog.prime-dialog::backdrop {
   color: hsl(var(--foreground));
   border: 0;
   border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 1px hsl(var(--input));
+  box-shadow: inset 0 0 0 1px var(--control-edge);
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.55;
@@ -2715,29 +2796,6 @@ body.is-diff-busy .doc-sheet {
     grid-template-columns: minmax(24px, auto) 1fr;
     column-gap: 8px;
   }
-  .review-bar {
-    gap: 8px;
-  }
-  .ra-btn {
-    height: 44px;
-    padding: 0 14px;
-  }
-  .ra-btn.ra-edit .ra-label,
-  .ra-btn.ra-reopen .ra-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-  .ra-btn.ra-edit,
-  .ra-btn.ra-reopen {
-    width: 44px;
-    padding: 0;
-    justify-content: center;
-    margin-left: auto;
-    box-shadow: inset 0 0 0 1px var(--kante-300);
-  }
   .bottom-bar {
     display: grid;
     position: fixed;
@@ -2908,8 +2966,144 @@ body.is-diff-busy .doc-sheet {
     min-width: 44px;
   }
   .ra-btn {
+    width: 44px;
     height: 44px;
   }
+  .ra-btn .icon {
+    width: 20px;
+    height: 20px;
+  }
+  .ra-pill,
+  .ra-undo {
+    min-height: 44px;
+  }
+  .ra-undo {
+    padding: 0 10px;
+  }
+}
+
+/* ── Screen readers: removed / added words are announced (del / ins are not voiced) ── */
+del.tok-del::before,
+del.tok-del::after,
+ins.tok-ins::before,
+ins.tok-ins::after {
+  content: "";
+}
+:lang(de) del.tok-del::before { content: "" / "entfernt: "; }
+:lang(de) del.tok-del::after { content: "" / " (Ende entfernt) "; }
+:lang(de) ins.tok-ins::before { content: "" / "hinzugefügt: "; }
+:lang(de) ins.tok-ins::after { content: "" / " (Ende hinzugefügt) "; }
+:lang(en) del.tok-del::before { content: "" / "removed: "; }
+:lang(en) del.tok-del::after { content: "" / " (end removed) "; }
+:lang(en) ins.tok-ins::before { content: "" / "added: "; }
+:lang(en) ins.tok-ins::after { content: "" / " (end added) "; }
+
+/* ── "Weitere Formate" inside the export menu ── */
+.menu-sub {
+  padding-left: 12px;
+}
+.menu-sub[hidden] {
+  display: none;
+}
+.mi-chev {
+  margin-left: auto;
+  width: 14px;
+  height: 14px;
+  color: hsl(var(--muted-foreground));
+  transition: transform 120ms ease-out;
+}
+[aria-expanded="true"] > .mi-chev {
+  transform: rotate(90deg);
+}
+
+/* Every button is at least 44 × 44 px (WCAG 2.5.5) */
+.btn,
+.tb-btn {
+  min-width: 44px;
+}
+@media (max-width: 767px) {
+  body.is-comparing .hide-phone-compare {
+    display: none !important;
+  }
+}
+
+/* ── Help: same place on the landing page and in the comparison ── */
+body.is-comparing #btn-help {
+  width: 44px;
+  padding: 0;
+  box-shadow: none;
+  background: transparent;
+}
+body.is-comparing #btn-help span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* ── Find bar: inside the top bar, never over the captions or the list ── */
+.search-panel {
+  position: fixed;
+  top: calc((var(--topbar-h) - 44px) / 2);
+  right: 12px;
+  height: 44px;
+  width: min(440px, calc(100vw - 24px));
+  box-shadow: 0 0 0 1px var(--control-edge), var(--elev-2);
+}
+
+/* ── Import errors on the start page: in the flow, under the file slots ── */
+.import-notice.is-inline {
+  position: static;
+  transform: none;
+  width: auto;
+  margin-top: 12px;
+  box-shadow: inset 0 0 0 1px hsl(var(--destructive) / 0.6);
+}
+.import-notice.is-inline.is-warning {
+  box-shadow: inset 0 0 0 1px var(--control-edge);
+}
+.drop-slot.has-error .drop-slot-btn {
+  border: 2px solid hsl(var(--destructive));
+}
+.import-notice-close {
+  width: 44px;
+  height: 44px;
+}
+
+/* ── No toast over an open menu or sheet ── */
+body.menu-sheet-open .toast-region,
+body.list-open .toast-region {
+  display: none;
+}
+
+/* ── Forced colors (Windows high contrast): keep the overview ruler and the current change ── */
+@media (forced-colors: active) {
+  .ruler-track .rm {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  .ruler-track .rm.is-active {
+    background: Highlight;
+  }
+  .ruler-window {
+    forced-color-adjust: none;
+    box-shadow: none;
+    outline: 2px solid CanvasText;
+    background: transparent;
+  }
+  .clause.is-active {
+    outline: 2px solid Highlight;
+  }
+  .review-bar,
+  .stepper,
+  .tb-files,
+  .status-filters {
+    border: 1px solid CanvasText;
+  }
+  del.tok-del { text-decoration: line-through; }
+  ins.tok-ins { text-decoration: underline; }
 }
 
 /* Reduced motion: no smooth scrolling, transitions or animations */
@@ -2960,6 +3154,16 @@ body.is-diff-busy .doc-sheet {
   }
   .clause.deferred-block {
     content-visibility: visible !important;
+  }
+  /* No interactive leftovers on paper */
+  .hf-toggle, .review-status .ra-undo, .review-status-sep, .import-notice {
+    display: none !important;
+  }
+  .clause.is-active {
+    box-shadow: none !important;
+  }
+  .hf-group.is-collapsed > .diff-row-anchor {
+    display: flex !important;
   }
 }
 
@@ -3283,12 +3487,13 @@ body.is-diff-busy .doc-sheet {
     </div>
 
     <div class="tb-right">
-      <!-- Landing page only -->
-      <button type="button" class="btn btn-ghost landing-only" id="btn-help">
+      <!-- Help: same place on the landing page and in the comparison -->
+      <button type="button" class="btn btn-ghost hide-phone-compare" id="btn-help">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
         <span data-i18n="helpBtn">Hilfe</span>
       </button>
-      <button type="button" class="btn btn-ghost landing-only" id="btn-lang">DE</button>
+      <!-- Landing page only -->
+      <button type="button" class="btn btn-ghost landing-only" id="btn-lang">English</button>
       <button type="button" class="btn btn-icon btn-ghost landing-only" id="btn-theme">
         <svg class="icon" id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
       </button>
@@ -3356,11 +3561,14 @@ body.is-diff-busy .doc-sheet {
         <div class="menu menu-right" id="export-menu" role="menu" aria-labelledby="btn-export-menu" hidden>
           <button type="button" class="menu-item" data-export="word" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m8 13 1.5 5 2.5-4 2.5 4 1.5-5"/></svg><span data-i18n="expWord">Word mit Änderungsverfolgung (.docx)</span></button>
           <button type="button" class="menu-item" data-export="print" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg><span data-i18n="expPdf">Drucken oder als PDF sichern</span></button>
-          <button type="button" class="menu-item" data-export="html" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg><span data-i18n="expHtml">Bericht als Webseite (.html)</span></button>
-          <button type="button" class="menu-item" data-export="md" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span data-i18n="expMd">Bericht als Markdown (.md)</span></button>
-          <div class="menu-sep" role="separator"></div>
           <button type="button" class="menu-item" data-export="copy" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span data-i18n="expCopy">Text der neuen Fassung kopieren</span></button>
-          <button type="button" class="menu-item" data-export="txt" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span data-i18n="expTxt">… als Textdatei (.txt)</span></button>
+          <div class="menu-sep" role="separator"></div>
+          <button type="button" class="menu-item" role="menuitem" id="btn-more-formats" aria-expanded="false" aria-controls="more-formats"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg><span data-i18n="moreFormats">Weitere Formate</span><svg class="icon mi-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+          <div class="menu-sub" id="more-formats" role="group" aria-labelledby="btn-more-formats" hidden>
+            <button type="button" class="menu-item" data-export="html" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg><span data-i18n="expHtml">Bericht als Webseite (.html)</span></button>
+            <button type="button" class="menu-item" data-export="md" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span data-i18n="expMd">Bericht als Markdown (.md)</span></button>
+            <button type="button" class="menu-item" data-export="txt" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span data-i18n="expTxt">Neue Fassung als Textdatei (.txt)</span></button>
+          </div>
         </div>
       </div>
 
@@ -3370,17 +3578,15 @@ body.is-diff-busy .doc-sheet {
         </button>
         <div class="menu menu-right" id="more-menu" role="menu" aria-labelledby="btn-more" hidden>
           <button type="button" class="menu-item" role="menuitem" id="btn-clear"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span data-i18n="clearBtn">Neuer Vergleich</span></button>
-          <button type="button" class="menu-item" role="menuitem" id="btn-paste-modal"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span data-i18n="textBtn">Text einfügen/bearbeiten</span></button>
+          <button type="button" class="menu-item" role="menuitem" id="btn-paste-modal" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span data-i18n="textBtn">Text einfügen/bearbeiten</span></button>
           <div class="menu-sep" role="separator"></div>
           <button type="button" class="menu-item" role="menuitem" data-session-action="save" id="menu-save"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span data-i18n="sessionSave">Arbeitsstand speichern…</span></button>
           <button type="button" class="menu-item btn-open-session" role="menuitem" id="menu-open"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span data-i18n="sessionOpen">Arbeitsstand öffnen…</span></button>
           <div class="menu-sep" role="separator"></div>
-          <button type="button" class="menu-item" role="menuitem" id="btn-undo" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg><span data-i18n="undoLabel">Rückgängig</span><kbd class="mi-kbd" id="kbd-undo">Strg+Z</kbd></button>
-          <button type="button" class="menu-item" role="menuitem" id="btn-redo" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg><span data-i18n="redoLabel">Wiederherstellen</span><kbd class="mi-kbd" id="kbd-redo">Strg+Y</kbd></button>
           <div class="menu-sep" role="separator"></div>
           <button type="button" class="menu-item phone-only" role="menuitem" id="menu-view"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg><span data-i18n="viewMenu">Ansicht</span></button>
-          <button type="button" class="menu-item" role="menuitem" id="menu-help"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-i18n="helpMenu">Hilfe &amp; Tastenkürzel</span></button>
-          <button type="button" class="menu-item" role="menuitem" id="menu-lang"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg><span data-i18n="langMenu">Sprache: English</span></button>
+          <button type="button" class="menu-item phone-only" role="menuitem" id="menu-help"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-i18n="helpMenu">Hilfe &amp; Tastenkürzel</span></button>
+          <button type="button" class="menu-item" role="menuitem" id="menu-lang"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg><span data-i18n="langMenu">English</span></button>
           <button type="button" class="menu-item" role="menuitem" id="btn-privacy-info"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-i18n="footerPrivacy">Impressum &amp; Datenschutz</span></button>
           <a class="menu-item" role="menuitem" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span data-i18n="githubMenu">Quellcode auf GitHub</span></a>
         </div>
@@ -3391,7 +3597,7 @@ body.is-diff-busy .doc-sheet {
   <!-- ── 2. WORKSPACE: panes, overview ruler, change list ──────────────────────────────── -->
   <main class="workspace" id="main">
     <h1 class="sr-only compare-only" id="compare-heading" tabindex="-1">Doc Diff</h1>
-    <section class="doc-pane doc-pane-left" id="pane-left" data-side="left" tabindex="0" aria-labelledby="cap-left">
+    <section class="doc-pane doc-pane-left" id="pane-left" data-side="left" tabindex="0" aria-label="Alte Fassung">
       <div class="pane-caption" id="cap-left"><span data-i18n="colLeft">Alte Fassung</span><span class="cap-sep" aria-hidden="true"> · </span><span class="cap-file" id="filename-left"></span></div>
       <div class="drop-zone-overlay">
         <div class="drop-box" id="i18n-drop-left" data-i18n="dropLeft">Alte Fassung hier ablegen</div>
@@ -3399,7 +3605,7 @@ body.is-diff-busy .doc-sheet {
       <div class="doc-sheet" id="sheet-left"></div>
     </section>
 
-    <section class="doc-pane doc-pane-right" id="pane-right" data-side="right" tabindex="0" aria-labelledby="cap-right">
+    <section class="doc-pane doc-pane-right" id="pane-right" data-side="right" tabindex="0" aria-label="Neue Fassung">
       <div class="pane-caption" id="cap-right"><span data-i18n="colRight">Neue Fassung</span><span class="cap-sep" aria-hidden="true"> · </span><span class="cap-file" id="filename-right"></span></div>
       <div class="drop-zone-overlay">
         <div class="drop-box" id="i18n-drop-right" data-i18n="dropRight">Neue Fassung hier ablegen</div>
@@ -3407,7 +3613,7 @@ body.is-diff-busy .doc-sheet {
       <div class="doc-sheet" id="sheet-right"></div>
     </section>
 
-    <section class="doc-pane-unified" id="pane-unified" tabindex="0" aria-labelledby="cap-unified">
+    <section class="doc-pane-unified" id="pane-unified" tabindex="0" aria-label="Alte und neue Fassung">
       <div class="pane-caption" id="cap-unified"><span data-i18n="paneUnifiedLabel">Alte und neue Fassung</span><span class="cap-sep" aria-hidden="true"> · </span><span class="cap-file" id="filename-unified"></span></div>
       <div class="doc-sheet" id="sheet-unified"></div>
     </section>
@@ -3570,16 +3776,19 @@ body.is-diff-busy .doc-sheet {
           <span class="progress-text" id="list-progress"></span>
         </div>
         <p class="first-hint" id="first-hint">
-          <span class="first-hint-text"><span class="hint-pair"><del class="tok-del" data-i18n="legendDelSample">durchgestrichen</del> <span data-i18n="legendDel">= entfernt</span></span> <span class="hint-pair"><ins class="tok-ins" data-i18n="legendInsSample">grün</ins> <span data-i18n="legendIns">= hinzugefügt</span></span></span>
+          <span class="first-hint-text" data-i18n="hintGlyphs">✓ annehmen · ✗ ablehnen · J/K nächste Änderung</span>
           <button type="button" class="hint-close" id="btn-legend-close" aria-label="Hinweis ausblenden" data-i18n-label="legendClose">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </p>
-        <div class="list-filters" id="sidebar-filter-bar" role="tablist" aria-label="Änderungen filtern" data-i18n-label="filterGroupLabel">
+        <div class="status-filters" id="status-filter-bar" role="group" aria-label="Nach Prüfstand filtern" data-i18n-label="statusGroupLabel">
+          <button type="button" class="status-filter" id="status-open" data-status-filter="open" aria-pressed="false"><span data-i18n="filterOpen">Offen</span> <span class="lf-count" id="filter-count-open">0</span></button>
+          <button type="button" class="status-filter" id="status-reviewed" data-status-filter="reviewed" aria-pressed="false"><span data-i18n="filterReviewed">Geprüft</span> <span class="lf-count" id="filter-count-reviewed">0</span></button>
+        </div>
+        <div class="list-filters" id="sidebar-filter-bar" role="tablist" aria-label="Nach Art filtern" data-i18n-label="filterGroupLabel">
           <button type="button" class="list-filter" role="tab" id="tab-all" data-sidebar-filter="all" aria-selected="true" aria-controls="sidebar-list"><span data-i18n="filterAll">Alle</span></button>
-          <button type="button" class="list-filter" role="tab" id="tab-open" data-sidebar-filter="open" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterOpen">Offen</span></button>
           <button type="button" class="list-filter" role="tab" id="tab-modified" data-sidebar-filter="modified" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterMod">Geändert</span> <span class="lf-count" id="filter-count-mod">0</span></button>
-          <button type="button" class="list-filter" role="tab" id="tab-inserted" data-sidebar-filter="inserted" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterIns">Neu</span> <span class="lf-count" id="filter-count-ins">0</span></button>
+          <button type="button" class="list-filter" role="tab" id="tab-inserted" data-sidebar-filter="inserted" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterIns">Hinzugefügt</span> <span class="lf-count" id="filter-count-ins">0</span></button>
           <button type="button" class="list-filter" role="tab" id="tab-deleted" data-sidebar-filter="deleted" aria-selected="false" aria-controls="sidebar-list" tabindex="-1"><span data-i18n="filterDel">Entfernt</span> <span class="lf-count" id="filter-count-del">0</span></button>
         </div>
       </div>
@@ -3824,7 +4033,7 @@ const I18N = {
     expHtml: 'Bericht als Webseite (.html)',
     expMd: 'Bericht als Markdown (.md)',
     expCopy: 'Text der neuen Fassung kopieren',
-    expTxt: '… als Textdatei (.txt)',
+    expTxt: 'Neue Fassung als Textdatei (.txt)',
     moreLabel: 'Weitere Aktionen',
     clearBtn: 'Neuer Vergleich',
     textBtn: 'Text einfügen/bearbeiten',
@@ -3834,7 +4043,9 @@ const I18N = {
     redoLabel: 'Wiederherstellen',
     helpMenu: 'Hilfe & Tastenkürzel',
     helpBtn: 'Hilfe',
-    langMenu: 'Sprache: English',
+    langMenu: 'English',
+    langTarget: 'English',
+    moreFormats: 'Weitere Formate',
     langTitle: 'Sprache wechseln (Deutsch / English)',
     kbdCtrl: 'Strg',
     kbdShift: 'Umschalt',
@@ -3846,20 +4057,20 @@ const I18N = {
     toastTxt: 'Textdatei gespeichert: {name}',
     toastSession: 'Arbeitsstand gespeichert: {name}',
     toastCopied: 'Text der neuen Fassung kopiert',
-    toastAccepted: 'Angenommen',
-    toastRejected: 'Abgelehnt',
-    toastReopened: 'Wieder offen',
     toastEdited: 'Absatz bearbeitet',
+    toastEditedReopened: 'Absatz bearbeitet – Änderung wieder offen',
     toastUndo: 'Rückgängig',
     toastUndone: 'Rückgängig gemacht',
     toastRedone: 'Wiederhergestellt',
-    copyFailed: 'Kopieren in die Zwischenablage ist hier nicht möglich. Bitte nutzen Sie stattdessen „… als Textdatei (.txt)“.',
+    copyFailed: 'Kopieren in die Zwischenablage ist hier nicht möglich. Bitte nutzen Sie stattdessen „Neue Fassung als Textdatei (.txt)“ unter „Weitere Formate“.',
     announceCompared: 'Vergleich fertig: {n} Änderungen. Mit J und K springen Sie von Änderung zu Änderung.',
     announceComparedOne: 'Vergleich fertig: 1 Änderung.',
     announceIdentical: 'Vergleich fertig: keine Textunterschiede.',
     announceStep: 'Änderung {i} von {n}: {ref}, {type}{status}',
-    announceAccepted: 'Änderung {i} von {n} angenommen',
-    announceRejected: 'Änderung {i} von {n} abgelehnt',
+    announceAcceptedNext: 'Angenommen – weiter mit Änderung {j} von {n}',
+    announceRejectedNext: 'Abgelehnt – weiter mit Änderung {j} von {n}',
+    announceAcceptedDone: 'Änderung {i} von {n} angenommen – keine offenen Änderungen mehr',
+    announceRejectedDone: 'Änderung {i} von {n} abgelehnt – keine offenen Änderungen mehr',
     announceReopened: 'Änderung {i} von {n} wieder offen',
     announceSearch: 'Treffer {i} von {n}',
     compareHeading: 'Vergleich: {left} mit {right}',
@@ -3869,20 +4080,25 @@ const I18N = {
     listTitle: '{n} Änderungen',
     listTitleOne: '1 Änderung',
     listProgress: '{k} von {n} geprüft',
-    filterGroupLabel: 'Änderungen filtern',
+    filterGroupLabel: 'Nach Art filtern',
+    statusGroupLabel: 'Nach Prüfstand filtern',
     filterAll: 'Alle',
     filterOpen: 'Offen',
+    filterReviewed: 'Geprüft',
     filterMod: 'Geändert',
-    filterIns: 'Neu',
+    filterIns: 'Hinzugefügt',
     filterDel: 'Entfernt',
-    legendDelSample: 'durchgestrichen',
-    legendDel: '= entfernt',
-    legendInsSample: 'grün',
-    legendIns: '= hinzugefügt',
+    stepPosFiltered: '{i} von {n} {label}',
+    stepLabel_open: 'offenen',
+    stepLabel_reviewed: 'geprüften',
+    stepLabel_modified: 'geänderten',
+    stepLabel_inserted: 'hinzugefügten',
+    stepLabel_deleted: 'entfernten',
+    listTitleFiltered: '{k} von {n} Änderungen',
     legendClose: 'Hinweis ausblenden',
     mobDone: 'Fertig',
     noMatchesTitle: 'Nichts in diesem Filter',
-    noMatchesDesc: 'Wählen Sie „Alle“, um alle Änderungen zu sehen.',
+    noMatchesDesc: 'Wählen Sie „Alle“ und heben Sie „Offen“ / „Geprüft“ auf, um alle Änderungen zu sehen.',
     identicalTitle: 'Dokumente sind identisch',
     identicalDesc: 'Zwischen alter und neuer Fassung gibt es keine Textunterschiede.',
     typeMod: 'Geändert',
@@ -3908,11 +4124,17 @@ const I18N = {
     acceptBtn: 'Annehmen',
     rejectBtn: 'Ablehnen',
     editBtn: 'Bearbeiten',
-    reopenBtn: 'Wieder öffnen',
-    acceptTitle: 'Neue Fassung behalten und als geprüft markieren (A)',
-    rejectTitle: 'Alte Fassung dieses Absatzes wiederherstellen und als geprüft markieren (R)',
-    editTitle: 'Absatz der neuen Fassung bearbeiten (oder Doppelklick)',
+    reopenBtn: 'Rückgängig',
+    acceptTitle: 'Annehmen (A)',
+    rejectTitle: 'Ablehnen (R)',
+    editTitle: 'Bearbeiten (E)',
     reopenTitle: 'Prüfung zurücknehmen',
+    rejectedInsNote: 'Abgelehnt – hinzugefügter Absatz danach entfernt',
+    cardRemoved: 'entfernt:',
+    cardAdded: 'hinzugefügt:',
+    paragraphShort: 'Absatz',
+    hfMergedRef: 'Kopf-/Fußzeile – auf {n} Seiten gleich geändert',
+    hintGlyphs: '✓ annehmen · ✗ ablehnen · J/K nächste Änderung',
     reviewBarLabel: 'Änderung {i} von {n}',
     paraActionsLabel: 'Absatz',
     acceptedNote: 'Angenommen',
@@ -3933,15 +4155,16 @@ const I18N = {
       </section>
       <section class="help-sec">
         <h3>Prüfen</h3>
-        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Beides markiert die Änderung als geprüft und lässt sich rückgängig machen. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
+        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft, springen zur nächsten offenen Änderung und lassen sich über <strong>Rückgängig</strong> am Absatz zurücknehmen. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
       </section>
       <section class="help-sec">
         <h3>Tastenkürzel</h3>
         <table class="help-keys">
           <tbody>
-            <tr><th scope="row"><kbd>J</kbd> / <kbd>K</kbd></th><td>Nächste offene / vorherige Änderung</td></tr>
+            <tr><th scope="row"><kbd>J</kbd> / <kbd>K</kbd></th><td>Nächste / vorherige offene Änderung</td></tr>
             <tr><th scope="row"><kbd>A</kbd></th><td>Änderung annehmen</td></tr>
             <tr><th scope="row"><kbd>R</kbd></th><td>Änderung ablehnen</td></tr>
+            <tr><th scope="row"><kbd>E</kbd></th><td>Absatz bearbeiten</td></tr>
             <tr><th scope="row"><kbd>Enter</kbd></th><td>In der Liste: zur Stelle springen</td></tr>
             <tr><th scope="row"><kbd>/</kbd> oder <kbd>{mod}+F</kbd></th><td>Im Dokument suchen</td></tr>
             <tr><th scope="row"><kbd>{mod}+Z</kbd></th><td>Rückgängig</td></tr>
@@ -3998,7 +4221,7 @@ const I18N = {
     errLegacyDoc: 'Alte Word-Dateien (.doc) werden nicht unterstützt. Bitte in Word als .docx speichern und erneut laden.',
     errRtf: 'RTF-Dateien werden nicht unterstützt. Bitte als .docx oder .txt speichern und erneut laden.',
     errNotText: 'Die Datei ist kein lesbarer Text (UTF-8). Bitte PDF, Word (.docx) oder eine UTF-8-Textdatei verwenden.',
-    errEmptyFile: 'Die Datei enthält keinen Text.',
+    errEmptyFile: 'Die Datei enthält keinen Text. Bitte eine Datei mit Text wählen – bei einem Scan zuerst Texterkennung (OCR) ausführen.',
     errScannedPdf: 'Dieses PDF ist ein Scan ohne Text. Bitte zuerst per Texterkennung (OCR) in ein durchsuchbares PDF umwandeln.',
     errScannedPdfFile: '„{name}“ ist ein Scan ohne Text. Bitte zuerst per Texterkennung (OCR) in ein durchsuchbares PDF umwandeln.',
     warnPdfPagesWithoutText: 'Hinweis: Seiten ohne Textebene (Scan/Bild) können nicht verglichen werden:',
@@ -4065,7 +4288,6 @@ const I18N = {
     // ── Landing page (static HTML, rendered by scripts/build.py) ─────────
     lpLoaded: 'Geladen',
     lpChangeFile: 'Andere Datei wählen',
-    unitPara: 'Abs.',
     pasteText: 'Text einfügen',
     loadSample: 'Beispiel ansehen',
     heroTitle: 'Dokumente <del class="hero-del" aria-hidden="true" data-word="mühsam"></del> <ins class="hero-ins">einfach</ins> vergleichen.',
@@ -4183,7 +4405,7 @@ const I18N = {
     expHtml: 'Report as web page (.html)',
     expMd: 'Report as Markdown (.md)',
     expCopy: 'Copy text of the new version',
-    expTxt: '… as text file (.txt)',
+    expTxt: 'New version as text file (.txt)',
     moreLabel: 'More actions',
     clearBtn: 'New comparison',
     textBtn: 'Paste or edit text',
@@ -4193,7 +4415,9 @@ const I18N = {
     redoLabel: 'Redo',
     helpMenu: 'Help & shortcuts',
     helpBtn: 'Help',
-    langMenu: 'Language: Deutsch',
+    langMenu: 'Deutsch',
+    langTarget: 'Deutsch',
+    moreFormats: 'More formats',
     langTitle: 'Switch language (Deutsch / English)',
     kbdCtrl: 'Ctrl',
     kbdShift: 'Shift',
@@ -4205,20 +4429,20 @@ const I18N = {
     toastTxt: 'Text file saved: {name}',
     toastSession: 'Work saved: {name}',
     toastCopied: 'Text of the new version copied',
-    toastAccepted: 'Accepted',
-    toastRejected: 'Rejected',
-    toastReopened: 'Reopened',
     toastEdited: 'Paragraph edited',
+    toastEditedReopened: 'Paragraph edited – change reopened',
     toastUndo: 'Undo',
     toastUndone: 'Undone',
     toastRedone: 'Redone',
-    copyFailed: 'Copying to the clipboard is not possible here. Please use “… as text file (.txt)” instead.',
+    copyFailed: 'Copying to the clipboard is not possible here. Please use “New version as text file (.txt)” under “More formats” instead.',
     announceCompared: 'Comparison ready: {n} changes. Press J and K to move between changes.',
     announceComparedOne: 'Comparison ready: 1 change.',
     announceIdentical: 'Comparison ready: no text differences.',
     announceStep: 'Change {i} of {n}: {ref}, {type}{status}',
-    announceAccepted: 'Change {i} of {n} accepted',
-    announceRejected: 'Change {i} of {n} rejected',
+    announceAcceptedNext: 'Accepted – on to change {j} of {n}',
+    announceRejectedNext: 'Rejected – on to change {j} of {n}',
+    announceAcceptedDone: 'Change {i} of {n} accepted – no open changes left',
+    announceRejectedDone: 'Change {i} of {n} rejected – no open changes left',
     announceReopened: 'Change {i} of {n} reopened',
     announceSearch: 'Match {i} of {n}',
     compareHeading: 'Comparison: {left} with {right}',
@@ -4228,20 +4452,25 @@ const I18N = {
     listTitle: '{n} changes',
     listTitleOne: '1 change',
     listProgress: '{k} of {n} reviewed',
-    filterGroupLabel: 'Filter changes',
+    filterGroupLabel: 'Filter by kind',
+    statusGroupLabel: 'Filter by review status',
     filterAll: 'All',
     filterOpen: 'Open',
+    filterReviewed: 'Reviewed',
     filterMod: 'Changed',
     filterIns: 'Added',
     filterDel: 'Removed',
-    legendDelSample: 'struck through',
-    legendDel: '= removed',
-    legendInsSample: 'green',
-    legendIns: '= added',
+    stepPosFiltered: '{i} of {n} {label}',
+    stepLabel_open: 'open',
+    stepLabel_reviewed: 'reviewed',
+    stepLabel_modified: 'changed',
+    stepLabel_inserted: 'added',
+    stepLabel_deleted: 'removed',
+    listTitleFiltered: '{k} of {n} changes',
     legendClose: 'Dismiss hint',
     mobDone: 'Done',
     noMatchesTitle: 'Nothing in this filter',
-    noMatchesDesc: 'Choose “All” to see every change.',
+    noMatchesDesc: 'Choose “All” and clear “Open” / “Reviewed” to see every change.',
     identicalTitle: 'Documents are identical',
     identicalDesc: 'There are no text differences between the old and the new version.',
     typeMod: 'Changed',
@@ -4267,11 +4496,17 @@ const I18N = {
     acceptBtn: 'Accept',
     rejectBtn: 'Reject',
     editBtn: 'Edit',
-    reopenBtn: 'Reopen',
-    acceptTitle: 'Keep the new wording and mark as reviewed (A)',
-    rejectTitle: 'Restore the old wording of this paragraph and mark as reviewed (R)',
-    editTitle: 'Edit this paragraph of the new version (or double-click)',
+    reopenBtn: 'Undo',
+    acceptTitle: 'Accept (A)',
+    rejectTitle: 'Reject (R)',
+    editTitle: 'Edit (E)',
     reopenTitle: 'Undo the review of this change',
+    rejectedInsNote: 'Rejected – added paragraph below removed',
+    cardRemoved: 'removed:',
+    cardAdded: 'added:',
+    paragraphShort: 'Paragraph',
+    hfMergedRef: 'Header/footer – same change on {n} pages',
+    hintGlyphs: '✓ accept · ✗ reject · J/K next change',
     reviewBarLabel: 'Change {i} of {n}',
     paraActionsLabel: 'Paragraph',
     acceptedNote: 'Accepted',
@@ -4292,15 +4527,16 @@ const I18N = {
       </section>
       <section class="help-sec">
         <h3>Reviewing</h3>
-        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. Both mark the change as reviewed and can be undone. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
+        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed, move on to the next open change and can be taken back with <strong>Undo</strong> at the paragraph. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
       </section>
       <section class="help-sec">
         <h3>Keyboard shortcuts</h3>
         <table class="help-keys">
           <tbody>
-            <tr><th scope="row"><kbd>J</kbd> / <kbd>K</kbd></th><td>Next open / previous change</td></tr>
+            <tr><th scope="row"><kbd>J</kbd> / <kbd>K</kbd></th><td>Next / previous open change</td></tr>
             <tr><th scope="row"><kbd>A</kbd></th><td>Accept the change</td></tr>
             <tr><th scope="row"><kbd>R</kbd></th><td>Reject the change</td></tr>
+            <tr><th scope="row"><kbd>E</kbd></th><td>Edit the paragraph</td></tr>
             <tr><th scope="row"><kbd>Enter</kbd></th><td>In the list: jump to the change</td></tr>
             <tr><th scope="row"><kbd>/</kbd> or <kbd>{mod}+F</kbd></th><td>Find in document</td></tr>
             <tr><th scope="row"><kbd>{mod}+Z</kbd></th><td>Undo</td></tr>
@@ -4357,7 +4593,7 @@ const I18N = {
     errLegacyDoc: 'Legacy Word files (.doc) are not supported. Please save the file as .docx in Word and load it again.',
     errRtf: 'RTF files are not supported. Please save the file as .docx or .txt and load it again.',
     errNotText: 'The file is not readable text (UTF-8). Please use PDF, Word (.docx) or a UTF-8 text file.',
-    errEmptyFile: 'The file does not contain any text.',
+    errEmptyFile: 'The file does not contain any text. Choose a file with text – for a scan, run OCR first.',
     errScannedPdf: 'This PDF is a scan without text. Run OCR first to make it searchable.',
     errScannedPdfFile: '“{name}” is a scan without text. Run OCR first to make it searchable.',
     warnPdfPagesWithoutText: 'Note: pages without a text layer (scan/image) cannot be compared:',
@@ -4424,7 +4660,6 @@ const I18N = {
     // ── Landing page (static HTML, rendered by scripts/build.py) ─────────
     lpLoaded: 'Loaded',
     lpChangeFile: 'Choose another file',
-    unitPara: 'paras',
     pasteText: 'Paste text',
     loadSample: 'View example',
     heroTitle: 'Compare documents <del class="hero-del" aria-hidden="true" data-word="by hand"></del> <ins class="hero-ins">easily</ins>.',
@@ -4834,7 +5069,8 @@ const state = {
   ignoreHeadersFooters: true,
   filteredHfCount: 0,
   rightAllBlocks: [],
-  sidebarFilter: 'all',
+  sidebarFilter: 'all', // kind: all | modified | inserted | deleted
+  statusFilter: 'all', // all | open | reviewed
   sidebarOpen: true,
   searchQuery: '',
   isProgrammaticScroll: false,
@@ -4920,8 +5156,13 @@ function applyTranslationsToStaticDom() {
   document.title = t('metaTitle');
   applyDataI18n();
   const btnLang = document.getElementById('btn-lang');
-  btnLang.textContent = state.lang.toUpperCase();
-  setTooltip(btnLang, t('langTitle'), `${state.lang.toUpperCase()} – ${t('langTitle')}`);
+  // Named by the language it switches to, in that language.
+  const target = state.lang === 'de' ? 'en' : 'de';
+  btnLang.textContent = t('langTarget');
+  btnLang.setAttribute('lang', target);
+  setTooltip(btnLang, t('langTitle'));
+  const menuLang = document.querySelector('#menu-lang [data-i18n="langMenu"]');
+  if (menuLang) menuLang.setAttribute('lang', target);
   setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
   setTooltip(document.getElementById('btn-prev'), t('prevTitle'), t('prevLabel'));
   setTooltip(document.getElementById('btn-next'), t('nextTitle'), t('nextLabel'));
@@ -4931,8 +5172,6 @@ function applyTranslationsToStaticDom() {
   setTooltip(document.getElementById('btn-search-close'), t('searchClose'));
   setTooltip(document.getElementById('btn-more'), t('moreLabel'));
   document.getElementById('search-input').placeholder = t('searchPlaceholder');
-  document.getElementById('kbd-undo').textContent = undoKeyLabel();
-  document.getElementById('kbd-redo').textContent = redoKeyLabel();
   document.getElementById('textarea-left').placeholder = t('modalLeftPh');
   document.getElementById('textarea-right').placeholder = t('modalRightPh');
   document.getElementById('i18n-help-body').innerHTML = formatMsg('helpBodyHtml', {
@@ -4943,49 +5182,48 @@ function applyTranslationsToStaticDom() {
   updateFileLabels();
 }
 
-// Middle truncation keeps both the start and the version suffix of a file name visible:
-// "Rahmenvertrag_IT_…_v2.docx".
-function truncateMiddle(name, max) {
-  const chars = Array.from(String(name || ''));
-  if (chars.length <= max) return chars.join('');
-  const keepEnd = Math.ceil((max - 1) * 0.45);
-  const keepStart = max - 1 - keepEnd;
-  return chars.slice(0, keepStart).join('') + '…' + chars.slice(chars.length - keepEnd).join('');
-}
-
-// Two names that share a long start ("Vertrag_v1_…", "Vertrag_v2_…") keep the part that
-// tells them apart: "…v1_Vorher.docx".
-function truncateFileName(name, other, max) {
+// One rule for every shortened file name: keep the part that tells the two files apart and
+// the extension, cut in the middle. The second name of a pair drops the start both share:
+// "werkvertrag_v…1.pdf → …2.pdf".
+function truncateFileName(name, other, max, second = false) {
   const chars = Array.from(String(name || ''));
   if (chars.length <= max) return chars.join('');
   const o = Array.from(String(other || ''));
   let d = 0;
   while (d < chars.length && d < o.length && chars[d] === o[d]) d++;
-  // Start the distinguishing part at a word boundary ("…v1_Vorher", not "…1_Vorher").
-  while (d > 0 && !/[\s_.\-]/.test(chars[d - 1])) d--;
-  if (d > 4 && d < chars.length && chars.length - d + 1 <= max) {
-    const tail = chars.slice(d);
+  const tail = chars.slice(d);
+  if (d > 4 && tail.length && tail.length + 1 <= max) {
+    if (second) return '…' + tail.join('');
     const room = max - 1 - tail.length;
-    const head = room >= 6 ? chars.slice(0, room) : [];
-    return head.join('') + '…' + tail.join('');
+    return (room >= 4 ? chars.slice(0, room).join('') : '') + '…' + tail.join('');
   }
-  return truncateMiddle(name, max);
+  // Tight space: the start of the distinguishing part plus the extension ("…1_Vor….docx").
+  const extTail = (/\.[A-Za-z0-9]{1,5}$/.exec(tail.join('')) || [''])[0];
+  if (d > 4 && tail.length > extTail.length + 2 && max >= extTail.length + 5) {
+    const stem = tail.slice(0, tail.length - extTail.length);
+    return '…' + stem.slice(0, max - 2 - extTail.length).join('') + '…' + extTail;
+  }
+  // No shared start (or the distinguishing part is too long): keep the start and the end with
+  // the extension.
+  const ext = (/\.[A-Za-z0-9]{1,5}$/.exec(chars.join('')) || [''])[0];
+  const keepEnd = Math.max(ext.length + 3, Math.ceil((max - 1) * 0.45));
+  const keepStart = Math.max(1, max - 1 - keepEnd);
+  return chars.slice(0, keepStart).join('') + '…' + chars.slice(chars.length - keepEnd).join('');
 }
 
 // File names in the top bar button, its popover and the pane captions.
 function updateFileLabels() {
   const left = state.leftName || t('noFileLeft');
   const right = state.rightName || t('noFileRight');
-  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 15;
+  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : 12;
   const filesLeft = document.getElementById('files-left');
   const filesRight = document.getElementById('files-right');
-  // Narrow screens: a shared extension carries no information ("…v1_Vorher → …v2_Nachher").
-  const ext = n => (/\.[A-Za-z0-9]{1,5}$/.exec(n) || [''])[0];
-  const dropExt = max <= 16 && ext(left) && ext(left).toLowerCase() === ext(right).toLowerCase();
-  const shownLeft = dropExt ? left.slice(0, -ext(left).length) : left;
-  const shownRight = dropExt ? right.slice(0, -ext(right).length) : right;
-  filesLeft.textContent = truncateFileName(shownLeft, shownRight, max);
-  filesRight.textContent = truncateFileName(shownRight, shownLeft, max);
+  filesLeft.textContent = truncateFileName(left, right, max);
+  filesRight.textContent = truncateFileName(right, left, max, true);
+  // Pane names for screen readers: "Alte Fassung: Vertrag_v1.docx".
+  document.getElementById('pane-left').setAttribute('aria-label', `${t('colLeft')}: ${left}`);
+  document.getElementById('pane-right').setAttribute('aria-label', `${t('colRight')}: ${right}`);
+  document.getElementById('pane-unified').setAttribute('aria-label', `${t('paneUnifiedLabel')}: ${left} → ${right}`);
   document.getElementById('files-label').textContent = formatMsg('filesBtnLabel', { left, right });
   document.getElementById('fp-name-left').textContent = left;
   document.getElementById('fp-name-right').textContent = right;
@@ -6915,8 +7153,8 @@ function updateLandingSlots(left, right) {
     if (loaded) {
       const parts = [t(titleKey)];
       if (fmt && fmt !== 'DEMO') parts.push(fmt);
-      if (info.pages > 1) parts.push(`${info.pages} ${t('pageShort')}`);
-      parts.push(`${info.blocks} ${t('unitPara')}`);
+      if (info.pages > 1) parts.push(formatMsg('metaPages', { n: info.pages }));
+      parts.push(info.blocks === 1 ? t('metaParasOne') : formatMsg('metaParas', { n: info.blocks }));
       titleEl.textContent = name || t(titleKey);
       titleEl.removeAttribute('data-i18n');
       hintEl.textContent = `${t('lpLoaded')} · ${parts.join(' · ')}`;
@@ -6975,8 +7213,11 @@ function applyComparisonResult(request, result, opts = {}) {
 
   const { leftBlocks, rightBlocks, leftPages, rightPages } = result;
 
-  document.getElementById('filename-left').textContent = state.leftName || t('noFileLeft');
-  document.getElementById('filename-right').textContent = state.rightName || t('noFileRight');
+  // Captions: the same shortening rule as the top bar, with more room.
+  const capLeft = state.leftName || t('noFileLeft');
+  const capRight = state.rightName || t('noFileRight');
+  document.getElementById('filename-left').textContent = truncateFileName(capLeft, capRight, 44);
+  document.getElementById('filename-right').textContent = truncateFileName(capRight, capLeft, 44);
   updateFileLabels();
 
   const bothLoaded = leftBlocks.length > 0 && rightBlocks.length > 0;
@@ -7039,11 +7280,8 @@ function applyComparisonResult(request, result, opts = {}) {
   // The selected / hovered row may be gone after an edit that removed paragraphs.
   if (state.activeRowId && !state.alignedRows.some(r => r.id === state.activeRowId)) state.activeRowId = null;
   if (state.hoveredRowId && !state.alignedRows.some(r => r.id === state.hoveredRowId)) state.hoveredRowId = null;
-  if (pendingSelectAfterReject !== null) {
-    const row = state.alignedRows[Math.min(pendingSelectAfterReject, state.alignedRows.length - 1)];
-    pendingSelectAfterReject = null;
-    if (row) state.activeRowId = row.id;
-  }
+  // After "Ablehnen": on to the next open change, or the rejected one when none is left.
+  const scrollAfterReject = pendingSelectAfterReject !== null && consumePendingReject();
   // Change 1 is selected as soon as a comparison is shown.
   const preselect = !state.activeRowId && state.listItems.length > 0;
   if (preselect) state.activeRowId = state.listItems[0].rowId;
@@ -7071,6 +7309,12 @@ function applyComparisonResult(request, result, opts = {}) {
   if (state.searchQuery) scheduleSearchRecount();
 
   scheduleRulerDraw();
+  if (scrollAfterReject) {
+    const id = state.activeRowId;
+    requestAnimationFrame(() => {
+      if (state.activeRowId === id) selectAndScrollToRow(id, true, true, { flash: false, keepIfVisible: true });
+    });
+  }
   if (preselect || !wasComparing) {
     const id = state.activeRowId;
     if (id) requestAnimationFrame(() => {
@@ -7083,7 +7327,19 @@ function applyComparisonResult(request, result, opts = {}) {
     activeDocPane().focus({ preventScroll: true });
   }
 
-  if (!wasComparing) {
+  const freshDocuments = !wasComparing || newDocumentsPending;
+  newDocumentsPending = false;
+  if (wasComparing && freshDocuments) {
+    // A file was replaced from the file menu: focus must not stay on <body>.
+    const now = document.activeElement;
+    if (!now || now === document.body || !now.getClientRects().length) {
+      requestAnimationFrame(() => {
+        const a = document.activeElement;
+        if (!a || a === document.body || !a.getClientRects().length) activeDocPane().focus({ preventScroll: true });
+      });
+    }
+  }
+  if (freshDocuments) {
     const total = state.listItems.length;
     announce(
       total === 0
@@ -7094,7 +7350,7 @@ function applyComparisonResult(request, result, opts = {}) {
     );
     // The landing page (and whatever had focus in it) just disappeared: hand focus to the
     // document so keyboard users continue with Tab or J / K from a sensible place.
-    if (focusWasLost || focusInLanding) {
+    if (!wasComparing && (focusWasLost || focusInLanding)) {
       requestAnimationFrame(() => activeDocPane().focus({ preventScroll: true }));
     }
   }
@@ -7251,9 +7507,8 @@ function renderRowAnchorsHtml(row, idx, q) {
   const movedClass = row.moved ? ' is-moved' : '';
   const movedNote = renderMovedNoteHtml(row);
   const ghostClass = row.ghostNote ? ' has-ghost' : '';
-  const ghostNote = row.ghostNote
-    ? `<span class="review-note is-rejected">${escapeHtml(t('rejectedNote'))}</span>`
-    : '';
+  // "✓ Angenommen · Rückgängig" / "✗ Abgelehnt … · Rückgängig" on top of a reviewed paragraph.
+  const ghostNote = reviewStatusHtml(row);
   const anchorOpen = `<div class="diff-row-anchor${ghostClass}" data-row-id="${row.id}" data-type="${row.type}">`;
 
   const left = row.leftBlock
@@ -7262,7 +7517,7 @@ function renderRowAnchorsHtml(row, idx, q) {
 
   const right = row.rightBlock
     ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'right')} ${getClauseTypeClasses(row.rightBlock)}${movedClass}${extra}" data-row-id="${row.id}">${ghostNote}${movedNote}${renderRightBlockHtml(row, q)}</div></div>`
-    : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}"></div></div>`;
+    : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}">${ghostNote}</div></div>`;
 
   const primaryBlock = row.rightBlock || row.leftBlock;
   const unified = `${anchorOpen}<div class="clause ${getRowStateClass(row, 'unified')} ${getClauseTypeClasses(primaryBlock)}${movedClass}${extra}" data-row-id="${row.id}">${ghostNote}${movedNote}${renderUnifiedBlockHtml(row, q, true)}</div></div>`;
@@ -7535,34 +7790,87 @@ function getItemTexts(item) {
   return { left: item.row.leftBlock ? item.row.leftBlock.text : '', right: item.row.rightBlock ? item.row.rightBlock.text : '' };
 }
 
+// A card shows each change in its sentence: up to four grey words before and after, the removed
+// words struck through and the added ones underlined (no arrows). A paragraph that is removed
+// or added as a whole reads "entfernt: …" / "hinzugefügt: …".
 function renderSidebarDeltaHtml(item) {
   const { left, right } = getItemTexts(item);
   if (item.type === 'deleted') {
-    return `<span class="nav-item-snippet"><del class="tok-del">${escapeHtml(truncateClean(left, 92))}</del></span>`;
+    return `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardRemoved'))}</span> <del class="tok-del">${escapeHtml(truncateClean(left, 92))}</del></span>`;
   }
   if (item.type === 'inserted') {
-    return `<span class="nav-item-snippet"><ins class="tok-ins">${escapeHtml(truncateClean(right, 92))}</ins></span>`;
+    return `<span class="nav-item-snippet"><span class="nav-ctx-label">${escapeHtml(t('cardAdded'))}</span> <ins class="tok-ins">${escapeHtml(truncateClean(right, 92))}</ins></span>`;
   }
-  const pairs = extractDeltaPairs(getItemWordDiffs(item));
-  if (pairs.length === 0) {
+  const snippets = buildContextSnippets(getItemWordDiffs(item));
+  if (snippets.length === 0) {
     return `<span class="nav-item-snippet">${item.ghost ? escapeHtml(truncateClean(right, 92)) : renderUnifiedBlockHtml(item.row, '')}</span>`;
   }
-  const maxPairs = 3;
-  const visible = pairs.slice(0, maxPairs);
-  const rowsHtml = visible
-    .map(pair => {
-      if (pair.del && pair.ins) {
-        return `<span class="nav-delta-row"><del class="tok-del">${escapeHtml(truncateClean(pair.del, 34))}</del><span class="nav-delta-arrow" aria-hidden="true">→</span><ins class="tok-ins">${escapeHtml(truncateClean(pair.ins, 34))}</ins></span>`;
-      }
-      if (pair.ins) return `<span class="nav-delta-row"><ins class="tok-ins">${escapeHtml(truncateClean(pair.ins, 46))}</ins></span>`;
-      return `<span class="nav-delta-row"><del class="tok-del">${escapeHtml(truncateClean(pair.del, 46))}</del></span>`;
-    })
+  const max = 2;
+  const html = snippets
+    .slice(0, max)
+    .map(sn => `<span class="nav-delta-row">${sn}</span>`)
     .join('');
   const moreHtml =
-    pairs.length > maxPairs
-      ? `<span class="nav-delta-more">+${pairs.length - maxPairs} ${escapeHtml(t('moreDeltas'))}</span>`
+    snippets.length > max ? `<span class="nav-delta-more">+${snippets.length - max} ${escapeHtml(t('moreDeltas'))}</span>` : '';
+  return `<span class="nav-item-deltas">${html}${moreHtml}</span>`;
+}
+
+// The changed runs of a word diff (as in extractDeltaPairs; runs separated by at most two
+// unchanged words are joined), each with up to four unchanged words of the new wording on
+// either side.
+function buildContextSnippets(wordDiffs, ctxWords = 4) {
+  const isChange = tok => Boolean(tok && (tok.removed || tok.added));
+  const wordCount = s => (s.trim() ? s.trim().split(/\s+/).length : 0);
+  const runs = [];
+  let i = 0;
+  while (i < wordDiffs.length) {
+    if (!isChange(wordDiffs[i])) {
+      i++;
+      continue;
+    }
+    const start = i;
+    let end = i;
+    let j = i + 1;
+    while (j < wordDiffs.length) {
+      if (isChange(wordDiffs[j])) {
+        end = j;
+        j++;
+        continue;
+      }
+      // Unchanged text up to the next change: join when it is two words or fewer.
+      let k = j;
+      let gap = '';
+      while (k < wordDiffs.length && !isChange(wordDiffs[k])) gap += wordDiffs[k++].value;
+      if (k < wordDiffs.length && wordCount(gap) <= 2) {
+        end = k;
+        j = k + 1;
+        continue;
+      }
+      break;
+    }
+    runs.push([start, end]);
+    i = end + 1;
+  }
+  const clean = s => s.replace(/\s+/g, ' ');
+  const newText = (from, to) => wordDiffs.slice(from, to).filter(tok => !tok.removed).map(tok => tok.value).join('');
+  return runs.map(([start, end]) => {
+    const run = wordDiffs.slice(start, end + 1);
+    const del = clean(run.filter(tok => !tok.added).map(tok => tok.value).join('')).trim();
+    const ins = clean(run.filter(tok => !tok.removed).map(tok => tok.value).join('')).trim();
+    const beforeWords = clean(newText(0, start)).trimEnd().split(' ').filter(Boolean);
+    const afterWords = clean(newText(end + 1, wordDiffs.length)).trimStart().split(' ').filter(Boolean);
+    const before = beforeWords.length
+      ? (beforeWords.length > ctxWords ? '…' : '') + beforeWords.slice(-ctxWords).join(' ') + ' '
       : '';
-  return `<span class="nav-item-deltas">${rowsHtml}${moreHtml}</span>`;
+    const after = afterWords.length
+      ? ' ' + afterWords.slice(0, ctxWords).join(' ') + (afterWords.length > ctxWords ? '…' : '')
+      : '';
+    const ctx = s => (s.trim() ? `<span class="nav-ctx">${escapeHtml(s)}</span>` : '');
+    const parts = [];
+    if (del) parts.push(`<del class="tok-del">${escapeHtml(truncateClean(del, 44))}</del>`);
+    if (ins) parts.push(`<ins class="tok-ins">${escapeHtml(truncateClean(ins, 44))}</ins>`);
+    return ctx(before) + parts.join(' ') + ctx(after);
+  });
 }
 
 // "geändert" / "hinzugefügt" / "entfernt" / "Verschoben"
@@ -7580,11 +7888,13 @@ function getStatusLabel(status) {
 function getDisplayRef(row) {
   const block = row.rightBlock || row.leftBlock;
   const ref = block && block.refCode ? String(block.refCode) : '';
-  return ref.replace(/\s*[•‣▪◦]\s*$/, '').trim();
+  // Unnumbered paragraphs carry an internal "#n" reference: show "Absatz" instead.
+  return ref.replace(/\s*[•‣▪◦]\s*$/, '').replace(/\s*#\d+$/, '').trim() || t('paragraphShort');
 }
 
 function getItemRef(item) {
-  if (item.ghost) return item.ghost.refCode || '';
+  if (item.members) return formatMsg('hfMergedRef', { n: item.pages || item.members.length });
+  if (item.ghost) return String(item.ghost.refCode || '').replace(/\s*#\d+$/, '').trim() || t('paragraphShort');
   return getDisplayRef(item.row);
 }
 
@@ -7595,10 +7905,11 @@ function getItemPage(item) {
 // List items under the active list filter (search never filters the list).
 function getFilteredListItems() {
   const f = state.sidebarFilter;
+  const s = state.statusFilter;
   return state.listItems.filter(item => {
-    if (f === 'all') return true;
-    if (f === 'open') return item.status === 'open';
-    return item.type === f;
+    if (s === 'open' && item.status !== 'open') return false;
+    if (s === 'reviewed' && item.status === 'open') return false;
+    return f === 'all' || item.type === f;
   });
 }
 // Kept for callers and QA scripts written against the earlier name.
@@ -7608,7 +7919,10 @@ function updateSidebarHeaderState() {
   const total = state.listItems.length;
   const counts = getChangeCounts();
   const review = getReviewCounts();
-  document.getElementById('list-title').textContent = changesTitle(total);
+  const filtered = state.sidebarFilter !== 'all' || state.statusFilter !== 'all';
+  document.getElementById('list-title').textContent = filtered
+    ? formatMsg('listTitleFiltered', { k: getFilteredListItems().length, n: total })
+    : changesTitle(total);
   document.getElementById('list-progress').textContent = total ? formatMsg('listProgress', { k: review.reviewed, n: total }) : '';
   document.getElementById('progress-fill').style.width = total ? `${(review.reviewed / total) * 100}%` : '0';
   document.querySelector('.list-progress').hidden = total === 0;
@@ -7617,6 +7931,10 @@ function updateSidebarHeaderState() {
     if (el) el.textContent = String(n);
   };
   set('filter-count-open', review.open);
+  set('filter-count-reviewed', review.reviewed);
+  document.querySelectorAll('[data-status-filter]').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.getAttribute('data-status-filter') === state.statusFilter));
+  });
   set('filter-count-mod', counts.mod);
   set('filter-count-ins', counts.ins);
   set('filter-count-del', counts.del);
@@ -7625,8 +7943,7 @@ function updateSidebarHeaderState() {
   const btnList = document.getElementById('btn-list');
   if (btnList) btnList.setAttribute('aria-label', formatMsg('listBtnLabel', { n: total }));
 
-  const countFor = f =>
-    f === 'all' ? total : f === 'open' ? review.open : f === 'modified' ? counts.mod : f === 'inserted' ? counts.ins : counts.del;
+  const countFor = f => (f === 'all' ? total : f === 'modified' ? counts.mod : f === 'inserted' ? counts.ins : counts.del);
   document.querySelectorAll('[data-sidebar-filter]').forEach(btn => {
     const f = btn.getAttribute('data-sidebar-filter');
     const isActive = f === state.sidebarFilter;
@@ -7646,7 +7963,7 @@ function renderSidebarList(bothLoaded) {
 
   const filtered = getFilteredListItems();
   if (filtered.length === 0) {
-    const isFilter = state.sidebarFilter !== 'all';
+    const isFilter = state.sidebarFilter !== 'all' || state.statusFilter !== 'all';
     setSafeContainerHtml(
       sidebarList,
       `<div class="empty-state empty-state-sm" data-empty-state><p class="empty-title">${escapeHtml(
@@ -7673,11 +7990,10 @@ function renderSidebarList(bothLoaded) {
             : item.status === 'rejected'
             ? `<span class="nav-status is-rejected" aria-hidden="true">${ICON_X}</span>`
             : '';
-        const head = [ref, `${t('pageShort')} ${page}`].filter(Boolean).join(' · ');
-        const actions = isActive
-          ? `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
-          : '';
-        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}</span></span>${renderSidebarDeltaHtml(item)}</button>${actions}</div>`;
+        const pages = item.members ? itemMembers(item).map(m => getItemPage(m)) : [page];
+        const pageLabel = pages.length > 1 ? `${t('pageShort')} ${Math.min(...pages)}–${Math.max(...pages)}` : `${t('pageShort')} ${page}`;
+        const head = item.members ? `${ref} · ${pageLabel}` : [ref, pageLabel].filter(Boolean).join(' · ');
+        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}. </span></span>${renderSidebarDeltaHtml(item)}</button></div>`;
       })
       .join('')
   );
@@ -8512,6 +8828,8 @@ function reviewKeyForRow(row, anchors, insertCounts) {
 
 // Builds state.listItems: every current change plus the rejected changes, in document order,
 // with their review status. Also sets row.reviewKey / row.reviewStatus on the rows.
+// Identical header/footer changes on several pages become one item (with `members`), listed
+// after the changes in the body text.
 function rebuildReviewIndex() {
   const rows = state.alignedRows;
   const anchors = computeRowAnchors(rows);
@@ -8533,7 +8851,7 @@ function rebuildReviewIndex() {
     const entry = state.reviews[key];
     const status = entry && entry.status === 'accepted' ? 'accepted' : 'open';
     row.reviewStatus = status === 'accepted' ? 'accepted' : '';
-    items.push({ id: row.id, rowId: row.id, row, type: row.type, status, ghost: null, order: idx, sub: 0 });
+    items.push({ id: row.id, key, rowId: row.id, row, type: row.type, status, ghost: null, order: idx, sub: 0 });
   });
 
   // Rejected changes, placed where they were.
@@ -8547,6 +8865,7 @@ function rebuildReviewIndex() {
       if (!target) continue;
       order = rows.indexOf(target);
       sub = entry.prevAnchor ? 0.5 : -0.5;
+      if (!target.ghostNote) target.ghostNote = 'rejected-ins';
     } else {
       target = rowByLeftAnchor.get(entry.leftAnchor);
       if (target) {
@@ -8561,10 +8880,12 @@ function rebuildReviewIndex() {
         if (!target) continue;
         order = rows.indexOf(target);
         sub = entry.prevAnchor ? 0.5 : -0.5;
+        if (!target.ghostNote) target.ghostNote = 'rejected-ins';
       }
     }
     items.push({
       id: `ghost-${key.length}-${hashString(key)}`,
+      key,
       rowId: target.id,
       row: target,
       type: entry.type,
@@ -8574,12 +8895,81 @@ function rebuildReviewIndex() {
       sub,
     });
   }
-  items.sort((a, b) => a.order - b.order || a.sub - b.sub);
-  items.forEach((item, i) => {
+  const merged = mergeHeaderFooterItems(items, rows.length);
+  merged.sort((a, b) => a.order - b.order || a.sub - b.sub);
+  merged.forEach((item, i) => {
     item.index = i + 1;
   });
-  state.listItems = items;
-  return items;
+  state.listItems = merged;
+  return merged;
+}
+
+function isHeaderFooterItem(item) {
+  if (item.ghost) return Boolean(item.ghost.hf);
+  const b = item.row.rightBlock || item.row.leftBlock;
+  return Boolean(b && (b.isHeaderFooter || b.kind === 'hf'));
+}
+
+// Running headers and footers repeat on every page with the page number in them: the same
+// change on several pages is one decision. Numbers are ignored when comparing the lines; the
+// changed words themselves must be identical.
+function headerFooterGroupKey(item) {
+  if (item.type !== 'modified') return '';
+  const norm = s => String(s || '').replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+  const left = item.ghost ? item.ghost.leftText : item.row.leftBlock ? item.row.leftBlock.text : '';
+  const right = item.ghost ? item.ghost.rightText : item.row.rightBlock ? item.row.rightBlock.text : '';
+  let changed = '';
+  if (!item.ghost && Array.isArray(item.row.wordDiffs)) {
+    changed = item.row.wordDiffs
+      .filter(d => d.added || d.removed)
+      .map(d => (d.added ? '+' : '-') + d.value)
+      .join('\u0001');
+  }
+  return [item.status, item.ghost ? 'g' : 'l', norm(left), norm(right), changed].join('\u0000');
+}
+
+function mergeHeaderFooterItems(items, rowCount) {
+  const out = [];
+  const groups = new Map();
+  for (const item of items) {
+    if (!isHeaderFooterItem(item)) {
+      out.push(item);
+      continue;
+    }
+    // Header / footer changes come after the changes in the body text.
+    item.order += rowCount + 1;
+    const key = headerFooterGroupKey(item);
+    if (!key) {
+      out.push(item);
+      continue;
+    }
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  for (const [key, list] of groups) {
+    if (list.length === 1) {
+      out.push(list[0]);
+      continue;
+    }
+    list.sort((a, b) => a.order - b.order || a.sub - b.sub);
+    const first = list[0];
+    const pageOf = m => (m.ghost ? m.ghost.pageNum : m.row.pageNum) || 1;
+    out.push({ ...first, id: `hf-${hashString(key)}`, members: list, pages: new Set(list.map(pageOf)).size });
+  }
+  return out;
+}
+
+// The items a list entry stands for (itself, or every page of a merged header/footer change).
+function itemMembers(item) {
+  return item && item.members ? item.members : item ? [item] : [];
+}
+
+function itemHasRow(item, rowId) {
+  return item.rowId === rowId || Boolean(item.members && item.members.some(m => m.rowId === rowId));
+}
+
+function itemHasKey(item, key) {
+  return item.key === key || Boolean(item.members && item.members.some(m => m.key === key));
 }
 
 function hashString(s) {
@@ -8600,7 +8990,7 @@ function getActiveItem() {
   if (!state.activeRowId) return null;
   let ghost = null;
   for (const item of state.listItems) {
-    if (item.rowId !== state.activeRowId) continue;
+    if (!itemHasRow(item, state.activeRowId)) continue;
     if (!item.ghost) return item;
     if (!ghost) ghost = item;
   }
@@ -8624,51 +9014,78 @@ function resetReviews() {
   state.reviews = {};
 }
 
+// The next open change after the one with this key (wrapping around), or null.
+function nextOpenItemAfter(key) {
+  const items = state.listItems;
+  const i = items.findIndex(it => itemHasKey(it, key));
+  for (let k = 1; k <= items.length; k++) {
+    const it = items[(Math.max(i, 0) + k) % items.length];
+    if (it && it.status === 'open') return it;
+  }
+  return null;
+}
+
+function reviewAnnouncement(kind, idx, next) {
+  const n = state.listItems.length;
+  if (next) return formatMsg(kind === 'accepted' ? 'announceAcceptedNext' : 'announceRejectedNext', { i: idx, j: next.index, n });
+  return formatMsg(kind === 'accepted' ? 'announceAcceptedDone' : 'announceRejectedDone', { i: idx, n });
+}
+
 /* ── Actions ───────────────────────────────────────────────────────────── */
 
 function canReviewNow() {
   return document.body.classList.contains('is-comparing') && isShownComparisonCurrent();
 }
 
+// Where focus goes once the next change is current: its "accept" button (or the list card).
+let reviewFocusRequest = null;
+
 function acceptItem(item, opts = {}) {
   if (!item || item.ghost || item.status === 'accepted' || !canReviewNow()) return false;
-  const row = item.row;
+  const members = itemMembers(item);
+  const idx = item.index;
+  const key = item.key;
   pushUndoSnapshot();
-  state.reviews[row.reviewKey] = { status: 'accepted', type: row.type };
+  for (const m of members) state.reviews[m.row.reviewKey] = { status: 'accepted', type: m.row.type };
   refreshReviewState();
-  const n = state.listItems.length;
-  const idx = (state.listItems.find(i => i.rowId === row.id && !i.ghost) || item).index;
-  announce(formatMsg('announceAccepted', { i: idx, n }));
-  if (!opts.silent) showUndoToast('toastAccepted');
+  // On to the next open change (like "Accept and move to next" in Word).
+  const next = opts.stay ? null : nextOpenItemAfter(key);
+  if (next) {
+    reviewFocusRequest = opts.fromList ? 'list' : 'bar';
+    selectAndScrollToRow(next.rowId, true, true, { itemId: next.id, flash: false, keepIfVisible: true });
+  }
+  announce(reviewAnnouncement('accepted', idx, next));
   return true;
 }
 
 function rejectItem(item, opts = {}) {
   if (!item || item.ghost || !canReviewNow()) return false;
-  const row = item.row;
+  const members = itemMembers(item);
   const anchors = computeRowAnchors(state.alignedRows);
-  const entry = {
-    status: 'rejected',
-    type: row.type,
-    leftText: row.leftBlock ? row.leftBlock.text : '',
-    rightText: row.rightBlock ? row.rightBlock.text : '',
-    leftAnchor: anchors.left.get(row.id) || '',
-    prevAnchor: anchors.prev.get(row.id) || '',
-    pageNum: row.pageNum || 1,
-    refCode: getDisplayRef(row),
-  };
-  const idx = item.index;
-  const n = state.listItems.length;
   pushUndoSnapshot();
-  delete state.reviews[row.reviewKey];
-  state.reviews[row.reviewKey] = entry;
-  // The rejected row stays selected; for an insertion that is the paragraph above it.
-  const targetIdx = state.alignedRows.indexOf(row);
-  pendingSelectAfterReject = row.type === 'inserted' ? Math.max(0, targetIdx - 1) : targetIdx;
-  state.rightText = rebuildRightTextFromRows(row.id, row.leftBlock ? row.leftBlock.text : '');
+  for (const m of members) {
+    const row = m.row;
+    delete state.reviews[row.reviewKey];
+    state.reviews[row.reviewKey] = {
+      status: 'rejected',
+      type: row.type,
+      leftText: row.leftBlock ? row.leftBlock.text : '',
+      rightText: row.rightBlock ? row.rightBlock.text : '',
+      leftAnchor: anchors.left.get(row.id) || '',
+      prevAnchor: anchors.prev.get(row.id) || '',
+      pageNum: row.pageNum || 1,
+      refCode: getDisplayRef(row),
+    };
+    if (isHeaderFooterItem(m)) state.reviews[row.reviewKey].hf = true;
+  }
+  // After the new comparison: on to the next open change (or stay on this one).
+  pendingSelectAfterReject = { key: item.key, idx: item.index, stay: Boolean(opts.stay), focus: opts.fromList ? 'list' : 'bar' };
+  if (members.length > 1) {
+    state.rightText = rebuildRightTextReplacingRows(new Map(members.map(m => [m.row.id, m.row.leftBlock ? m.row.leftBlock.text : ''])));
+  } else {
+    state.rightText = rebuildRightTextFromRows(item.row.id, item.row.leftBlock ? item.row.leftBlock.text : '');
+  }
   runComparison();
-  announce(formatMsg('announceRejected', { i: idx, n }));
-  if (!opts.silent) showUndoToast('toastRejected');
   return true;
 }
 
@@ -8677,16 +9094,21 @@ function reopenItem(item) {
   if (!item || item.status === 'open' || !canReviewNow()) return false;
   const idx = item.index;
   const n = state.listItems.length;
+  const members = itemMembers(item);
   if (item.status === 'accepted') {
     pushUndoSnapshot();
-    delete state.reviews[item.row.reviewKey];
+    for (const m of members) delete state.reviews[m.row.reviewKey];
     refreshReviewState();
   } else {
-    const g = item.ghost;
-    const key = Object.keys(state.reviews).find(k => state.reviews[k] === g);
     pushUndoSnapshot();
-    if (key) delete state.reviews[key];
-    if (g.type === 'inserted') {
+    for (const m of members) {
+      const key = Object.keys(state.reviews).find(k => state.reviews[k] === m.ghost);
+      if (key) delete state.reviews[key];
+    }
+    const g = item.ghost;
+    if (members.length > 1) {
+      state.rightText = rebuildRightTextReplacingRows(new Map(members.map(m => [m.row.id, m.ghost.rightText])));
+    } else if (g.type === 'inserted') {
       const anchorRow = item.row;
       const base = anchorRow.rightBlock ? anchorRow.rightBlock.text : '';
       state.rightText = rebuildRightTextFromRows(anchorRow.id, base ? `${base}\n${g.rightText}` : g.rightText);
@@ -8696,11 +9118,24 @@ function reopenItem(item) {
     runComparison();
   }
   announce(formatMsg('announceReopened', { i: idx, n }));
-  showUndoToast('toastReopened');
   return true;
 }
 
 let pendingSelectAfterReject = null;
+
+// After a new comparison that followed "reject": select the next open change and announce.
+function consumePendingReject() {
+  const req = pendingSelectAfterReject;
+  pendingSelectAfterReject = null;
+  if (!req) return false;
+  const own = state.listItems.find(it => itemHasKey(it, req.key));
+  const next = req.stay ? null : nextOpenItemAfter(req.key);
+  const target = next || own;
+  if (target) state.activeRowId = target.rowId;
+  if (next) reviewFocusRequest = req.focus;
+  announce(reviewAnnouncement('rejected', req.idx, next));
+  return Boolean(next);
+}
 
 // After a review-only change (no new comparison): decorations, list, counters.
 function refreshReviewState() {
@@ -8712,18 +9147,70 @@ function refreshReviewState() {
   scheduleRulerDraw();
 }
 
-// Toggles the review classes on the rendered clauses without re-rendering them.
+/* ── Status line of a reviewed change ───────────────────────────────────────
+ *
+ * Every reviewed paragraph of the new version carries a short line on top: "✓ Angenommen ·
+ * Rückgängig" or "✗ Abgelehnt – alte Fassung wiederhergestellt · Rückgängig". It is part of
+ * the paragraph (so selecting a paragraph never changes any height).
+ */
+
+function reviewStatusHtml(row) {
+  const accepted = row.reviewStatus === 'accepted';
+  if (!accepted && !row.ghostNote) return '';
+  const active = row.id === state.activeRowId;
+  return (
+    `<span class="review-status ${accepted ? 'is-accepted' : 'is-rejected'}" data-status-row="${row.id}">` +
+    `${accepted ? ICON_CHECK : ICON_X}<span class="review-status-text">${escapeHtml(t(accepted ? 'acceptedNote' : row.ghostNote === 'rejected' ? 'rejectedNote' : 'rejectedInsNote'))}</span>` +
+    `<span class="review-status-sep" aria-hidden="true">·</span>` +
+    `<button type="button" class="ra-undo" data-review-action="reopen" data-tooltip="${escapeHtml(t('reopenTitle'))}" tabindex="${active ? 0 : -1}">${escapeHtml(t('reopenBtn'))}</button>` +
+    `</span>`
+  );
+}
+
+// Brings the status lines and review classes of the rendered clauses up to date without
+// re-rendering the paragraphs.
 function decorateReviewedRows() {
   for (const row of state.alignedRows) {
     const els = getRowElements(row.id);
-    for (const el of [els.l, els.r, els.u]) {
+    if (!els) continue;
+    if (els.l) els.l.classList.toggle('is-accepted', row.reviewStatus === 'accepted');
+    const html = reviewStatusHtml(row);
+    for (const el of [els.r, els.u]) {
       if (!el) continue;
       el.classList.toggle('is-accepted', row.reviewStatus === 'accepted');
+      const current = el.querySelector(':scope > .review-status');
+      if (!html) {
+        if (current) current.remove();
+        continue;
+      }
+      if (current && current.outerHTML === html) continue;
+      const hadFocus = current && current.contains(document.activeElement);
+      if (current) current.remove();
+      el.insertBefore(htmlToElement(html), el.firstChild);
+      if (hadFocus) el.querySelector(':scope > .review-status .ra-undo').focus({ preventScroll: true });
     }
   }
 }
 
-/* ── The docked action row under the active paragraph ──────────────────── */
+function htmlToElement(html) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html;
+  return tpl.content.firstChild;
+}
+
+// Only the status line of the current paragraph is in the tab order.
+function syncStatusTabStops() {
+  for (const btn of document.querySelectorAll('.review-status .ra-undo')) {
+    btn.tabIndex = btn.closest('[data-status-row]').getAttribute('data-status-row') === state.activeRowId ? 0 : -1;
+  }
+}
+
+/* ── Review actions at the current paragraph ─────────────────────────────
+ *
+ * One place only: a compact column of three icon buttons (accept, reject, edit) in the right
+ * margin of the current paragraph of the new version (or of the stacked view). Every
+ * paragraph there keeps that margin free, so selecting a paragraph never moves any text.
+ */
 
 // Created on first use (the module is also loaded without a DOM by the export tests).
 let reviewBar = null;
@@ -8732,8 +9219,10 @@ function getReviewBar() {
   reviewBar = document.createElement('div');
   reviewBar.className = 'review-bar';
   reviewBar.setAttribute('role', 'toolbar');
+  reviewBar.setAttribute('aria-orientation', 'vertical');
   reviewBar.addEventListener('mousedown', e => e.stopPropagation());
-  // Roving focus inside the action row: one tab stop, arrow keys move between the buttons.
+  reviewBar.addEventListener('dblclick', e => e.stopPropagation());
+  // Roving focus inside the group: one tab stop, arrow keys move between the buttons.
   reviewBar.addEventListener('keydown', e => handleRovingKeys(e, reviewBar));
   return reviewBar;
 }
@@ -8745,26 +9234,20 @@ function removeReviewBar() {
 const ICON_CHECK = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 const ICON_X = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 const ICON_EDIT = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
-const ICON_UNDO = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>';
 
-// Buttons for one item (shared by the document action row and the active list card).
-function reviewActionsHtml(item, row, context) {
-  const btn = (action, icon, label, title, cls = '') =>
-    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" data-tooltip="${escapeHtml(title)}" tabindex="-1">${icon}<span class="ra-label">${escapeHtml(label)}</span></button>`;
-  const edit = btn('edit', ICON_EDIT, t('editBtn'), t('editTitle'), 'ra-edit');
-  if (!item) return rovingFirst(edit);
-  if (item.status === 'open') {
+// Icon buttons: accept / reject for an open change, edit for any paragraph of the new version.
+function reviewActionsHtml(item) {
+  const btn = (action, icon, label, title, key, cls) =>
+    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" aria-label="${escapeHtml(label)}" aria-keyshortcuts="${key}" data-tooltip="${escapeHtml(title)}" tabindex="-1">${icon}</button>`;
+  const edit = btn('edit', ICON_EDIT, t('editBtn'), t('editTitle'), 'E', 'ra-edit');
+  if (item && item.status === 'open') {
     return rovingFirst(
-      btn('accept', ICON_CHECK, t('acceptBtn'), t('acceptTitle'), 'ra-accept') +
-      btn('reject', ICON_X, t('rejectBtn'), t('rejectTitle'), 'ra-reject') +
+      btn('accept', ICON_CHECK, t('acceptBtn'), t('acceptTitle'), 'A', 'ra-accept') +
+      btn('reject', ICON_X, t('rejectBtn'), t('rejectTitle'), 'R', 'ra-reject') +
       edit
     );
   }
-  const note =
-    item.status === 'accepted'
-      ? `<span class="ra-status is-accepted">${ICON_CHECK}${escapeHtml(t('acceptedNote'))}</span>`
-      : `<span class="ra-status is-rejected">${ICON_X}${escapeHtml(t('rejectedNote'))}</span>`;
-  return note + rovingFirst(btn('reopen', ICON_UNDO, t('reopenBtn'), t('reopenTitle'), 'ra-reopen') + (item.status === 'accepted' ? edit : ''));
+  return rovingFirst(edit);
 }
 
 // A group of action buttons is one tab stop; the arrow keys move inside it.
@@ -8773,45 +9256,59 @@ function rovingFirst(html) {
 }
 
 function handleRovingKeys(e, container) {
-  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return false;
+  const keys = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'];
+  if (!keys.includes(e.key)) return false;
   const buttons = Array.from(container.querySelectorAll('button'));
   const i = buttons.indexOf(document.activeElement);
   if (i < 0) return false;
   e.preventDefault();
   e.stopPropagation();
-  const next =
-    e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+  const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1;
+  const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (i + step + buttons.length) % buttons.length;
   buttons.forEach((b, k) => (b.tabIndex = k === next ? 0 : -1));
   buttons[next].focus();
   return true;
 }
 
+// The clause that carries the actions of a row in the visible view.
+function reviewHostFor(rowId) {
+  const els = getRowElements(rowId);
+  return els ? (state.viewMode === 'inline' ? els.u : els.r) : null;
+}
+
 function placeReviewBar() {
   const row = state.activeRowId && state.alignedRows.find(r => r.id === state.activeRowId);
-  const els = row ? getRowElements(row.id) : null;
-  const host = els ? (state.viewMode === 'inline' ? els.u : els.r) : null;
+  const host = row ? reviewHostFor(row.id) : null;
+  syncStatusTabStops();
   if (!row || !host || host.classList.contains('is-editing') || !document.body.classList.contains('is-comparing')) {
     removeReviewBar();
+    reviewFocusRequest = null;
     return;
   }
   const bar = getReviewBar();
   const item = getActiveItem();
   const hadFocus = bar.contains(document.activeElement);
   const focusedAction = hadFocus ? document.activeElement.getAttribute('data-review-action') : null;
-  bar.innerHTML = reviewActionsHtml(item, row, 'doc');
+  bar.innerHTML = reviewActionsHtml(item);
   bar.setAttribute(
     'aria-label',
     item ? formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }) : t('paraActionsLabel')
   );
   const buttons = bar.querySelectorAll('button');
-  if (buttons.length) buttons[0].tabIndex = 0;
   if (bar.parentElement !== host) host.appendChild(bar);
-  if (hadFocus) {
-    const again = bar.querySelector(`[data-review-action="${focusedAction}"]`) || buttons[0];
-    if (again) {
-      buttons.forEach(b => (b.tabIndex = b === again ? 0 : -1));
-      again.focus({ preventScroll: true });
-    }
+  const request = reviewFocusRequest;
+  reviewFocusRequest = null;
+  let target = null;
+  if (request === 'bar') target = bar.querySelector('[data-review-action="accept"]') || buttons[0];
+  else if (hadFocus) target = bar.querySelector(`[data-review-action="${focusedAction}"]`) || buttons[0];
+  if (target) {
+    buttons.forEach(b => (b.tabIndex = b === target ? 0 : -1));
+    target.focus({ preventScroll: true });
+  } else if (request === 'list') {
+    requestAnimationFrame(() => {
+      const card = sidebarList.querySelector('.nav-item.is-active .nav-item-main');
+      if (card && card.getClientRects().length) card.focus({ preventScroll: true });
+    });
   }
 }
 
@@ -8823,12 +9320,15 @@ function runReviewAction(action, fromList) {
   hideTooltip();
   requestRowFocus(row.id, fromList);
   let done = false;
-  if (action === 'accept') done = acceptItem(item);
-  else if (action === 'reject') done = rejectItem(item);
-  else if (action === 'reopen') done = reopenItem(item);
-  else if (action === 'edit') {
+  if (action === 'accept') done = acceptItem(item, { fromList });
+  else if (action === 'reject') done = rejectItem(item, { fromList });
+  else if (action === 'reopen') {
+    done = reopenItem(item);
+    // Back on the reopened change, ready for a new decision.
+    if (done) requestRowFocus(state.activeRowId, fromList);
+  } else if (action === 'edit') {
     pendingRowFocus = null;
-    const host = getRowElements(row.id)[state.viewMode === 'inline' ? 'u' : 'r'];
+    const host = reviewHostFor(row.id);
     if (host) startInlineClauseEdit(host, row.id);
     return true;
   }
@@ -8874,7 +9374,7 @@ function drawRuler() {
   const total = state.alignedRows.length || 1;
   const activeItem = getActiveItem();
   const html = [];
-  for (const item of state.listItems) {
+  for (const item of state.listItems.flatMap(it => (it.members ? it.members.map(m => ({ ...m, id: it.id, index: it.index, members: it.members })) : [it]))) {
     const el = getRowElements(item.rowId)[key];
     let top;
     let h = 3;
@@ -8888,7 +9388,8 @@ function drawRuler() {
       top = ((item.row.rowNumber - 1) / total) * H; // not rendered yet
     }
     if (item.ghost && item.type === 'inserted') top += h;
-    const cls = `rm rm-${item.type === 'modified' ? 'mod' : item.type === 'inserted' ? 'ins' : 'del'} is-${item.status}${item === activeItem ? ' is-active' : ''}`;
+    const isActive = activeItem && (item === activeItem || item.id === activeItem.id);
+    const cls = `rm rm-${item.type === 'modified' ? 'mod' : item.type === 'inserted' ? 'ins' : 'del'} is-${item.status}${isActive ? ' is-active' : ''}`;
     html.push(
       `<div class="${cls}" style="top:${Math.min(H - 3, top).toFixed(1)}px;height:${Math.min(h, 40).toFixed(1)}px" data-row-id="${item.rowId}" data-item-id="${item.id}" data-tooltip="${escapeHtml(rulerLabel(item))}"></div>`
     );
@@ -9084,7 +9585,7 @@ function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true, opts = {
   if (navTarget) navTarget.scrollIntoView({ block: 'nearest', behavior });
 }
 
-// Moves the "active" card (and its action buttons) in the list without re-rendering it.
+// Moves the "active" card in the list without re-rendering it (cards carry no actions).
 function updateListActiveCard(itemId) {
   const item = itemId ? state.listItems.find(i => i.id === itemId) || getActiveItem() : getActiveItem();
   const focusInList = sidebarList.contains(document.activeElement);
@@ -9093,8 +9594,6 @@ function updateListActiveCard(itemId) {
     el.classList.remove('is-active');
     const main = el.querySelector('.nav-item-main');
     if (main) main.removeAttribute('aria-current');
-    const actions = el.querySelector('.nav-item-actions');
-    if (actions) actions.remove();
   }
   if (!item) return;
   const card = sidebarList.querySelector(`.nav-item[data-item-id="${item.id}"]`);
@@ -9102,12 +9601,6 @@ function updateListActiveCard(itemId) {
   card.classList.add('is-active');
   const main = card.querySelector('.nav-item-main');
   main.setAttribute('aria-current', 'true');
-  if (!card.querySelector('.nav-item-actions')) {
-    card.insertAdjacentHTML(
-      'beforeend',
-      `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
-    );
-  }
   if (!focusInList) {
     for (const b of sidebarList.querySelectorAll('.nav-item-main')) b.tabIndex = b === main ? 0 : -1;
   }
@@ -9171,8 +9664,11 @@ function resetEditHistory() {
   // A row id of the previous document would select an unrelated row in the new one.
   state.activeRowId = null;
   state.hoveredRowId = null;
+  // A new pair of documents: the next comparison is announced like a first one.
+  newDocumentsPending = true;
   updateUndoRedoButtons();
 }
+var newDocumentsPending = false; // `var`: set before the first comparison
 
 function makeHistorySnapshot() {
   return { text: state.rightText, reviews: cloneReviews() };
@@ -9296,6 +9792,41 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
   return out.join('\n\n');
 }
 
+// The new version with several paragraphs replaced at once (rows that have a right block),
+// e.g. the same header/footer line on every page.
+function rebuildRightTextReplacingRows(replacements) {
+  const allBlocks = state.rightAllBlocks || [];
+  const hasExplicit = allBlocks.some(b => b.hasExplicitPage);
+  const targets = [];
+  for (const [rowId, text] of replacements) {
+    const row = state.alignedRows.find(r => r.id === rowId);
+    if (!row || !row.rightBlock) continue;
+    const lines = [];
+    for (const line of sanitizeExternalText(text || '').split(/\n+/)) {
+      if (!line.trim()) continue;
+      lines.push(
+        serializeBlockLine({
+          text: line.trim(),
+          kind: row.rightBlock.kind,
+          indent: row.rightBlock.indent,
+          isHeaderFooter: Boolean(row.rightBlock.isHeaderFooter),
+        })
+      );
+    }
+    targets.push({ block: row.rightBlock, lines });
+  }
+  const out = [];
+  let lastPage = null;
+  for (const b of allBlocks) {
+    const pageNum = b.pageNum || 1;
+    if (hasExplicit && pageNum !== lastPage) out.push(pageMarkerLine(pageNum));
+    lastPage = pageNum;
+    const hit = targets.find(x => sameBlock(b, x.block));
+    out.push(...(hit ? hit.lines : [serializeBlockLine(b)]));
+  }
+  return out.join('\n\n');
+}
+
 // Row blocks are the very objects in state.rightAllBlocks (also after the worker's structured
 // clone); the position check is a fallback.
 function sameBlock(a, b) {
@@ -9309,8 +9840,8 @@ function revertRowToOriginal(targetRowId) {
   if (!state.alignedRows.length) return;
   const targetRow = state.alignedRows.find(r => r.id === targetRowId);
   if (!targetRow || !isShownComparisonCurrent()) return;
-  const item = state.listItems.find(i => i.rowId === targetRowId && !i.ghost);
-  if (item) rejectItem(item, { silent: true });
+  const item = state.listItems.find(i => itemHasRow(i, targetRowId) && !i.ghost);
+  if (item) rejectItem(item, { stay: true });
 }
 
 function startInlineClauseEdit(clauseEl, rowId) {
@@ -9391,11 +9922,13 @@ function startInlineClauseEdit(clauseEl, rowId) {
       closeUnchanged(keepFocus && !stale);
       return;
     }
+    // Editing a reviewed paragraph makes it an open change again: say so.
+    const wasReviewed = row.reviewStatus === 'accepted' || Boolean(row.ghostNote);
     pushUndoSnapshot();
     state.rightText = rebuildRightTextFromRows(rowId, newText);
     if (keepFocus) requestRowFocus(rowId, openerInSidebar);
     runComparison();
-    showUndoToast('toastEdited');
+    showUndoToast(wasReviewed ? 'toastEditedReopened' : 'toastEdited');
   };
 
   const cancel = () => {
@@ -9462,14 +9995,21 @@ function toggleHfGroup(id, collapse) {
     const actionBtn = e.target.closest('[data-review-action]');
     if (actionBtn) {
       e.stopPropagation();
-      const fromList = container === sidebarList;
-      const card = actionBtn.closest('.nav-item[data-row-id]');
-      if (card && card.getAttribute('data-row-id') !== state.activeRowId) {
-        selectAndScrollToRow(card.getAttribute('data-row-id'), false, true, { itemId: card.getAttribute('data-item-id') });
+      // "Rückgängig" in the status line of a reviewed paragraph: make that change current first.
+      const statusLine = actionBtn.closest('[data-status-row]');
+      if (statusLine) {
+        const rowId = statusLine.getAttribute('data-status-row');
+        const row = state.alignedRows.find(r => r.id === rowId);
+        const wantGhost = Boolean(row && row.ghostNote && row.reviewStatus !== 'accepted');
+        const item = state.listItems.find(it => itemHasRow(it, rowId) && it.status !== 'open' && Boolean(it.ghost) === wantGhost);
+        if (!item) return;
+        selectAndScrollToRow(rowId, false, false, { itemId: item.id, flash: false });
+        requestRowFocus(rowId, false);
+        if (reopenItem(item)) requestRowFocus(state.activeRowId, false);
+        applyPendingRowFocusIfIdle();
+        return;
       }
-      const action = actionBtn.getAttribute('data-review-action');
-      if (action === 'edit' && fromList && isTabletOrSmaller()) closeListSheet(false);
-      runReviewAction(action, fromList);
+      runReviewAction(actionBtn.getAttribute('data-review-action'), false);
       return;
     }
     const hfToggle = e.target.closest('[data-hf-toggle]');
@@ -9494,11 +10034,6 @@ function toggleHfGroup(id, collapse) {
 
 // The list: one tab stop; arrow keys move between the cards (selection follows focus).
 sidebarList.addEventListener('keydown', e => {
-  const actions = e.target.closest('.nav-item-actions');
-  if (actions) {
-    handleRovingKeys(e, actions);
-    return;
-  }
   const main = e.target.closest('.nav-item-main');
   if (!main) return;
   const all = Array.from(sidebarList.querySelectorAll('.nav-item-main'));
@@ -9526,6 +10061,22 @@ sidebarList.addEventListener('focusin', e => {
 const sidebarFilterBar = document.getElementById('sidebar-filter-bar');
 function setListFilter(f, focus) {
   state.sidebarFilter = f;
+  applyListFilters();
+  if (focus) {
+    const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);
+    if (tab) tab.focus();
+  }
+}
+// Status ("Offen" / "Geprüft") is a separate toggle on top of the kind of change.
+function setStatusFilter(s) {
+  state.statusFilter = state.statusFilter === s ? 'all' : s;
+  applyListFilters();
+}
+document.getElementById('status-filter-bar').addEventListener('click', e => {
+  const btn = e.target.closest('[data-status-filter]');
+  if (btn) setStatusFilter(btn.getAttribute('data-status-filter'));
+});
+function applyListFilters() {
   renderSidebarList(state.alignedRows.length > 0);
   // The stepper follows the filter: a current change outside it gives way to the first one in it.
   const visible = getFilteredListItems();
@@ -9534,10 +10085,6 @@ function setListFilter(f, focus) {
     selectAndScrollToRow(visible[0].rowId, true, true, { itemId: visible[0].id, flash: false });
   }
   updateStepper();
-  if (focus) {
-    const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);
-    if (tab) tab.focus();
-  }
 }
 sidebarFilterBar.addEventListener('click', e => {
   const btn = e.target.closest('[data-sidebar-filter]');
@@ -10073,7 +10620,14 @@ function getExportItems() {
     state.listItems.length &&
     state.listItems.every(i => state.alignedRows.includes(i.row))
   ) {
-    return state.listItems;
+    // Exports follow the document: every occurrence of a merged header/footer change, in
+    // document order (the list shows those after the body changes).
+    const pos = new Map(state.alignedRows.map((r, i) => [r.id, i]));
+    return state.listItems
+      .flatMap(item => (item.members ? item.members : [item]))
+      .map(item => ({ ...item, members: undefined }))
+      .sort((a, b) => pos.get(a.rowId) - pos.get(b.rowId) || (a.sub || 0) - (b.sub || 0))
+      .map((item, i) => ({ ...item, index: i + 1 }));
   }
   return state.changeRows.map((row, i) => ({
     id: row.id,
@@ -10646,7 +11200,7 @@ function buildPrintViewHtml(date = new Date()) {
       </div>
       <div class="pv-meta">
         <span>${escapeHtml(formatExportCountsLine(counts))}</span>
-        ${getExportReviewLine(counts) ? `<span>${escapeHtml(getExportReviewLine(counts))}</span>` : ''}
+        <span>${escapeHtml(getExportReviewLine(counts) || formatMsg('listProgress', { k: 0, n: counts.total }))}</span>
         <span>${escapeHtml(getExportScopeText())}</span>
         <span>${escapeHtml(t('exportLabelHf'))}: ${escapeHtml(getExportHfText())}</span>
       </div>
@@ -11703,7 +12257,10 @@ function updateStepper() {
   const total = items.length;
   const active = getActiveItem();
   const idx = active ? items.indexOf(active) : -1;
-  const text = formatMsg('stepPos', { i: total ? (idx >= 0 ? idx + 1 : '–') : 0, n: total });
+  // With a filter the count says what it counts: "1 von 1 entfernten".
+  const filterKey = state.sidebarFilter !== 'all' ? state.sidebarFilter : state.statusFilter !== 'all' ? state.statusFilter : '';
+  const pos = { i: total ? (idx >= 0 ? idx + 1 : '–') : 0, n: total };
+  const text = filterKey ? formatMsg('stepPosFiltered', { ...pos, label: t(`stepLabel_${filterKey}`) }) : formatMsg('stepPos', pos);
   document.getElementById('step-pos').textContent = text;
   document.getElementById('mob-step-count').textContent = text;
   document.getElementById('mob-step').setAttribute('aria-label', formatMsg('mobStepLabel', { i: idx >= 0 ? idx + 1 : '–', n: total }));
@@ -11790,6 +12347,7 @@ function openMenu(id, trigger, focus = 'first') {
 }
 
 function closeMenu(id, returnFocus) {
+  if (id === 'export-menu') setMoreFormats(false);
   if (!openMenuState || openMenuState.id !== id) {
     const menu = document.getElementById(id);
     if (menu) {
@@ -11867,6 +12425,40 @@ document.getElementById('mob-btn-export').addEventListener('click', e => {
 });
 
 // A click on a menu item runs it and closes the menu (focus back to the menu button).
+// "Weitere Formate": opens the less common formats inside the menu.
+function setMoreFormats(open, focusFirst) {
+  const btn = document.getElementById('btn-more-formats');
+  const sub = document.getElementById('more-formats');
+  btn.setAttribute('aria-expanded', String(open));
+  sub.hidden = !open;
+  if (open && focusFirst) {
+    const first = sub.querySelector('[role="menuitem"]');
+    if (first) {
+      first.tabIndex = -1;
+      first.focus();
+    }
+  }
+}
+document.getElementById('btn-more-formats').addEventListener('click', e => {
+  e.stopPropagation();
+  setMoreFormats(document.getElementById('more-formats').hidden, true);
+});
+document.getElementById('btn-more-formats').addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    e.stopPropagation();
+    setMoreFormats(true, true);
+  }
+});
+document.getElementById('more-formats').addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    e.stopPropagation();
+    setMoreFormats(false);
+    document.getElementById('btn-more-formats').focus();
+  }
+});
+
 document.getElementById('export-menu').addEventListener('click', e => {
   const item = e.target.closest('[data-export]');
   if (!item) return;
@@ -11908,14 +12500,6 @@ document.getElementById('more-menu').addEventListener('click', e => {
       break;
     case 'btn-paste-modal':
       openPasteModal();
-      break;
-    case 'btn-undo':
-      performUndo();
-      announceHistory('toastUndone');
-      break;
-    case 'btn-redo':
-      performRedo();
-      announceHistory('toastRedone');
       break;
     case 'menu-help':
       openHelp();
@@ -12175,6 +12759,10 @@ window.addEventListener('keydown', e => {
   } else if (key === 'r') {
     e.preventDefault();
     runReviewAction('reject', Boolean(activeEl && activeEl.closest && activeEl.closest('#sidebar-list')));
+  } else if (key === 'e') {
+    e.preventDefault();
+    if (isTabletOrSmaller()) closeListSheet(false);
+    runReviewAction('edit', false);
   } else if (e.key === '/') {
     e.preventDefault();
     openSearch();
@@ -12195,6 +12783,7 @@ function clearComparison() {
   state.activeRowId = null;
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
+  state.statusFilter = 'all';
   state.searchQuery = '';
   state.pageBreaks = null;
   resetEditHistory();
@@ -12442,9 +13031,60 @@ toastEl.addEventListener('focusin', () => clearTimeout(toastTimer));
   if (typeof original !== 'function') return;
   window.showImportNotice = function showImportNoticeWithScanWording(message, kind) {
     const m = typeof message === 'string' && message.match(/^.*?[„“"]([^“”"]+)[“”"]: (.*)$/);
-    if (m && m[2] === t('errScannedPdf')) message = formatMsg('errScannedPdfFile', { name: m[1] });
-    return original.call(this, message, kind);
+    // A scanned PDF and an image (also one renamed to .pdf) get the same message.
+    if (m && (m[2] === t('errScannedPdf') || m[2] === t('errImage'))) message = formatMsg('errScannedPdfFile', { name: m[1] });
+    // English text uses English quotation marks.
+    else if (m && state.lang === 'en') message = message.replace(`„${m[1]}“`, `“${m[1]}”`);
+    const result = original.call(this, message, kind);
+    placeImportNotice();
+    return result;
   };
+})();
+
+// Errors on the start page appear in the flow under the two file slots (the affected one gets
+// an error border), never floating over the page.
+let lastImportSide = null;
+(function trackImportSide() {
+  const upload = window.handleFileUpload;
+  if (typeof upload === 'function') {
+    window.handleFileUpload = function trackedFileUpload(file, side) {
+      lastImportSide = side === 'left' || side === 'right' ? side : null;
+      return upload.apply(this, arguments);
+    };
+  }
+  const drop = window.handleDropFiles;
+  if (typeof drop === 'function') {
+    window.handleDropFiles = function trackedDropFiles(files, side) {
+      lastImportSide = files && files.length === 1 && (side === 'left' || side === 'right') ? side : null;
+      return drop.apply(this, arguments);
+    };
+  }
+  const clear = window.clearImportNotice;
+  if (typeof clear === 'function') {
+    window.clearImportNotice = function clearImportNoticeAndSlots() {
+      document.querySelectorAll('.drop-slot.has-error').forEach(el => el.classList.remove('has-error'));
+      return clear.apply(this, arguments);
+    };
+  }
+})();
+
+function placeImportNotice() {
+  const el = document.getElementById('import-notice');
+  if (!el) return;
+  const slots = document.querySelector('.drop-slots');
+  const onLanding = !document.body.classList.contains('is-comparing') && slots && slots.getClientRects().length;
+  document.querySelectorAll('.drop-slot.has-error').forEach(s => s.classList.remove('has-error'));
+  if (onLanding) {
+    if (el.previousElementSibling !== slots) slots.after(el);
+    el.classList.add('is-inline');
+    const slot = lastImportSide && document.getElementById(`lp-slot-${lastImportSide}`);
+    if (slot && !el.classList.contains('is-warning')) slot.classList.add('has-error');
+  } else {
+    if (el.parentElement !== document.body) document.body.appendChild(el);
+    el.classList.remove('is-inline');
+  }
+}
+(function () {
 })();
 
 /* ── Tooltip (mouse hover and keyboard focus only; never after a tap) ──── */
@@ -12846,6 +13486,7 @@ function serializeReviewEntries(reviews) {
       if (e.status === 'rejected') {
         for (const k of ['leftText', 'rightText', 'leftAnchor', 'prevAnchor', 'refCode']) out[k] = String(e[k] || '');
         out.pageNum = Number.isInteger(e.pageNum) && e.pageNum > 0 ? e.pageNum : 1;
+        if (e.hf) out.hf = true; // a header/footer line (listed after the body changes)
       }
       return out;
     });
@@ -12995,6 +13636,10 @@ function expectReviewEntries(value) {
       entry.refCode = expectString(raw.refCode, 1000);
       if (!Number.isInteger(raw.pageNum) || raw.pageNum < 1 || raw.pageNum > 1e6) throw new SessionFileError('sessionErrorInvalid');
       entry.pageNum = raw.pageNum;
+      if (raw.hf !== undefined) {
+        if (raw.hf !== true) throw new SessionFileError('sessionErrorInvalid');
+        entry.hf = true;
+      }
     }
     Object.defineProperty(out, key, { value: entry, enumerable: true, writable: true, configurable: true });
   }
@@ -13112,6 +13757,7 @@ async function applySessionData(session) {
   state.activeRowId = null;
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
+  state.statusFilter = 'all';
   state.searchQuery = '';
   state.ignoreHeadersFooters = session.view.ignoreHeadersFooters;
   state.pageBreaks = session.view.pageBreaks;

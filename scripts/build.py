@@ -220,7 +220,7 @@ def render_page(template: str, lang: str, i18n: dict, version: str) -> str:
         .replace("__ASSET_BASE__", page["asset_base"])
         .replace("__OG_LOCALE__", page["og_locale"])
         .replace("__OG_LOCALE_ALT__", page["og_locale_alt"])
-        .replace("__LANG_LABEL__", lang.upper())
+        .replace("__LANG_LABEL__", "English" if lang == "de" else "Deutsch")
         .replace("__JSON_LD__", json_ld(template, lang, strings, version))
     )
     return out

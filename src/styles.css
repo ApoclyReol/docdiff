@@ -59,6 +59,8 @@
   --kante-200: rgb(0 0 0 / 0.082);
   --kante-300: rgb(0 0 0 / 0.12);
   --kante-500: rgb(0 0 0 / 0.212);
+  /* Edges that identify a control (≥ 3:1 against the page, WCAG 1.4.11) */
+  --control-edge: rgb(0 0 0 / 0.5);
 
   --primary: 212.8 100% 36%;
   --primary-hover: 212.8 100% 31%;
@@ -108,6 +110,7 @@
   --kante-200: rgb(255 255 255 / 0.09);
   --kante-300: rgb(255 255 255 / 0.14);
   --kante-500: rgb(255 255 255 / 0.24);
+  --control-edge: rgb(255 255 255 / 0.45);
 
   --primary: 212.4 100% 35.7%;
   --primary-hover: 212.4 100% 41%;
@@ -239,7 +242,7 @@ svg.icon {
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
 .btn {
-  height: 36px;
+  height: 44px;
   padding: 0 12px;
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
@@ -253,7 +256,7 @@ svg.icon {
   border: 0;
   background: hsl(var(--card));
   color: hsl(var(--foreground));
-  box-shadow: inset 0 0 0 1px var(--kante-300), var(--elev-1);
+  box-shadow: inset 0 0 0 1px var(--control-edge), var(--elev-1);
   transition: background-color 100ms ease-out, box-shadow 100ms ease-out, color 100ms ease-out;
   white-space: nowrap;
   flex-shrink: 0;
@@ -283,7 +286,7 @@ svg.icon {
   box-shadow: inset 0 0 0 1px hsl(var(--destructive) / 0.55);
 }
 .btn-icon {
-  width: 36px;
+  width: 44px;
   padding: 0;
 }
 @media (hover: hover) {
@@ -363,7 +366,7 @@ body:not(.is-comparing) .topbar {
   gap: 6px;
   min-width: 0;
   max-width: 100%;
-  height: 36px;
+  height: 44px;
   padding: 0 8px 0 10px;
   border: 0;
   border-radius: var(--radius-md);
@@ -373,7 +376,7 @@ body:not(.is-comparing) .topbar {
   font-size: var(--text-ui);
   font-weight: 500;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px var(--kante-200);
+  box-shadow: inset 0 0 0 1px var(--control-edge);
 }
 .tb-file {
   white-space: nowrap;
@@ -394,8 +397,8 @@ body:not(.is-comparing) .topbar {
   opacity: 0.85;
 }
 .tb-icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
@@ -415,7 +418,7 @@ body:not(.is-comparing) .topbar {
   cursor: default;
 }
 .tb-btn {
-  height: 36px;
+  height: 44px;
   padding: 0 10px 0 12px;
 }
 .tb-compact-icon {
@@ -452,10 +455,10 @@ body:not(.is-comparing) .topbar {
 .stepper {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
+  gap: 0;
+  padding: 0;
   border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--kante-200);
+  box-shadow: inset 0 0 0 1px var(--control-edge);
 }
 .step-pos {
   min-width: 76px;
@@ -681,19 +684,16 @@ body:not(.is-comparing) .topbar {
   white-space: nowrap;
 }
 mark.tok-search {
-  background: hsl(var(--warning-ton-2));
+  background: hsl(var(--primary) / 0.1);
   color: inherit;
   border-radius: 2px;
   padding: 0 1px;
+  box-shadow: inset 0 -2px 0 hsl(var(--primary-ink) / 0.55);
 }
 mark.tok-search.is-current {
-  background: hsl(var(--search-current));
-  color: hsl(0 0% 5%);
-  box-shadow: 0 0 0 2px hsl(var(--search-current));
-}
-del.tok-del mark.tok-search.is-current,
-ins.tok-ins mark.tok-search.is-current {
-  color: hsl(0 0% 5%);
+  background: hsl(var(--primary) / 0.16);
+  color: inherit;
+  box-shadow: 0 0 0 2px hsl(var(--primary-ink));
 }
 
 /* ── Landing page (shown until both versions are loaded) ─────────────────── */
@@ -1016,8 +1016,8 @@ body.is-dragging-file .drop-slot-btn {
   height: 26px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: hsl(var(--primary-ton-2));
-  color: hsl(var(--primary-ink));
+  background: hsl(var(--ton-2));
+  color: hsl(var(--foreground));
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 700;
@@ -1431,16 +1431,17 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
   min-height: 24px;
   user-select: none;
 }
+.clause.state-placeholder:has(> .review-status) {
+  display: block;
+}
+.clause.state-placeholder:has(> .review-status)::before {
+  display: none;
+}
 .clause.state-placeholder::before {
   content: "";
   flex: 1;
   height: 1px;
   border-top: 1px dashed hsl(var(--input));
-}
-@media (hover: hover) {
-  .clause.state-equal.is-hovered:not(.is-active) {
-    background: hsl(var(--ton-1));
-  }
 }
 /* The current change: a 2 px ink ring (the review actions sit inside it) */
 .clause.is-active {
@@ -1557,7 +1558,13 @@ ins.tok-ins.tok-marker {
   border-top: 1px solid hsl(var(--border));
   border-bottom: 0;
 }
+.hf-toggle::after {
+  content: "";
+  position: absolute;
+  inset: -10px -4px;
+}
 .hf-toggle {
+  position: relative;
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
@@ -1588,81 +1595,139 @@ ins.tok-ins.tok-marker {
   display: none;
 }
 
-/* ── Review actions, docked under the current paragraph ────────────────── */
+/* ── Review actions: a compact column of icon buttons in the right margin of the current
+   paragraph. Every paragraph of the new version keeps that margin free, so selecting one
+   never moves text or changes a height. ── */
+:root {
+  --rv-btn: 32px;
+  --rv-gutter: 44px;
+}
+@media (pointer: coarse) {
+  :root {
+    --rv-btn: 44px;
+    --rv-gutter: 54px;
+  }
+}
+#sheet-right .clause,
+#sheet-unified .clause {
+  padding-right: var(--rv-gutter);
+}
 .review-bar {
-  grid-column: 1 / -1;
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  z-index: 4;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid hsl(var(--border));
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px hsl(var(--border)), var(--elev-1);
   font-size: var(--text-ui);
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.4;
   color: hsl(var(--foreground));
 }
-.clause.kind-bullet .review-bar {
-  margin-left: -10px;
+.clause.kind-hf .review-bar {
+  top: 0;
 }
 .ra-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 12px;
+  justify-content: center;
+  width: var(--rv-btn);
+  height: var(--rv-btn);
+  padding: 0;
   border: 0;
-  border-radius: var(--radius-md);
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
-  box-shadow: inset 0 0 0 1px var(--kante-500);
-  font: inherit;
-  font-size: var(--text-ui);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.ra-btn.ra-accept {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  box-shadow: none;
-}
-.ra-btn.ra-edit,
-.ra-btn.ra-reopen {
+  border-radius: calc(var(--radius-md) - 2px);
   background: transparent;
-  box-shadow: none;
-  color: hsl(var(--foreground));
+  color: hsl(var(--muted-foreground));
+  font: inherit;
+  cursor: pointer;
 }
 .ra-btn .icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.2;
+}
+@media (pointer: coarse) {
+  .ra-btn .icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+.ra-btn:focus-visible {
+  outline-offset: 0;
+}
+/* Colour only on hover and keyboard focus */
+.ra-btn.ra-accept:focus-visible { color: hsl(var(--success-ink)); background: hsl(var(--success-ton-1)); }
+.ra-btn.ra-reject:focus-visible { color: hsl(var(--destructive-ink)); background: hsl(var(--destructive-ton-1)); }
+.ra-btn.ra-edit:focus-visible { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
+@media (hover: hover) {
+  .ra-btn.ra-accept:hover { color: hsl(var(--success-ink)); background: hsl(var(--success-ton-1)); }
+  .ra-btn.ra-reject:hover { color: hsl(var(--destructive-ink)); background: hsl(var(--destructive-ton-1)); }
+  .ra-btn.ra-edit:hover { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
+}
+
+/* Status line of a reviewed paragraph: "✓ Angenommen · Rückgängig" */
+.review-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 6px;
+  grid-column: 1 / -1;
+  margin: -2px 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.review-status .icon {
   width: 15px;
   height: 15px;
+  stroke-width: 2.4;
+  flex-shrink: 0;
+}
+.review-status.is-accepted { color: hsl(var(--success-ink)); }
+.review-status.is-rejected { color: hsl(var(--foreground)); }
+.review-status-sep {
+  color: hsl(var(--muted-foreground));
+  font-weight: 400;
+}
+.ra-undo {
+  position: relative;
+  min-height: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: hsl(var(--primary-ink));
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+/* 44 × 44 px pointer target without moving the text around it */
+.ra-undo::before {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: max(100%, 44px);
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 @media (hover: hover) {
-  .ra-btn:hover {
-    background: hsl(var(--ton-2));
-  }
-  .ra-btn.ra-accept:hover {
-    background: hsl(var(--primary-hover));
-  }
+  .ra-undo:hover { background: hsl(var(--ton-2)); }
 }
-.ra-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 4px;
-  font-weight: 600;
+.clause.kind-hf .review-status {
+  font-size: 12.5px;
 }
-.ra-status.is-accepted {
-  color: hsl(var(--success-ink));
-}
-.ra-status.is-rejected {
-  color: hsl(var(--destructive-ink));
-}
-.ra-status .icon {
-  width: 15px;
-  height: 15px;
+/* The status line carries the check mark in the new version */
+#sheet-right .clause.is-accepted::after,
+#sheet-unified .clause.is-accepted::after {
+  display: none;
 }
 
 /* Inline editor */
@@ -1753,7 +1818,7 @@ ins.tok-ins.tok-marker {
   height: 0;
   border-radius: 3px;
   background: hsl(var(--foreground) / 0.07);
-  box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.32);
+  box-shadow: inset 0 0 0 1.5px hsl(var(--foreground) / 0.6);
   pointer-events: none;
 }
 .ruler.is-dragging .ruler-window {
@@ -1805,7 +1870,7 @@ ins.tok-ins.tok-marker {
   flex: 0 0 72px;
   height: 4px;
   border-radius: 999px;
-  background: hsl(var(--ton-3));
+  background: var(--control-edge);
   overflow: hidden;
 }
 .progress-fill {
@@ -1820,9 +1885,6 @@ ins.tok-ins.tok-marker {
   display: flex;
   flex-wrap: wrap;
   column-gap: 12px;
-}
-.hint-pair {
-  white-space: nowrap;
 }
 .first-hint {
   display: flex;
@@ -1840,8 +1902,8 @@ body.legend-dismissed .first-hint {
   display: none;
 }
 .hint-close {
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   border: 0;
   border-radius: var(--radius-md);
@@ -1852,16 +1914,56 @@ body.legend-dismissed .first-hint {
   justify-content: center;
   cursor: pointer;
 }
+/* Review status: two toggles ("Offen 12", "Geprüft 8"), separate from the kind of change */
+.status-filters {
+  display: flex;
+  margin-top: 10px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--kante-500);
+}
+.status-filter {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: hsl(var(--foreground));
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.status-filter + .status-filter {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  box-shadow: inset 1px 0 0 var(--kante-500);
+}
+.status-filter:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.status-filter[aria-pressed="true"] {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-weight: 650;
+}
+@media (hover: hover) {
+  .status-filter[aria-pressed="false"]:hover {
+    background: hsl(var(--ton-2));
+  }
+}
 .list-filters {
   display: flex;
   gap: 2px;
-  margin: 8px -4px 0;
+  margin: 4px -4px 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .list-filter {
   flex-shrink: 0;
-  height: 38px;
+  height: 44px;
+  min-width: 44px;
   padding: 0 4px;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -1963,7 +2065,13 @@ body.legend-dismissed .first-hint {
   stroke-width: 2.4;
 }
 .nav-status.is-accepted { color: hsl(var(--success-ink)); }
-.nav-status.is-rejected { color: hsl(var(--destructive-ink)); }
+.nav-status.is-rejected { color: hsl(var(--muted-foreground)); }
+.nav-item.is-accepted .nav-item-ref,
+.nav-item.is-rejected .nav-item-ref,
+.nav-item.is-accepted .nav-item-deltas,
+.nav-item.is-rejected .nav-item-deltas {
+  color: hsl(var(--muted-foreground));
+}
 .nav-item.is-accepted .tok-del,
 .nav-item.is-accepted .tok-ins,
 .nav-item.is-rejected .tok-del,
@@ -1974,18 +2082,17 @@ body.legend-dismissed .first-hint {
 .nav-item-deltas {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-}
-.nav-delta-row {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
   gap: 4px;
-  word-break: break-word;
 }
-.nav-delta-arrow {
+/* One change in its sentence: grey context, struck / underlined words, in normal text flow */
+.nav-delta-row {
+  display: block;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.nav-ctx,
+.nav-ctx-label {
   color: hsl(var(--muted-foreground));
-  flex-shrink: 0;
 }
 .nav-delta-more {
   font-size: 13px;
@@ -1997,32 +2104,6 @@ body.legend-dismissed .first-hint {
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
-}
-.nav-item-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 12px 12px 13px;
-}
-.nav-item-actions .ra-btn {
-  height: 32px;
-  padding: 0 10px;
-}
-.nav-item-actions .ra-edit,
-.nav-item-actions .ra-reopen {
-  width: 32px;
-  padding: 0;
-  justify-content: center;
-  margin-left: auto;
-}
-.nav-item-actions .ra-edit .ra-label,
-.nav-item-actions .ra-reopen .ra-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
 }
 .empty-state {
   margin: auto;
@@ -2214,7 +2295,7 @@ dialog.prime-dialog::backdrop {
   color: hsl(var(--foreground));
   border: 0;
   border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 1px hsl(var(--input));
+  box-shadow: inset 0 0 0 1px var(--control-edge);
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.55;
@@ -2540,29 +2621,6 @@ body.is-diff-busy .doc-sheet {
     grid-template-columns: minmax(24px, auto) 1fr;
     column-gap: 8px;
   }
-  .review-bar {
-    gap: 8px;
-  }
-  .ra-btn {
-    height: 44px;
-    padding: 0 14px;
-  }
-  .ra-btn.ra-edit .ra-label,
-  .ra-btn.ra-reopen .ra-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-  .ra-btn.ra-edit,
-  .ra-btn.ra-reopen {
-    width: 44px;
-    padding: 0;
-    justify-content: center;
-    margin-left: auto;
-    box-shadow: inset 0 0 0 1px var(--kante-300);
-  }
   .bottom-bar {
     display: grid;
     position: fixed;
@@ -2733,8 +2791,144 @@ body.is-diff-busy .doc-sheet {
     min-width: 44px;
   }
   .ra-btn {
+    width: 44px;
     height: 44px;
   }
+  .ra-btn .icon {
+    width: 20px;
+    height: 20px;
+  }
+  .ra-pill,
+  .ra-undo {
+    min-height: 44px;
+  }
+  .ra-undo {
+    padding: 0 10px;
+  }
+}
+
+/* ── Screen readers: removed / added words are announced (del / ins are not voiced) ── */
+del.tok-del::before,
+del.tok-del::after,
+ins.tok-ins::before,
+ins.tok-ins::after {
+  content: "";
+}
+:lang(de) del.tok-del::before { content: "" / "entfernt: "; }
+:lang(de) del.tok-del::after { content: "" / " (Ende entfernt) "; }
+:lang(de) ins.tok-ins::before { content: "" / "hinzugefügt: "; }
+:lang(de) ins.tok-ins::after { content: "" / " (Ende hinzugefügt) "; }
+:lang(en) del.tok-del::before { content: "" / "removed: "; }
+:lang(en) del.tok-del::after { content: "" / " (end removed) "; }
+:lang(en) ins.tok-ins::before { content: "" / "added: "; }
+:lang(en) ins.tok-ins::after { content: "" / " (end added) "; }
+
+/* ── "Weitere Formate" inside the export menu ── */
+.menu-sub {
+  padding-left: 12px;
+}
+.menu-sub[hidden] {
+  display: none;
+}
+.mi-chev {
+  margin-left: auto;
+  width: 14px;
+  height: 14px;
+  color: hsl(var(--muted-foreground));
+  transition: transform 120ms ease-out;
+}
+[aria-expanded="true"] > .mi-chev {
+  transform: rotate(90deg);
+}
+
+/* Every button is at least 44 × 44 px (WCAG 2.5.5) */
+.btn,
+.tb-btn {
+  min-width: 44px;
+}
+@media (max-width: 767px) {
+  body.is-comparing .hide-phone-compare {
+    display: none !important;
+  }
+}
+
+/* ── Help: same place on the landing page and in the comparison ── */
+body.is-comparing #btn-help {
+  width: 44px;
+  padding: 0;
+  box-shadow: none;
+  background: transparent;
+}
+body.is-comparing #btn-help span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* ── Find bar: inside the top bar, never over the captions or the list ── */
+.search-panel {
+  position: fixed;
+  top: calc((var(--topbar-h) - 44px) / 2);
+  right: 12px;
+  height: 44px;
+  width: min(440px, calc(100vw - 24px));
+  box-shadow: 0 0 0 1px var(--control-edge), var(--elev-2);
+}
+
+/* ── Import errors on the start page: in the flow, under the file slots ── */
+.import-notice.is-inline {
+  position: static;
+  transform: none;
+  width: auto;
+  margin-top: 12px;
+  box-shadow: inset 0 0 0 1px hsl(var(--destructive) / 0.6);
+}
+.import-notice.is-inline.is-warning {
+  box-shadow: inset 0 0 0 1px var(--control-edge);
+}
+.drop-slot.has-error .drop-slot-btn {
+  border: 2px solid hsl(var(--destructive));
+}
+.import-notice-close {
+  width: 44px;
+  height: 44px;
+}
+
+/* ── No toast over an open menu or sheet ── */
+body.menu-sheet-open .toast-region,
+body.list-open .toast-region {
+  display: none;
+}
+
+/* ── Forced colors (Windows high contrast): keep the overview ruler and the current change ── */
+@media (forced-colors: active) {
+  .ruler-track .rm {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  .ruler-track .rm.is-active {
+    background: Highlight;
+  }
+  .ruler-window {
+    forced-color-adjust: none;
+    box-shadow: none;
+    outline: 2px solid CanvasText;
+    background: transparent;
+  }
+  .clause.is-active {
+    outline: 2px solid Highlight;
+  }
+  .review-bar,
+  .stepper,
+  .tb-files,
+  .status-filters {
+    border: 1px solid CanvasText;
+  }
+  del.tok-del { text-decoration: line-through; }
+  ins.tok-ins { text-decoration: underline; }
 }
 
 /* Reduced motion: no smooth scrolling, transitions or animations */
@@ -2785,6 +2979,16 @@ body.is-diff-busy .doc-sheet {
   }
   .clause.deferred-block {
     content-visibility: visible !important;
+  }
+  /* No interactive leftovers on paper */
+  .hf-toggle, .review-status .ra-undo, .review-status-sep, .import-notice {
+    display: none !important;
+  }
+  .clause.is-active {
+    box-shadow: none !important;
+  }
+  .hf-group.is-collapsed > .diff-row-anchor {
+    display: flex !important;
   }
 }
 

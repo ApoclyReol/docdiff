@@ -301,8 +301,8 @@ function updateLandingSlots(left, right) {
     if (loaded) {
       const parts = [t(titleKey)];
       if (fmt && fmt !== 'DEMO') parts.push(fmt);
-      if (info.pages > 1) parts.push(`${info.pages} ${t('pageShort')}`);
-      parts.push(`${info.blocks} ${t('unitPara')}`);
+      if (info.pages > 1) parts.push(formatMsg('metaPages', { n: info.pages }));
+      parts.push(info.blocks === 1 ? t('metaParasOne') : formatMsg('metaParas', { n: info.blocks }));
       titleEl.textContent = name || t(titleKey);
       titleEl.removeAttribute('data-i18n');
       hintEl.textContent = `${t('lpLoaded')} · ${parts.join(' · ')}`;

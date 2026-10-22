@@ -51,7 +51,7 @@ It was written with German contracts in mind (`§ 1`, `(1)`, `1.1` clause number
   - Paragraphs that moved unchanged are labelled "Moved" at both positions.
   - Hyphenated line breaks in PDFs are joined.
 - **Views:** side by side or one column (default on phones), with or without the original page breaks. An overview bar next to the text shows where the changes are.
-- **Review:** accept a change (keep the new wording) or reject it (restore the old wording of that paragraph); both mark it as reviewed and can be undone. Paragraphs of the new version can also be edited in place.
+- **Review:** accept a change (keep the new wording) or reject it (restore the old wording of that paragraph) with the small ✓ / ✗ buttons next to the current paragraph or `A` / `R`; both mark it as reviewed, move on to the next open change and can be undone. The same header or footer change on several pages is one decision. The list of changes can be filtered by review status and by kind of change. Paragraphs of the new version can also be edited in place.
 - **Export:**
   - Word `.docx` in which open changes are tracked changes (accept or reject them in Word or LibreOffice) and changes accepted in Doc Diff are already applied
   - PDF via the browser's print dialog
@@ -104,8 +104,9 @@ Reading PDFs is the slowest part. Very long single paragraphs (hundreds of thous
 
 | Key | Action |
 | :-- | :-- |
-| `J` / `K` | Next open / previous change |
-| `A` / `R` | Accept / reject the current change |
+| `J` / `K` | Next / previous open change |
+| `A` / `R` | Accept / reject the current change and move on to the next open one |
+| `E` | Edit the current paragraph |
 | `Enter` | In the list of changes: jump to the change |
 | `/`, `Ctrl+F` / `Cmd+F` | Find in document |
 | `Ctrl+Z` / `Cmd+Z` | Undo |
