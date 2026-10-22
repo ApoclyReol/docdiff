@@ -153,7 +153,9 @@ function cloneReviews(reviews = state.reviews) {
 }
 
 function serializeReviews(reviews = state.reviews) {
-  return JSON.stringify(Object.keys(reviews).sort().map(k => [k, reviews[k]]));
+  // Field order is not significant; sort it so equal states serialize equally.
+  const sorted = v => Object.fromEntries(Object.keys(v).sort().map(f => [f, v[f]]));
+  return JSON.stringify(Object.keys(reviews).sort().map(k => [k, sorted(reviews[k])]));
 }
 
 // Review status belongs to the loaded pair of documents.

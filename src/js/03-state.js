@@ -209,6 +209,8 @@ function updateFileLabels() {
 
 function setViewMode(mode, opts = {}) {
   if (mode !== 'split' && mode !== 'inline') mode = 'split';
+  // Phones only show one column.
+  if (mode === 'split' && typeof isPhoneWidth === 'function' && isPhoneWidth()) mode = 'inline';
   const changed = state.viewMode !== mode;
   // The change in view before switching stays in view afterwards.
   const keepRowId = changed && document.body.classList.contains('is-comparing') ? state.activeRowId : null;

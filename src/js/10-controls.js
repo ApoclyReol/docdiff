@@ -107,7 +107,11 @@ function closeMenu(id, returnFocus) {
   for (const t of [trigger, document.getElementById(MENU_TRIGGERS[id])]) if (t) t.setAttribute('aria-expanded', 'false');
   openMenuState = null;
   document.body.classList.remove('menu-sheet-open');
-  if (returnFocus && trigger && trigger.getClientRects().length) trigger.focus();
+  if (returnFocus) {
+    // A menu opened from inside another menu (the view options in ⋯ on phones) returns to ⋯.
+    const target = [trigger, document.getElementById(MENU_TRIGGERS[id]), document.getElementById('btn-more')].find(t => t && t.getClientRects().length);
+    if (target) target.focus();
+  }
 }
 
 function closeAllMenus(returnFocus) {
@@ -391,8 +395,8 @@ document.getElementById('mob-step').addEventListener('click', e => {
 });
 document.getElementById('btn-close-sidebar-sheet').addEventListener('click', () => closeListSheet());
 document.getElementById('mobile-sheet-backdrop').addEventListener('click', () => {
-  closeListSheet();
-  closeAllMenus(false);
+  if (openMenuState) closeMenu(openMenuState.id, true);
+  else closeListSheet();
 });
 
 /* ── Keyboard ───────────────────────────────────────────────────────────── */
@@ -700,7 +704,14 @@ function hideToast() {
   toastEl.classList.remove('is-visible');
   toastEl.hidden = true;
   toastRun = null;
-  if (hadFocus) activeDocPane().focus({ preventScroll: true });
+  if (hadFocus) focusPageFallback();
+}
+
+// Focus somewhere sensible on the visible page: the document, or the landing heading.
+function focusPageFallback() {
+  const pane = activeDocPane();
+  const target = document.body.classList.contains('is-comparing') && pane.getClientRects().length ? pane : document.getElementById('landing-title');
+  if (target && target.getClientRects().length) target.focus({ preventScroll: true });
 }
 
 function showUndoToast(key) {
@@ -717,6 +728,9 @@ toastAction.addEventListener('click', () => {
   const run = toastRun;
   hideToast();
   if (run) run();
+  // The action can switch views (undoing a cleared comparison); keep focus on the page.
+  const active = document.activeElement;
+  if (!active || active === document.body || !active.getClientRects().length) focusPageFallback();
 });
 // Hovering or focusing the toast keeps it.
 toastEl.addEventListener('pointerenter', () => clearTimeout(toastTimer));

@@ -3324,12 +3324,12 @@ body.is-diff-busy .doc-sheet {
           <svg class="icon tb-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
         </button>
         <div class="menu menu-right" id="view-menu" role="menu" aria-labelledby="btn-view-menu" hidden>
-          <div class="menu-group" role="group" aria-labelledby="vm-layout">
+          <div class="menu-group hide-phone" role="group" aria-labelledby="vm-layout">
             <span class="menu-label" id="vm-layout" data-i18n="viewLayoutLabel">Layout</span>
             <button type="button" class="menu-item" role="menuitemradio" aria-checked="true" id="btn-mode-split"><span class="mi-check" aria-hidden="true"></span><span data-i18n="modeSplit">Side by side</span></button>
             <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" id="btn-mode-inline"><span class="mi-check" aria-hidden="true"></span><span data-i18n="modeInline">Inline</span></button>
           </div>
-          <div class="menu-sep" role="separator"></div>
+          <div class="menu-sep hide-phone" role="separator"></div>
           <button type="button" class="menu-item" role="menuitemcheckbox" aria-checked="true" id="btn-page-breaks"><span class="mi-check" aria-hidden="true"></span><span data-i18n="pageBreaks">Show page breaks</span></button>
           <button type="button" class="menu-item" role="menuitemcheckbox" aria-checked="false" id="btn-only-changes"><span class="mi-check" aria-hidden="true"></span><span data-i18n="onlyChanges">Changes only</span></button>
           <button type="button" class="menu-item" role="menuitemcheckbox" aria-checked="true" id="btn-filter-hf"><span class="mi-check" aria-hidden="true"></span><span data-i18n="hfFilterBtn">Hide headers &amp; footers</span><span class="mi-hint" id="hf-count-badge"></span></button>
@@ -4251,7 +4251,7 @@ const I18N = {
     typeIns: 'Added',
     typeDel: 'Removed',
     typeMoved: 'Moved',
-    typeHf: 'Header/Footer',
+    typeHf: 'Header/footer',
     statMod: 'changed',
     statIns: 'added',
     statDel: 'removed',
@@ -5000,6 +5000,8 @@ function updateFileLabels() {
 
 function setViewMode(mode, opts = {}) {
   if (mode !== 'split' && mode !== 'inline') mode = 'split';
+  // Phones only show one column.
+  if (mode === 'split' && typeof isPhoneWidth === 'function' && isPhoneWidth()) mode = 'inline';
   const changed = state.viewMode !== mode;
   // The change in view before switching stays in view afterwards.
   const keepRowId = changed && document.body.classList.contains('is-comparing') ? state.activeRowId : null;
@@ -8615,7 +8617,9 @@ function cloneReviews(reviews = state.reviews) {
 }
 
 function serializeReviews(reviews = state.reviews) {
-  return JSON.stringify(Object.keys(reviews).sort().map(k => [k, reviews[k]]));
+  // Field order is not significant; sort it so equal states serialize equally.
+  const sorted = v => Object.fromEntries(Object.keys(v).sort().map(f => [f, v[f]]));
+  return JSON.stringify(Object.keys(reviews).sort().map(k => [k, sorted(reviews[k])]));
 }
 
 // Review status belongs to the loaded pair of documents.
@@ -11804,7 +11808,11 @@ function closeMenu(id, returnFocus) {
   for (const t of [trigger, document.getElementById(MENU_TRIGGERS[id])]) if (t) t.setAttribute('aria-expanded', 'false');
   openMenuState = null;
   document.body.classList.remove('menu-sheet-open');
-  if (returnFocus && trigger && trigger.getClientRects().length) trigger.focus();
+  if (returnFocus) {
+    // A menu opened from inside another menu (the view options in ⋯ on phones) returns to ⋯.
+    const target = [trigger, document.getElementById(MENU_TRIGGERS[id]), document.getElementById('btn-more')].find(t => t && t.getClientRects().length);
+    if (target) target.focus();
+  }
 }
 
 function closeAllMenus(returnFocus) {
@@ -12088,8 +12096,8 @@ document.getElementById('mob-step').addEventListener('click', e => {
 });
 document.getElementById('btn-close-sidebar-sheet').addEventListener('click', () => closeListSheet());
 document.getElementById('mobile-sheet-backdrop').addEventListener('click', () => {
-  closeListSheet();
-  closeAllMenus(false);
+  if (openMenuState) closeMenu(openMenuState.id, true);
+  else closeListSheet();
 });
 
 /* ── Keyboard ───────────────────────────────────────────────────────────── */
@@ -12397,7 +12405,14 @@ function hideToast() {
   toastEl.classList.remove('is-visible');
   toastEl.hidden = true;
   toastRun = null;
-  if (hadFocus) activeDocPane().focus({ preventScroll: true });
+  if (hadFocus) focusPageFallback();
+}
+
+// Focus somewhere sensible on the visible page: the document, or the landing heading.
+function focusPageFallback() {
+  const pane = activeDocPane();
+  const target = document.body.classList.contains('is-comparing') && pane.getClientRects().length ? pane : document.getElementById('landing-title');
+  if (target && target.getClientRects().length) target.focus({ preventScroll: true });
 }
 
 function showUndoToast(key) {
@@ -12414,6 +12429,9 @@ toastAction.addEventListener('click', () => {
   const run = toastRun;
   hideToast();
   if (run) run();
+  // The action can switch views (undoing a cleared comparison); keep focus on the page.
+  const active = document.activeElement;
+  if (!active || active === document.body || !active.getClientRects().length) focusPageFallback();
 });
 // Hovering or focusing the toast keeps it.
 toastEl.addEventListener('pointerenter', () => clearTimeout(toastTimer));

@@ -480,7 +480,7 @@ const I18N = {
     typeIns: 'Added',
     typeDel: 'Removed',
     typeMoved: 'Moved',
-    typeHf: 'Header/Footer',
+    typeHf: 'Header/footer',
     statMod: 'changed',
     statIns: 'added',
     statDel: 'removed',
