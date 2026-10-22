@@ -999,6 +999,28 @@ body.is-comparing .empty-launchpad {
   color: hsl(var(--foreground));
   text-wrap: balance;
 }
+/* The headline demonstrates the tool: one word struck out, its replacement marked as added */
+.landing-title .hero-del,
+.landing-title .hero-ins {
+  padding: 0 0.18em;
+  border-radius: 0.18em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.landing-title .hero-del {
+  background: hsl(var(--destructive-ton-2));
+  color: hsl(var(--destructive-ink));
+  box-shadow: inset 0 0 0 1px hsl(var(--destructive) / 0.22);
+  text-decoration: line-through;
+  text-decoration-thickness: 0.08em;
+  font-weight: 500;
+}
+.landing-title .hero-ins {
+  background: hsl(var(--success-ton-2));
+  color: hsl(var(--success-ink));
+  box-shadow: inset 0 0 0 1px hsl(var(--success) / 0.25);
+  text-decoration: none;
+}
 .landing-title:focus {
   outline: none;
 }
