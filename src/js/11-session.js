@@ -184,9 +184,9 @@ function showSessionDialog({ title, body, confirmLabel, cancelLabel, discardLabe
   // A dialog opened from a menu item: focus goes back to the menu button afterwards.
   const active = document.activeElement;
   sessionDialogReturnFocus = (typeof menuReturnTarget === 'function' && menuReturnTarget()) || active;
-  if (active && active.closest && active.closest('[role="menu"]')) {
-    const menu = active.closest('[role="menu"]');
-    sessionDialogReturnFocus = document.querySelector(`[aria-controls="${menu.id}"][aria-expanded="true"]`) || sessionDialogReturnFocus;
+  if (active && active.closest && active.closest('[role="menu"], .popover')) {
+    const menu = active.closest('[role="menu"], .popover');
+    sessionDialogReturnFocus = document.querySelector(`[aria-controls="${menu.id}"]`) || sessionDialogReturnFocus;
   }
   if (typeof closeAllMenus === 'function') closeAllMenus(false);
   sessionDialogTitle.textContent = title;

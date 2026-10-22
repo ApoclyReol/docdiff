@@ -275,7 +275,7 @@ document.getElementById('files-wrap').addEventListener('focusout', e => {
 });
 // Choosing a file or swapping closes the popover first.
 filesPop.addEventListener('click', e => {
-  if (e.target.closest('button')) closeFilesPop(false);
+  if (e.target.closest('button')) closeFilesPop(filesPop.contains(document.activeElement));
 });
 
 /* ── View options ───────────────────────────────────────────────────────── */
