@@ -78,9 +78,6 @@ const I18N = {
     toastTxt: 'Textdatei gespeichert: {name}',
     toastSession: 'Arbeitsstand gespeichert: {name}',
     toastCopied: 'Text der neuen Fassung kopiert',
-    toastAccepted: 'Angenommen',
-    toastRejected: 'Abgelehnt',
-    toastReopened: 'Wieder offen',
     toastEdited: 'Absatz bearbeitet',
     toastUndo: 'Rückgängig',
     toastUndone: 'Rückgängig gemacht',
@@ -107,10 +104,6 @@ const I18N = {
     filterMod: 'Geändert',
     filterIns: 'Neu',
     filterDel: 'Entfernt',
-    legendDelSample: 'durchgestrichen',
-    legendDel: '= entfernt',
-    legendInsSample: 'grün',
-    legendIns: '= hinzugefügt',
     legendClose: 'Hinweis ausblenden',
     mobDone: 'Fertig',
     noMatchesTitle: 'Nichts in diesem Filter',
@@ -140,11 +133,14 @@ const I18N = {
     acceptBtn: 'Annehmen',
     rejectBtn: 'Ablehnen',
     editBtn: 'Bearbeiten',
-    reopenBtn: 'Wieder öffnen',
-    acceptTitle: 'Neue Fassung behalten und als geprüft markieren (A)',
-    rejectTitle: 'Alte Fassung dieses Absatzes wiederherstellen und als geprüft markieren (R)',
-    editTitle: 'Absatz der neuen Fassung bearbeiten (oder Doppelklick)',
+    reopenBtn: 'Rückgängig',
+    acceptTitle: 'Annehmen (A)',
+    rejectTitle: 'Ablehnen (R)',
+    editTitle: 'Bearbeiten (E)',
     reopenTitle: 'Prüfung zurücknehmen',
+    pillAccepted: 'Angenommen',
+    pillRejected: 'Abgelehnt',
+    hintGlyphs: '✓ annehmen · ✗ ablehnen · J/K nächste Änderung',
     reviewBarLabel: 'Änderung {i} von {n}',
     paraActionsLabel: 'Absatz',
     acceptedNote: 'Angenommen',
@@ -165,7 +161,7 @@ const I18N = {
       </section>
       <section class="help-sec">
         <h3>Prüfen</h3>
-        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Beides markiert die Änderung als geprüft und lässt sich rückgängig machen. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
+        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft, springen zur nächsten offenen Änderung und lassen sich über <strong>Rückgängig</strong> am Absatz zurücknehmen. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
       </section>
       <section class="help-sec">
         <h3>Tastenkürzel</h3>
@@ -174,6 +170,7 @@ const I18N = {
             <tr><th scope="row"><kbd>J</kbd> / <kbd>K</kbd></th><td>Nächste offene / vorherige Änderung</td></tr>
             <tr><th scope="row"><kbd>A</kbd></th><td>Änderung annehmen</td></tr>
             <tr><th scope="row"><kbd>R</kbd></th><td>Änderung ablehnen</td></tr>
+            <tr><th scope="row"><kbd>E</kbd></th><td>Absatz bearbeiten</td></tr>
             <tr><th scope="row"><kbd>Enter</kbd></th><td>In der Liste: zur Stelle springen</td></tr>
             <tr><th scope="row"><kbd>/</kbd> oder <kbd>{mod}+F</kbd></th><td>Im Dokument suchen</td></tr>
             <tr><th scope="row"><kbd>{mod}+Z</kbd></th><td>Rückgängig</td></tr>
@@ -437,9 +434,6 @@ const I18N = {
     toastTxt: 'Text file saved: {name}',
     toastSession: 'Work saved: {name}',
     toastCopied: 'Text of the new version copied',
-    toastAccepted: 'Accepted',
-    toastRejected: 'Rejected',
-    toastReopened: 'Reopened',
     toastEdited: 'Paragraph edited',
     toastUndo: 'Undo',
     toastUndone: 'Undone',
@@ -466,10 +460,6 @@ const I18N = {
     filterMod: 'Changed',
     filterIns: 'Added',
     filterDel: 'Removed',
-    legendDelSample: 'struck through',
-    legendDel: '= removed',
-    legendInsSample: 'green',
-    legendIns: '= added',
     legendClose: 'Dismiss hint',
     mobDone: 'Done',
     noMatchesTitle: 'Nothing in this filter',
@@ -499,11 +489,14 @@ const I18N = {
     acceptBtn: 'Accept',
     rejectBtn: 'Reject',
     editBtn: 'Edit',
-    reopenBtn: 'Reopen',
-    acceptTitle: 'Keep the new wording and mark as reviewed (A)',
-    rejectTitle: 'Restore the old wording of this paragraph and mark as reviewed (R)',
-    editTitle: 'Edit this paragraph of the new version (or double-click)',
+    reopenBtn: 'Undo',
+    acceptTitle: 'Accept (A)',
+    rejectTitle: 'Reject (R)',
+    editTitle: 'Edit (E)',
     reopenTitle: 'Undo the review of this change',
+    pillAccepted: 'Accepted',
+    pillRejected: 'Rejected',
+    hintGlyphs: '✓ accept · ✗ reject · J/K next change',
     reviewBarLabel: 'Change {i} of {n}',
     paraActionsLabel: 'Paragraph',
     acceptedNote: 'Accepted',
@@ -524,7 +517,7 @@ const I18N = {
       </section>
       <section class="help-sec">
         <h3>Reviewing</h3>
-        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. Both mark the change as reviewed and can be undone. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
+        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed, move on to the next open change and can be taken back with <strong>Undo</strong> at the paragraph. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
       </section>
       <section class="help-sec">
         <h3>Keyboard shortcuts</h3>
@@ -533,6 +526,7 @@ const I18N = {
             <tr><th scope="row"><kbd>J</kbd> / <kbd>K</kbd></th><td>Next open / previous change</td></tr>
             <tr><th scope="row"><kbd>A</kbd></th><td>Accept the change</td></tr>
             <tr><th scope="row"><kbd>R</kbd></th><td>Reject the change</td></tr>
+            <tr><th scope="row"><kbd>E</kbd></th><td>Edit the paragraph</td></tr>
             <tr><th scope="row"><kbd>Enter</kbd></th><td>In the list: jump to the change</td></tr>
             <tr><th scope="row"><kbd>/</kbd> or <kbd>{mod}+F</kbd></th><td>Find in document</td></tr>
             <tr><th scope="row"><kbd>{mod}+Z</kbd></th><td>Undo</td></tr>

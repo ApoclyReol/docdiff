@@ -1612,11 +1612,6 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
   height: 1px;
   border-top: 1px dashed hsl(var(--input));
 }
-@media (hover: hover) {
-  .clause.state-equal.is-hovered:not(.is-active) {
-    background: hsl(var(--ton-1));
-  }
-}
 /* The current change: a 2 px ink ring (the review actions sit inside it) */
 .clause.is-active {
   box-shadow: 0 0 0 2px hsl(var(--current));
@@ -1763,81 +1758,110 @@ ins.tok-ins.tok-marker {
   display: none;
 }
 
-/* ── Review actions, docked under the current paragraph ────────────────── */
+/* ── Review actions: a compact icon group at the top right of the current paragraph ── */
 .review-bar {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
+  float: right;
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid hsl(var(--border));
+  gap: 2px;
+  margin: -3px -6px 4px 12px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px hsl(var(--border));
   font-size: var(--text-ui);
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.4;
   color: hsl(var(--foreground));
+  text-indent: 0;
 }
-.clause.kind-bullet .review-bar {
-  margin-left: -10px;
+/* Short header / footer lines: the group may reach into the padding instead of adding height */
+.clause.kind-hf .review-bar {
+  margin-top: -3px;
+  margin-bottom: 0;
+}
+/* Removed paragraph in the new version: the group ends the dashed line */
+.clause.state-placeholder .review-bar {
+  float: none;
+  margin: 0 -6px 0 12px;
 }
 .ra-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 12px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 0;
-  border-radius: var(--radius-md);
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
-  box-shadow: inset 0 0 0 1px var(--kante-500);
-  font: inherit;
-  font-size: var(--text-ui);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.ra-btn.ra-accept {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  box-shadow: none;
-}
-.ra-btn.ra-edit,
-.ra-btn.ra-reopen {
+  border-radius: calc(var(--radius-md) - 2px);
   background: transparent;
-  box-shadow: none;
-  color: hsl(var(--foreground));
+  color: hsl(var(--muted-foreground));
+  font: inherit;
+  cursor: pointer;
 }
 .ra-btn .icon {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.2;
 }
+.ra-btn:focus-visible {
+  outline-offset: 0;
+}
+/* Colour only on hover and keyboard focus */
+.ra-btn.ra-accept:focus-visible { color: hsl(var(--success-ink)); background: hsl(var(--success-ton-1)); }
+.ra-btn.ra-reject:focus-visible { color: hsl(var(--destructive-ink)); background: hsl(var(--destructive-ton-1)); }
+.ra-btn.ra-edit:focus-visible { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
 @media (hover: hover) {
-  .ra-btn:hover {
-    background: hsl(var(--ton-2));
-  }
-  .ra-btn.ra-accept:hover {
-    background: hsl(var(--primary-hover));
-  }
+  .ra-btn.ra-accept:hover { color: hsl(var(--success-ink)); background: hsl(var(--success-ton-1)); }
+  .ra-btn.ra-reject:hover { color: hsl(var(--destructive-ink)); background: hsl(var(--destructive-ton-1)); }
+  .ra-btn.ra-edit:hover { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
 }
-.ra-status {
+/* Reviewed: a status pill with "Undo" */
+.review-bar.is-pill {
+  padding: 0 4px 0 10px;
+}
+.ra-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-right: 4px;
+  min-height: 32px;
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
-.ra-status.is-accepted {
-  color: hsl(var(--success-ink));
-}
-.ra-status.is-rejected {
-  color: hsl(var(--destructive-ink));
-}
-.ra-status .icon {
+.ra-pill .icon {
   width: 15px;
   height: 15px;
+  stroke-width: 2.4;
+}
+.ra-pill.is-accepted { color: hsl(var(--success-ink)); }
+.ra-pill.is-rejected { color: hsl(var(--foreground)); }
+.ra-pill-sep {
+  color: hsl(var(--muted-foreground));
+  font-weight: 400;
+}
+.ra-undo {
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: hsl(var(--primary-ink));
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .ra-undo:hover { background: hsl(var(--ton-2)); }
+}
+/* The pill carries the check mark itself */
+.clause.is-accepted:has(.review-bar)::after {
+  display: none;
 }
 
 /* Inline editor */
@@ -1996,9 +2020,6 @@ ins.tok-ins.tok-marker {
   flex-wrap: wrap;
   column-gap: 12px;
 }
-.hint-pair {
-  white-space: nowrap;
-}
 .first-hint {
   display: flex;
   align-items: center;
@@ -2138,7 +2159,13 @@ body.legend-dismissed .first-hint {
   stroke-width: 2.4;
 }
 .nav-status.is-accepted { color: hsl(var(--success-ink)); }
-.nav-status.is-rejected { color: hsl(var(--destructive-ink)); }
+.nav-status.is-rejected { color: hsl(var(--muted-foreground)); }
+.nav-item.is-accepted .nav-item-ref,
+.nav-item.is-rejected .nav-item-ref,
+.nav-item.is-accepted .nav-item-deltas,
+.nav-item.is-rejected .nav-item-deltas {
+  color: hsl(var(--muted-foreground));
+}
 .nav-item.is-accepted .tok-del,
 .nav-item.is-accepted .tok-ins,
 .nav-item.is-rejected .tok-del,
@@ -2172,32 +2199,6 @@ body.legend-dismissed .first-hint {
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
-}
-.nav-item-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 12px 12px 13px;
-}
-.nav-item-actions .ra-btn {
-  height: 32px;
-  padding: 0 10px;
-}
-.nav-item-actions .ra-edit,
-.nav-item-actions .ra-reopen {
-  width: 32px;
-  padding: 0;
-  justify-content: center;
-  margin-left: auto;
-}
-.nav-item-actions .ra-edit .ra-label,
-.nav-item-actions .ra-reopen .ra-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
 }
 .empty-state {
   margin: auto;
@@ -2715,29 +2716,6 @@ body.is-diff-busy .doc-sheet {
     grid-template-columns: minmax(24px, auto) 1fr;
     column-gap: 8px;
   }
-  .review-bar {
-    gap: 8px;
-  }
-  .ra-btn {
-    height: 44px;
-    padding: 0 14px;
-  }
-  .ra-btn.ra-edit .ra-label,
-  .ra-btn.ra-reopen .ra-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-  .ra-btn.ra-edit,
-  .ra-btn.ra-reopen {
-    width: 44px;
-    padding: 0;
-    justify-content: center;
-    margin-left: auto;
-    box-shadow: inset 0 0 0 1px var(--kante-300);
-  }
   .bottom-bar {
     display: grid;
     position: fixed;
@@ -2908,7 +2886,19 @@ body.is-diff-busy .doc-sheet {
     min-width: 44px;
   }
   .ra-btn {
+    width: 44px;
     height: 44px;
+  }
+  .ra-btn .icon {
+    width: 20px;
+    height: 20px;
+  }
+  .ra-pill,
+  .ra-undo {
+    min-height: 44px;
+  }
+  .ra-undo {
+    padding: 0 10px;
   }
 }
 
@@ -3570,7 +3560,7 @@ body.is-diff-busy .doc-sheet {
           <span class="progress-text" id="list-progress"></span>
         </div>
         <p class="first-hint" id="first-hint">
-          <span class="first-hint-text"><span class="hint-pair"><del class="tok-del" data-i18n="legendDelSample">durchgestrichen</del> <span data-i18n="legendDel">= entfernt</span></span> <span class="hint-pair"><ins class="tok-ins" data-i18n="legendInsSample">grün</ins> <span data-i18n="legendIns">= hinzugefügt</span></span></span>
+          <span class="first-hint-text" data-i18n="hintGlyphs">✓ annehmen · ✗ ablehnen · J/K nächste Änderung</span>
           <button type="button" class="hint-close" id="btn-legend-close" aria-label="Hinweis ausblenden" data-i18n-label="legendClose">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
@@ -3846,9 +3836,6 @@ const I18N = {
     toastTxt: 'Textdatei gespeichert: {name}',
     toastSession: 'Arbeitsstand gespeichert: {name}',
     toastCopied: 'Text der neuen Fassung kopiert',
-    toastAccepted: 'Angenommen',
-    toastRejected: 'Abgelehnt',
-    toastReopened: 'Wieder offen',
     toastEdited: 'Absatz bearbeitet',
     toastUndo: 'Rückgängig',
     toastUndone: 'Rückgängig gemacht',
@@ -3875,10 +3862,6 @@ const I18N = {
     filterMod: 'Geändert',
     filterIns: 'Neu',
     filterDel: 'Entfernt',
-    legendDelSample: 'durchgestrichen',
-    legendDel: '= entfernt',
-    legendInsSample: 'grün',
-    legendIns: '= hinzugefügt',
     legendClose: 'Hinweis ausblenden',
     mobDone: 'Fertig',
     noMatchesTitle: 'Nichts in diesem Filter',
@@ -3908,11 +3891,14 @@ const I18N = {
     acceptBtn: 'Annehmen',
     rejectBtn: 'Ablehnen',
     editBtn: 'Bearbeiten',
-    reopenBtn: 'Wieder öffnen',
-    acceptTitle: 'Neue Fassung behalten und als geprüft markieren (A)',
-    rejectTitle: 'Alte Fassung dieses Absatzes wiederherstellen und als geprüft markieren (R)',
-    editTitle: 'Absatz der neuen Fassung bearbeiten (oder Doppelklick)',
+    reopenBtn: 'Rückgängig',
+    acceptTitle: 'Annehmen (A)',
+    rejectTitle: 'Ablehnen (R)',
+    editTitle: 'Bearbeiten (E)',
     reopenTitle: 'Prüfung zurücknehmen',
+    pillAccepted: 'Angenommen',
+    pillRejected: 'Abgelehnt',
+    hintGlyphs: '✓ annehmen · ✗ ablehnen · J/K nächste Änderung',
     reviewBarLabel: 'Änderung {i} von {n}',
     paraActionsLabel: 'Absatz',
     acceptedNote: 'Angenommen',
@@ -3933,7 +3919,7 @@ const I18N = {
       </section>
       <section class="help-sec">
         <h3>Prüfen</h3>
-        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Beides markiert die Änderung als geprüft und lässt sich rückgängig machen. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
+        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft, springen zur nächsten offenen Änderung und lassen sich über <strong>Rückgängig</strong> am Absatz zurücknehmen. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
       </section>
       <section class="help-sec">
         <h3>Tastenkürzel</h3>
@@ -3942,6 +3928,7 @@ const I18N = {
             <tr><th scope="row"><kbd>J</kbd> / <kbd>K</kbd></th><td>Nächste offene / vorherige Änderung</td></tr>
             <tr><th scope="row"><kbd>A</kbd></th><td>Änderung annehmen</td></tr>
             <tr><th scope="row"><kbd>R</kbd></th><td>Änderung ablehnen</td></tr>
+            <tr><th scope="row"><kbd>E</kbd></th><td>Absatz bearbeiten</td></tr>
             <tr><th scope="row"><kbd>Enter</kbd></th><td>In der Liste: zur Stelle springen</td></tr>
             <tr><th scope="row"><kbd>/</kbd> oder <kbd>{mod}+F</kbd></th><td>Im Dokument suchen</td></tr>
             <tr><th scope="row"><kbd>{mod}+Z</kbd></th><td>Rückgängig</td></tr>
@@ -4205,9 +4192,6 @@ const I18N = {
     toastTxt: 'Text file saved: {name}',
     toastSession: 'Work saved: {name}',
     toastCopied: 'Text of the new version copied',
-    toastAccepted: 'Accepted',
-    toastRejected: 'Rejected',
-    toastReopened: 'Reopened',
     toastEdited: 'Paragraph edited',
     toastUndo: 'Undo',
     toastUndone: 'Undone',
@@ -4234,10 +4218,6 @@ const I18N = {
     filterMod: 'Changed',
     filterIns: 'Added',
     filterDel: 'Removed',
-    legendDelSample: 'struck through',
-    legendDel: '= removed',
-    legendInsSample: 'green',
-    legendIns: '= added',
     legendClose: 'Dismiss hint',
     mobDone: 'Done',
     noMatchesTitle: 'Nothing in this filter',
@@ -4267,11 +4247,14 @@ const I18N = {
     acceptBtn: 'Accept',
     rejectBtn: 'Reject',
     editBtn: 'Edit',
-    reopenBtn: 'Reopen',
-    acceptTitle: 'Keep the new wording and mark as reviewed (A)',
-    rejectTitle: 'Restore the old wording of this paragraph and mark as reviewed (R)',
-    editTitle: 'Edit this paragraph of the new version (or double-click)',
+    reopenBtn: 'Undo',
+    acceptTitle: 'Accept (A)',
+    rejectTitle: 'Reject (R)',
+    editTitle: 'Edit (E)',
     reopenTitle: 'Undo the review of this change',
+    pillAccepted: 'Accepted',
+    pillRejected: 'Rejected',
+    hintGlyphs: '✓ accept · ✗ reject · J/K next change',
     reviewBarLabel: 'Change {i} of {n}',
     paraActionsLabel: 'Paragraph',
     acceptedNote: 'Accepted',
@@ -4292,7 +4275,7 @@ const I18N = {
       </section>
       <section class="help-sec">
         <h3>Reviewing</h3>
-        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. Both mark the change as reviewed and can be undone. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
+        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed, move on to the next open change and can be taken back with <strong>Undo</strong> at the paragraph. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
       </section>
       <section class="help-sec">
         <h3>Keyboard shortcuts</h3>
@@ -4301,6 +4284,7 @@ const I18N = {
             <tr><th scope="row"><kbd>J</kbd> / <kbd>K</kbd></th><td>Next open / previous change</td></tr>
             <tr><th scope="row"><kbd>A</kbd></th><td>Accept the change</td></tr>
             <tr><th scope="row"><kbd>R</kbd></th><td>Reject the change</td></tr>
+            <tr><th scope="row"><kbd>E</kbd></th><td>Edit the paragraph</td></tr>
             <tr><th scope="row"><kbd>Enter</kbd></th><td>In the list: jump to the change</td></tr>
             <tr><th scope="row"><kbd>/</kbd> or <kbd>{mod}+F</kbd></th><td>Find in document</td></tr>
             <tr><th scope="row"><kbd>{mod}+Z</kbd></th><td>Undo</td></tr>
@@ -7039,10 +7023,17 @@ function applyComparisonResult(request, result, opts = {}) {
   // The selected / hovered row may be gone after an edit that removed paragraphs.
   if (state.activeRowId && !state.alignedRows.some(r => r.id === state.activeRowId)) state.activeRowId = null;
   if (state.hoveredRowId && !state.alignedRows.some(r => r.id === state.hoveredRowId)) state.hoveredRowId = null;
+  let scrollAfterReject = false;
   if (pendingSelectAfterReject !== null) {
-    const row = state.alignedRows[Math.min(pendingSelectAfterReject, state.alignedRows.length - 1)];
+    // After "Ablehnen": on to the next open change, or the rejected one when none is left.
+    const req = pendingSelectAfterReject;
     pendingSelectAfterReject = null;
-    if (row) state.activeRowId = row.id;
+    const own = state.listItems.find(it => it.key === req.key);
+    const target = (!req.stay && nextOpenItemAfter(req.key)) || own;
+    if (target) {
+      state.activeRowId = target.rowId;
+      scrollAfterReject = target !== own;
+    }
   }
   // Change 1 is selected as soon as a comparison is shown.
   const preselect = !state.activeRowId && state.listItems.length > 0;
@@ -7071,6 +7062,12 @@ function applyComparisonResult(request, result, opts = {}) {
   if (state.searchQuery) scheduleSearchRecount();
 
   scheduleRulerDraw();
+  if (scrollAfterReject) {
+    const id = state.activeRowId;
+    requestAnimationFrame(() => {
+      if (state.activeRowId === id) selectAndScrollToRow(id, true, true, { flash: false, keepIfVisible: true });
+    });
+  }
   if (preselect || !wasComparing) {
     const id = state.activeRowId;
     if (id) requestAnimationFrame(() => {
@@ -7674,10 +7671,7 @@ function renderSidebarList(bothLoaded) {
             ? `<span class="nav-status is-rejected" aria-hidden="true">${ICON_X}</span>`
             : '';
         const head = [ref, `${t('pageShort')} ${page}`].filter(Boolean).join(' · ');
-        const actions = isActive
-          ? `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
-          : '';
-        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}</span></span>${renderSidebarDeltaHtml(item)}</button>${actions}</div>`;
+        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}</span></span>${renderSidebarDeltaHtml(item)}</button></div>`;
       })
       .join('')
   );
@@ -8533,7 +8527,7 @@ function rebuildReviewIndex() {
     const entry = state.reviews[key];
     const status = entry && entry.status === 'accepted' ? 'accepted' : 'open';
     row.reviewStatus = status === 'accepted' ? 'accepted' : '';
-    items.push({ id: row.id, rowId: row.id, row, type: row.type, status, ghost: null, order: idx, sub: 0 });
+    items.push({ id: row.id, key, rowId: row.id, row, type: row.type, status, ghost: null, order: idx, sub: 0 });
   });
 
   // Rejected changes, placed where they were.
@@ -8565,6 +8559,7 @@ function rebuildReviewIndex() {
     }
     items.push({
       id: `ghost-${key.length}-${hashString(key)}`,
+      key,
       rowId: target.id,
       row: target,
       type: entry.type,
@@ -8622,6 +8617,28 @@ function serializeReviews(reviews = state.reviews) {
 // Review status belongs to the loaded pair of documents.
 function resetReviews() {
   state.reviews = {};
+  lastReviewedKey = null;
+}
+
+// The change reviewed last keeps a small status pill with "Undo" until the next review.
+let lastReviewedKey = null;
+
+// The next open change after the one with this key (wrapping around), or null.
+function nextOpenItemAfter(key) {
+  const items = state.listItems;
+  const i = items.findIndex(it => it.key === key);
+  for (let k = 1; k <= items.length; k++) {
+    const it = items[(Math.max(i, 0) + k) % items.length];
+    if (it && it.status === 'open') return it;
+  }
+  return null;
+}
+
+function selectItemAfterReview(key) {
+  const next = nextOpenItemAfter(key);
+  const target = next || state.listItems.find(it => it.key === key);
+  if (!target) return;
+  selectAndScrollToRow(target.rowId, true, true, { itemId: target.id, flash: false, keepIfVisible: true });
 }
 
 /* ── Actions ───────────────────────────────────────────────────────────── */
@@ -8635,11 +8652,13 @@ function acceptItem(item, opts = {}) {
   const row = item.row;
   pushUndoSnapshot();
   state.reviews[row.reviewKey] = { status: 'accepted', type: row.type };
+  lastReviewedKey = row.reviewKey;
   refreshReviewState();
   const n = state.listItems.length;
   const idx = (state.listItems.find(i => i.rowId === row.id && !i.ghost) || item).index;
+  // On to the next open change; the pill at this paragraph offers "Undo".
+  if (!opts.stay) selectItemAfterReview(row.reviewKey);
   announce(formatMsg('announceAccepted', { i: idx, n }));
-  if (!opts.silent) showUndoToast('toastAccepted');
   return true;
 }
 
@@ -8662,13 +8681,12 @@ function rejectItem(item, opts = {}) {
   pushUndoSnapshot();
   delete state.reviews[row.reviewKey];
   state.reviews[row.reviewKey] = entry;
-  // The rejected row stays selected; for an insertion that is the paragraph above it.
-  const targetIdx = state.alignedRows.indexOf(row);
-  pendingSelectAfterReject = row.type === 'inserted' ? Math.max(0, targetIdx - 1) : targetIdx;
+  lastReviewedKey = row.reviewKey;
+  // After the new comparison: on to the next open change (or stay on this one).
+  pendingSelectAfterReject = { key: row.reviewKey, stay: Boolean(opts.stay) };
   state.rightText = rebuildRightTextFromRows(row.id, row.leftBlock ? row.leftBlock.text : '');
   runComparison();
   announce(formatMsg('announceRejected', { i: idx, n }));
-  if (!opts.silent) showUndoToast('toastRejected');
   return true;
 }
 
@@ -8695,8 +8713,8 @@ function reopenItem(item) {
     }
     runComparison();
   }
+  if (lastReviewedKey === item.key) lastReviewedKey = null;
   announce(formatMsg('announceReopened', { i: idx, n }));
-  showUndoToast('toastReopened');
   return true;
 }
 
@@ -8723,48 +8741,69 @@ function decorateReviewedRows() {
   }
 }
 
-/* ── The docked action row under the active paragraph ──────────────────── */
+/* ── Review actions at the current paragraph ─────────────────────────────
+ *
+ * One place only: a compact group of three icon buttons (accept, reject, edit) floats at the
+ * top right of the current paragraph in the new version (or in the stacked view). A reviewed
+ * change shows a status pill with "Undo" instead. The change reviewed last keeps its pill
+ * while the selection moves on to the next open change.
+ */
 
 // Created on first use (the module is also loaded without a DOM by the export tests).
 let reviewBar = null;
+let reviewPill = null;
+function makeReviewGroup(cls) {
+  const el = document.createElement('div');
+  el.className = cls;
+  el.addEventListener('mousedown', e => e.stopPropagation());
+  el.addEventListener('dblclick', e => e.stopPropagation());
+  // Roving focus inside the group: one tab stop, arrow keys move between the buttons.
+  el.addEventListener('keydown', e => handleRovingKeys(e, el));
+  return el;
+}
 function getReviewBar() {
-  if (reviewBar) return reviewBar;
-  reviewBar = document.createElement('div');
-  reviewBar.className = 'review-bar';
-  reviewBar.setAttribute('role', 'toolbar');
-  reviewBar.addEventListener('mousedown', e => e.stopPropagation());
-  // Roving focus inside the action row: one tab stop, arrow keys move between the buttons.
-  reviewBar.addEventListener('keydown', e => handleRovingKeys(e, reviewBar));
+  if (!reviewBar) reviewBar = makeReviewGroup('review-bar');
   return reviewBar;
+}
+function getReviewPill() {
+  if (!reviewPill) reviewPill = makeReviewGroup('review-bar review-pill-host');
+  return reviewPill;
 }
 
 function removeReviewBar() {
   if (reviewBar && reviewBar.isConnected) reviewBar.remove();
+  if (reviewPill && reviewPill.isConnected) reviewPill.remove();
 }
 
 const ICON_CHECK = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 const ICON_X = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 const ICON_EDIT = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
-const ICON_UNDO = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>';
 
-// Buttons for one item (shared by the document action row and the active list card).
-function reviewActionsHtml(item, row, context) {
-  const btn = (action, icon, label, title, cls = '') =>
-    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" data-tooltip="${escapeHtml(title)}" tabindex="-1">${icon}<span class="ra-label">${escapeHtml(label)}</span></button>`;
-  const edit = btn('edit', ICON_EDIT, t('editBtn'), t('editTitle'), 'ra-edit');
+// Icon buttons for an open change, a status pill for a reviewed one.
+function reviewActionsHtml(item) {
+  const btn = (action, icon, label, title, key, cls) =>
+    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" aria-label="${escapeHtml(label)}" aria-keyshortcuts="${key}" data-tooltip="${escapeHtml(title)}" tabindex="-1">${icon}</button>`;
+  const edit = btn('edit', ICON_EDIT, t('editBtn'), t('editTitle'), 'E', 'ra-edit');
   if (!item) return rovingFirst(edit);
   if (item.status === 'open') {
     return rovingFirst(
-      btn('accept', ICON_CHECK, t('acceptBtn'), t('acceptTitle'), 'ra-accept') +
-      btn('reject', ICON_X, t('rejectBtn'), t('rejectTitle'), 'ra-reject') +
+      btn('accept', ICON_CHECK, t('acceptBtn'), t('acceptTitle'), 'A', 'ra-accept') +
+      btn('reject', ICON_X, t('rejectBtn'), t('rejectTitle'), 'R', 'ra-reject') +
       edit
     );
   }
-  const note =
-    item.status === 'accepted'
-      ? `<span class="ra-status is-accepted">${ICON_CHECK}${escapeHtml(t('acceptedNote'))}</span>`
-      : `<span class="ra-status is-rejected">${ICON_X}${escapeHtml(t('rejectedNote'))}</span>`;
-  return note + rovingFirst(btn('reopen', ICON_UNDO, t('reopenBtn'), t('reopenTitle'), 'ra-reopen') + (item.status === 'accepted' ? edit : ''));
+  return reviewPillHtml(item);
+}
+
+function reviewPillHtml(item) {
+  const accepted = item.status === 'accepted';
+  return (
+    `<span class="ra-pill ${accepted ? 'is-accepted' : 'is-rejected'}">` +
+    `${accepted ? ICON_CHECK : ICON_X}<span class="ra-pill-text">${escapeHtml(t(accepted ? 'pillAccepted' : 'pillRejected'))}</span>` +
+    `<span class="ra-pill-sep" aria-hidden="true">·</span>` +
+    `<button type="button" class="ra-undo" data-review-action="reopen" data-tooltip="${escapeHtml(t('reopenTitle'))}" tabindex="0">${escapeHtml(t('reopenBtn'))}</button>` +
+    `</span>`
+  );
 }
 
 // A group of action buttons is one tab stop; the arrow keys move inside it.
@@ -8786,10 +8825,22 @@ function handleRovingKeys(e, container) {
   return true;
 }
 
+// The clause that carries the actions of a row in the visible view.
+function reviewHostFor(rowId) {
+  const els = getRowElements(rowId);
+  return els ? (state.viewMode === 'inline' ? els.u : els.r) : null;
+}
+
+// Floats at the top right of the paragraph text (inside the body of a numbered paragraph),
+// so the words flow around it instead of being covered.
+function attachReviewGroup(el, host) {
+  const slot = host.querySelector(':scope > .clause-body') || host;
+  if (el.parentElement !== slot || slot.firstChild !== el) slot.insertBefore(el, slot.firstChild);
+}
+
 function placeReviewBar() {
   const row = state.activeRowId && state.alignedRows.find(r => r.id === state.activeRowId);
-  const els = row ? getRowElements(row.id) : null;
-  const host = els ? (state.viewMode === 'inline' ? els.u : els.r) : null;
+  const host = row ? reviewHostFor(row.id) : null;
   if (!row || !host || host.classList.contains('is-editing') || !document.body.classList.contains('is-comparing')) {
     removeReviewBar();
     return;
@@ -8798,14 +8849,16 @@ function placeReviewBar() {
   const item = getActiveItem();
   const hadFocus = bar.contains(document.activeElement);
   const focusedAction = hadFocus ? document.activeElement.getAttribute('data-review-action') : null;
-  bar.innerHTML = reviewActionsHtml(item, row, 'doc');
+  bar.innerHTML = reviewActionsHtml(item);
+  bar.classList.toggle('is-pill', Boolean(item && item.status !== 'open'));
+  bar.setAttribute('role', 'toolbar');
   bar.setAttribute(
     'aria-label',
     item ? formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }) : t('paraActionsLabel')
   );
   const buttons = bar.querySelectorAll('button');
   if (buttons.length) buttons[0].tabIndex = 0;
-  if (bar.parentElement !== host) host.appendChild(bar);
+  attachReviewGroup(bar, host);
   if (hadFocus) {
     const again = bar.querySelector(`[data-review-action="${focusedAction}"]`) || buttons[0];
     if (again) {
@@ -8813,6 +8866,27 @@ function placeReviewBar() {
       again.focus({ preventScroll: true });
     }
   }
+  placeReviewPill(item);
+}
+
+// The status pill of the change reviewed last, while another change is current.
+function placeReviewPill(activeItem) {
+  const item = lastReviewedKey ? state.listItems.find(it => it.key === lastReviewedKey) : null;
+  const host =
+    item && item.status !== 'open' && item !== activeItem && item.rowId !== state.activeRowId ? reviewHostFor(item.rowId) : null;
+  if (!host || host.classList.contains('is-editing')) {
+    if (reviewPill && reviewPill.isConnected) reviewPill.remove();
+    return;
+  }
+  const pill = getReviewPill();
+  const hadFocus = pill.contains(document.activeElement);
+  pill.innerHTML = reviewPillHtml(item);
+  pill.classList.add('is-pill');
+  pill.setAttribute('role', 'group');
+  pill.setAttribute('aria-label', formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }));
+  pill.setAttribute('data-pill-item', item.id);
+  attachReviewGroup(pill, host);
+  if (hadFocus) pill.querySelector('button').focus({ preventScroll: true });
 }
 
 // Runs a review action for the active row ('accept' | 'reject' | 'edit' | 'reopen').
@@ -8825,7 +8899,11 @@ function runReviewAction(action, fromList) {
   let done = false;
   if (action === 'accept') done = acceptItem(item);
   else if (action === 'reject') done = rejectItem(item);
-  else if (action === 'reopen') done = reopenItem(item);
+  else if (action === 'reopen') {
+    done = reopenItem(item);
+    // Back on the reopened change, ready for a new decision.
+    if (done) requestRowFocus(state.activeRowId, fromList);
+  }
   else if (action === 'edit') {
     pendingRowFocus = null;
     const host = getRowElements(row.id)[state.viewMode === 'inline' ? 'u' : 'r'];
@@ -9084,7 +9162,7 @@ function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true, opts = {
   if (navTarget) navTarget.scrollIntoView({ block: 'nearest', behavior });
 }
 
-// Moves the "active" card (and its action buttons) in the list without re-rendering it.
+// Moves the "active" card in the list without re-rendering it (cards carry no actions).
 function updateListActiveCard(itemId) {
   const item = itemId ? state.listItems.find(i => i.id === itemId) || getActiveItem() : getActiveItem();
   const focusInList = sidebarList.contains(document.activeElement);
@@ -9093,8 +9171,6 @@ function updateListActiveCard(itemId) {
     el.classList.remove('is-active');
     const main = el.querySelector('.nav-item-main');
     if (main) main.removeAttribute('aria-current');
-    const actions = el.querySelector('.nav-item-actions');
-    if (actions) actions.remove();
   }
   if (!item) return;
   const card = sidebarList.querySelector(`.nav-item[data-item-id="${item.id}"]`);
@@ -9102,12 +9178,6 @@ function updateListActiveCard(itemId) {
   card.classList.add('is-active');
   const main = card.querySelector('.nav-item-main');
   main.setAttribute('aria-current', 'true');
-  if (!card.querySelector('.nav-item-actions')) {
-    card.insertAdjacentHTML(
-      'beforeend',
-      `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
-    );
-  }
   if (!focusInList) {
     for (const b of sidebarList.querySelectorAll('.nav-item-main')) b.tabIndex = b === main ? 0 : -1;
   }
@@ -9462,14 +9532,13 @@ function toggleHfGroup(id, collapse) {
     const actionBtn = e.target.closest('[data-review-action]');
     if (actionBtn) {
       e.stopPropagation();
-      const fromList = container === sidebarList;
-      const card = actionBtn.closest('.nav-item[data-row-id]');
-      if (card && card.getAttribute('data-row-id') !== state.activeRowId) {
-        selectAndScrollToRow(card.getAttribute('data-row-id'), false, true, { itemId: card.getAttribute('data-item-id') });
+      // "Undo" in the pill of a change that is not the current one: make it current first.
+      const pill = actionBtn.closest('[data-pill-item]');
+      if (pill) {
+        const item = state.listItems.find(it => it.id === pill.getAttribute('data-pill-item'));
+        if (item) selectAndScrollToRow(item.rowId, false, false, { itemId: item.id, flash: false });
       }
-      const action = actionBtn.getAttribute('data-review-action');
-      if (action === 'edit' && fromList && isTabletOrSmaller()) closeListSheet(false);
-      runReviewAction(action, fromList);
+      runReviewAction(actionBtn.getAttribute('data-review-action'), false);
       return;
     }
     const hfToggle = e.target.closest('[data-hf-toggle]');
@@ -9494,11 +9563,6 @@ function toggleHfGroup(id, collapse) {
 
 // The list: one tab stop; arrow keys move between the cards (selection follows focus).
 sidebarList.addEventListener('keydown', e => {
-  const actions = e.target.closest('.nav-item-actions');
-  if (actions) {
-    handleRovingKeys(e, actions);
-    return;
-  }
   const main = e.target.closest('.nav-item-main');
   if (!main) return;
   const all = Array.from(sidebarList.querySelectorAll('.nav-item-main'));
@@ -12175,6 +12239,10 @@ window.addEventListener('keydown', e => {
   } else if (key === 'r') {
     e.preventDefault();
     runReviewAction('reject', Boolean(activeEl && activeEl.closest && activeEl.closest('#sidebar-list')));
+  } else if (key === 'e') {
+    e.preventDefault();
+    if (isTabletOrSmaller()) closeListSheet(false);
+    runReviewAction('edit', false);
   } else if (e.key === '/') {
     e.preventDefault();
     openSearch();

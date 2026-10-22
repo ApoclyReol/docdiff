@@ -72,10 +72,17 @@ function applyComparisonResult(request, result, opts = {}) {
   // The selected / hovered row may be gone after an edit that removed paragraphs.
   if (state.activeRowId && !state.alignedRows.some(r => r.id === state.activeRowId)) state.activeRowId = null;
   if (state.hoveredRowId && !state.alignedRows.some(r => r.id === state.hoveredRowId)) state.hoveredRowId = null;
+  let scrollAfterReject = false;
   if (pendingSelectAfterReject !== null) {
-    const row = state.alignedRows[Math.min(pendingSelectAfterReject, state.alignedRows.length - 1)];
+    // After "Ablehnen": on to the next open change, or the rejected one when none is left.
+    const req = pendingSelectAfterReject;
     pendingSelectAfterReject = null;
-    if (row) state.activeRowId = row.id;
+    const own = state.listItems.find(it => it.key === req.key);
+    const target = (!req.stay && nextOpenItemAfter(req.key)) || own;
+    if (target) {
+      state.activeRowId = target.rowId;
+      scrollAfterReject = target !== own;
+    }
   }
   // Change 1 is selected as soon as a comparison is shown.
   const preselect = !state.activeRowId && state.listItems.length > 0;
@@ -104,6 +111,12 @@ function applyComparisonResult(request, result, opts = {}) {
   if (state.searchQuery) scheduleSearchRecount();
 
   scheduleRulerDraw();
+  if (scrollAfterReject) {
+    const id = state.activeRowId;
+    requestAnimationFrame(() => {
+      if (state.activeRowId === id) selectAndScrollToRow(id, true, true, { flash: false, keepIfVisible: true });
+    });
+  }
   if (preselect || !wasComparing) {
     const id = state.activeRowId;
     if (id) requestAnimationFrame(() => {
@@ -707,10 +720,7 @@ function renderSidebarList(bothLoaded) {
             ? `<span class="nav-status is-rejected" aria-hidden="true">${ICON_X}</span>`
             : '';
         const head = [ref, `${t('pageShort')} ${page}`].filter(Boolean).join(' · ');
-        const actions = isActive
-          ? `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
-          : '';
-        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}</span></span>${renderSidebarDeltaHtml(item)}</button>${actions}</div>`;
+        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}</span></span>${renderSidebarDeltaHtml(item)}</button></div>`;
       })
       .join('')
   );

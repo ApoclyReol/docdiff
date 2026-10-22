@@ -477,6 +477,10 @@ window.addEventListener('keydown', e => {
   } else if (key === 'r') {
     e.preventDefault();
     runReviewAction('reject', Boolean(activeEl && activeEl.closest && activeEl.closest('#sidebar-list')));
+  } else if (key === 'e') {
+    e.preventDefault();
+    if (isTabletOrSmaller()) closeListSheet(false);
+    runReviewAction('edit', false);
   } else if (e.key === '/') {
     e.preventDefault();
     openSearch();

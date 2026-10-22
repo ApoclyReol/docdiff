@@ -1437,11 +1437,6 @@ body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal
   height: 1px;
   border-top: 1px dashed hsl(var(--input));
 }
-@media (hover: hover) {
-  .clause.state-equal.is-hovered:not(.is-active) {
-    background: hsl(var(--ton-1));
-  }
-}
 /* The current change: a 2 px ink ring (the review actions sit inside it) */
 .clause.is-active {
   box-shadow: 0 0 0 2px hsl(var(--current));
@@ -1588,81 +1583,110 @@ ins.tok-ins.tok-marker {
   display: none;
 }
 
-/* ── Review actions, docked under the current paragraph ────────────────── */
+/* ── Review actions: a compact icon group at the top right of the current paragraph ── */
 .review-bar {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
+  float: right;
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid hsl(var(--border));
+  gap: 2px;
+  margin: -3px -6px 4px 12px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px hsl(var(--border));
   font-size: var(--text-ui);
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.4;
   color: hsl(var(--foreground));
+  text-indent: 0;
 }
-.clause.kind-bullet .review-bar {
-  margin-left: -10px;
+/* Short header / footer lines: the group may reach into the padding instead of adding height */
+.clause.kind-hf .review-bar {
+  margin-top: -3px;
+  margin-bottom: 0;
+}
+/* Removed paragraph in the new version: the group ends the dashed line */
+.clause.state-placeholder .review-bar {
+  float: none;
+  margin: 0 -6px 0 12px;
 }
 .ra-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 12px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 0;
-  border-radius: var(--radius-md);
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
-  box-shadow: inset 0 0 0 1px var(--kante-500);
-  font: inherit;
-  font-size: var(--text-ui);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.ra-btn.ra-accept {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  box-shadow: none;
-}
-.ra-btn.ra-edit,
-.ra-btn.ra-reopen {
+  border-radius: calc(var(--radius-md) - 2px);
   background: transparent;
-  box-shadow: none;
-  color: hsl(var(--foreground));
+  color: hsl(var(--muted-foreground));
+  font: inherit;
+  cursor: pointer;
 }
 .ra-btn .icon {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.2;
 }
+.ra-btn:focus-visible {
+  outline-offset: 0;
+}
+/* Colour only on hover and keyboard focus */
+.ra-btn.ra-accept:focus-visible { color: hsl(var(--success-ink)); background: hsl(var(--success-ton-1)); }
+.ra-btn.ra-reject:focus-visible { color: hsl(var(--destructive-ink)); background: hsl(var(--destructive-ton-1)); }
+.ra-btn.ra-edit:focus-visible { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
 @media (hover: hover) {
-  .ra-btn:hover {
-    background: hsl(var(--ton-2));
-  }
-  .ra-btn.ra-accept:hover {
-    background: hsl(var(--primary-hover));
-  }
+  .ra-btn.ra-accept:hover { color: hsl(var(--success-ink)); background: hsl(var(--success-ton-1)); }
+  .ra-btn.ra-reject:hover { color: hsl(var(--destructive-ink)); background: hsl(var(--destructive-ton-1)); }
+  .ra-btn.ra-edit:hover { color: hsl(var(--foreground)); background: hsl(var(--ton-2)); }
 }
-.ra-status {
+/* Reviewed: a status pill with "Undo" */
+.review-bar.is-pill {
+  padding: 0 4px 0 10px;
+}
+.ra-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-right: 4px;
+  min-height: 32px;
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
-.ra-status.is-accepted {
-  color: hsl(var(--success-ink));
-}
-.ra-status.is-rejected {
-  color: hsl(var(--destructive-ink));
-}
-.ra-status .icon {
+.ra-pill .icon {
   width: 15px;
   height: 15px;
+  stroke-width: 2.4;
+}
+.ra-pill.is-accepted { color: hsl(var(--success-ink)); }
+.ra-pill.is-rejected { color: hsl(var(--foreground)); }
+.ra-pill-sep {
+  color: hsl(var(--muted-foreground));
+  font-weight: 400;
+}
+.ra-undo {
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: hsl(var(--primary-ink));
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .ra-undo:hover { background: hsl(var(--ton-2)); }
+}
+/* The pill carries the check mark itself */
+.clause.is-accepted:has(.review-bar)::after {
+  display: none;
 }
 
 /* Inline editor */
@@ -1821,9 +1845,6 @@ ins.tok-ins.tok-marker {
   flex-wrap: wrap;
   column-gap: 12px;
 }
-.hint-pair {
-  white-space: nowrap;
-}
 .first-hint {
   display: flex;
   align-items: center;
@@ -1963,7 +1984,13 @@ body.legend-dismissed .first-hint {
   stroke-width: 2.4;
 }
 .nav-status.is-accepted { color: hsl(var(--success-ink)); }
-.nav-status.is-rejected { color: hsl(var(--destructive-ink)); }
+.nav-status.is-rejected { color: hsl(var(--muted-foreground)); }
+.nav-item.is-accepted .nav-item-ref,
+.nav-item.is-rejected .nav-item-ref,
+.nav-item.is-accepted .nav-item-deltas,
+.nav-item.is-rejected .nav-item-deltas {
+  color: hsl(var(--muted-foreground));
+}
 .nav-item.is-accepted .tok-del,
 .nav-item.is-accepted .tok-ins,
 .nav-item.is-rejected .tok-del,
@@ -1997,32 +2024,6 @@ body.legend-dismissed .first-hint {
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
-}
-.nav-item-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 12px 12px 13px;
-}
-.nav-item-actions .ra-btn {
-  height: 32px;
-  padding: 0 10px;
-}
-.nav-item-actions .ra-edit,
-.nav-item-actions .ra-reopen {
-  width: 32px;
-  padding: 0;
-  justify-content: center;
-  margin-left: auto;
-}
-.nav-item-actions .ra-edit .ra-label,
-.nav-item-actions .ra-reopen .ra-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
 }
 .empty-state {
   margin: auto;
@@ -2540,29 +2541,6 @@ body.is-diff-busy .doc-sheet {
     grid-template-columns: minmax(24px, auto) 1fr;
     column-gap: 8px;
   }
-  .review-bar {
-    gap: 8px;
-  }
-  .ra-btn {
-    height: 44px;
-    padding: 0 14px;
-  }
-  .ra-btn.ra-edit .ra-label,
-  .ra-btn.ra-reopen .ra-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-  .ra-btn.ra-edit,
-  .ra-btn.ra-reopen {
-    width: 44px;
-    padding: 0;
-    justify-content: center;
-    margin-left: auto;
-    box-shadow: inset 0 0 0 1px var(--kante-300);
-  }
   .bottom-bar {
     display: grid;
     position: fixed;
@@ -2733,7 +2711,19 @@ body.is-diff-busy .doc-sheet {
     min-width: 44px;
   }
   .ra-btn {
+    width: 44px;
     height: 44px;
+  }
+  .ra-btn .icon {
+    width: 20px;
+    height: 20px;
+  }
+  .ra-pill,
+  .ra-undo {
+    min-height: 44px;
+  }
+  .ra-undo {
+    padding: 0 10px;
   }
 }
 

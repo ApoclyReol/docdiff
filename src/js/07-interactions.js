@@ -246,7 +246,7 @@ function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true, opts = {
   if (navTarget) navTarget.scrollIntoView({ block: 'nearest', behavior });
 }
 
-// Moves the "active" card (and its action buttons) in the list without re-rendering it.
+// Moves the "active" card in the list without re-rendering it (cards carry no actions).
 function updateListActiveCard(itemId) {
   const item = itemId ? state.listItems.find(i => i.id === itemId) || getActiveItem() : getActiveItem();
   const focusInList = sidebarList.contains(document.activeElement);
@@ -255,8 +255,6 @@ function updateListActiveCard(itemId) {
     el.classList.remove('is-active');
     const main = el.querySelector('.nav-item-main');
     if (main) main.removeAttribute('aria-current');
-    const actions = el.querySelector('.nav-item-actions');
-    if (actions) actions.remove();
   }
   if (!item) return;
   const card = sidebarList.querySelector(`.nav-item[data-item-id="${item.id}"]`);
@@ -264,12 +262,6 @@ function updateListActiveCard(itemId) {
   card.classList.add('is-active');
   const main = card.querySelector('.nav-item-main');
   main.setAttribute('aria-current', 'true');
-  if (!card.querySelector('.nav-item-actions')) {
-    card.insertAdjacentHTML(
-      'beforeend',
-      `<div class="nav-item-actions" role="toolbar" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
-    );
-  }
   if (!focusInList) {
     for (const b of sidebarList.querySelectorAll('.nav-item-main')) b.tabIndex = b === main ? 0 : -1;
   }
@@ -624,14 +616,13 @@ function toggleHfGroup(id, collapse) {
     const actionBtn = e.target.closest('[data-review-action]');
     if (actionBtn) {
       e.stopPropagation();
-      const fromList = container === sidebarList;
-      const card = actionBtn.closest('.nav-item[data-row-id]');
-      if (card && card.getAttribute('data-row-id') !== state.activeRowId) {
-        selectAndScrollToRow(card.getAttribute('data-row-id'), false, true, { itemId: card.getAttribute('data-item-id') });
+      // "Undo" in the pill of a change that is not the current one: make it current first.
+      const pill = actionBtn.closest('[data-pill-item]');
+      if (pill) {
+        const item = state.listItems.find(it => it.id === pill.getAttribute('data-pill-item'));
+        if (item) selectAndScrollToRow(item.rowId, false, false, { itemId: item.id, flash: false });
       }
-      const action = actionBtn.getAttribute('data-review-action');
-      if (action === 'edit' && fromList && isTabletOrSmaller()) closeListSheet(false);
-      runReviewAction(action, fromList);
+      runReviewAction(actionBtn.getAttribute('data-review-action'), false);
       return;
     }
     const hfToggle = e.target.closest('[data-hf-toggle]');
@@ -656,11 +647,6 @@ function toggleHfGroup(id, collapse) {
 
 // The list: one tab stop; arrow keys move between the cards (selection follows focus).
 sidebarList.addEventListener('keydown', e => {
-  const actions = e.target.closest('.nav-item-actions');
-  if (actions) {
-    handleRovingKeys(e, actions);
-    return;
-  }
   const main = e.target.closest('.nav-item-main');
   if (!main) return;
   const all = Array.from(sidebarList.querySelectorAll('.nav-item-main'));
