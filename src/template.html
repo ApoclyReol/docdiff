@@ -798,7 +798,7 @@ __DIFF_JS__
       color: hsl(var(--foreground));
     }
 
-    /* ── Document Sheet Card (Minimal Corner Radius, PRIME Geist 1px Border) ─ */
+    /* ── Document Sheet & Paginated Page Cards (PRIME Geist 1px Border) ─────── */
     .doc-sheet {
       max-width: 780px;
       margin: 0 auto;
@@ -813,17 +813,112 @@ __DIFF_JS__
     .doc-pane-right .doc-sheet {
       margin: 0 auto 0 0;
     }
-    .doc-sheet:not(:has([data-empty-state])) {
+    .doc-sheet:not(:has([data-empty-state])):not(:has(.doc-page-card)) {
       background: hsl(var(--card));
       border-radius: var(--radius-sm);
       box-shadow: 0 0 0 1px hsl(var(--border));
       padding: 26px 20px 26px 20px;
     }
+    .doc-sheet:has(.doc-page-card) {
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      gap: 20px;
+    }
     .doc-pane-unified .doc-sheet {
       max-width: 840px;
     }
 
-    /* ── Centered Zero-Friction Launchpad Overlay (PRIME Geist Architecture) */
+    .doc-page-card {
+      background: hsl(var(--card));
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 0 1px hsl(var(--border)), var(--elev-2);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .doc-page-header {
+      height: 30px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--kante-100);
+      background: hsl(var(--ton-1) / 0.55);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: hsl(var(--muted-foreground));
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .page-head-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .page-num-label {
+      font-weight: 600;
+      color: hsl(var(--foreground));
+    }
+
+    .page-sec-range {
+      color: hsl(var(--muted-foreground));
+      opacity: 0.85;
+    }
+
+    .page-change-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      background: hsl(var(--ton-2));
+      color: hsl(var(--muted-foreground));
+    }
+    .page-change-pill.has-changes {
+      background: hsl(var(--primary-ton-1));
+      color: hsl(var(--primary-ink));
+      box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.22);
+    }
+
+    .doc-page-body {
+      padding: 20px 20px 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    /* Stream Mode (Endlos-Textfluss): Collapse Page Cards into Continuous Sheet */
+    body.view-stream .doc-sheet:has(.doc-page-card) {
+      background: hsl(var(--card));
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 0 1px hsl(var(--border));
+      padding: 24px 20px;
+      gap: 6px;
+    }
+    body.view-stream .doc-page-card {
+      background: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      min-height: 0 !important;
+    }
+    body.view-stream .doc-page-header {
+      display: none;
+    }
+    body.view-stream .doc-page-body {
+      padding: 0;
+      gap: 6px;
+    }
+
+    /* Centered Zero-Friction Launchpad Overlay (PRIME Geist Architecture) */
     body:not(.is-comparing) .col-bars {
       grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) !important;
     }
@@ -847,6 +942,7 @@ __DIFF_JS__
       opacity: 0.45;
     }
     body:not(.is-comparing) #btn-only-changes,
+    body:not(.is-comparing) #btn-filter-hf,
     body:not(.is-comparing) #search-box-wrap,
     body:not(.is-comparing) #btn-prev,
     body:not(.is-comparing) #btn-next,
@@ -1128,27 +1224,107 @@ __DIFF_JS__
       content-visibility: visible;
     }
 
-    /* Continuous Document Paragraph Flow (PRIME Geist) */
+    /* Structured Document Typography & Hanging-Indent Lists (PRIME Geist) */
     .clause {
       flex: 1;
       position: relative;
-      padding: 13px 14px;
+      padding: 11px 14px;
       border-left: 2px solid transparent;
       border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
       font-size: var(--text-chat-label);
-      line-height: 1.62;
+      line-height: 1.6;
       color: hsl(var(--foreground));
       cursor: pointer;
       transition: background-color 80ms ease-out, border-color 80ms ease-out;
+      text-wrap: pretty;
     }
 
-    .clause.is-heading {
-      font-weight: 600;
+    .clause.is-heading,
+    .clause.kind-h2 {
+      font-weight: 700;
       font-size: var(--text-sm);
-      padding-top: 15px;
-      padding-bottom: 10px;
+      line-height: 1.4;
+      padding-top: 14px;
+      padding-bottom: 8px;
+      margin-top: 4px;
+      letter-spacing: -0.015em;
+      color: hsl(var(--foreground));
+      text-wrap: balance;
+    }
+
+    .clause.kind-h1 {
+      font-weight: 700;
+      font-size: var(--text-base);
+      line-height: 1.35;
+      padding: 12px 14px 11px 14px;
+      margin-bottom: 2px;
+      border-bottom: 1px solid var(--kante-200);
+      letter-spacing: -0.022em;
+      color: hsl(var(--foreground));
+      text-wrap: balance;
+    }
+
+    .clause.kind-h3 {
+      font-weight: 600;
+      font-size: var(--text-chat-label);
+      line-height: 1.45;
+      padding: 10px 14px 5px 14px;
+      margin-top: 2px;
       letter-spacing: -0.01em;
       color: hsl(var(--foreground));
+      text-wrap: balance;
+    }
+
+    .clause.has-marker {
+      display: grid;
+      grid-template-columns: minmax(26px, auto) 1fr;
+      column-gap: 8px;
+      align-items: baseline;
+    }
+
+    .clause.kind-bullet.has-marker {
+      grid-template-columns: 14px 1fr;
+      column-gap: 7px;
+      padding-left: 24px;
+      padding-top: 7px;
+      padding-bottom: 7px;
+    }
+
+    .clause-marker {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      user-select: text;
+    }
+
+    .clause.kind-bullet .clause-marker {
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      line-height: 1;
+      color: hsl(var(--foreground) / 0.75);
+      text-align: center;
+    }
+
+    .clause-body {
+      min-width: 0;
+      text-wrap: pretty;
+    }
+
+    .clause.kind-hf {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.4;
+      padding: 6px 14px;
+      color: hsl(var(--muted-foreground));
+      opacity: 0.82;
+      border-bottom: 1px dashed var(--kante-200);
+    }
+
+    .clause.is-editing {
+      display: block !important;
     }
 
     .clause.state-equal {
@@ -1453,6 +1629,9 @@ __DIFF_JS__
     body.only-changes .diff-row-anchor[data-type="equal"] {
       display: none;
     }
+    body.only-changes .doc-page-card:not(:has(.diff-row-anchor:not([data-type="equal"]))) {
+      display: none;
+    }
 
     /* ── 28px Symmetric Center Gutter ──────────────────────────────────────── */
     .center-gutter {
@@ -1651,10 +1830,30 @@ __DIFF_JS__
       color: hsl(var(--foreground));
       box-shadow: inset 0 0 0 1px var(--kante-200);
     }
-    #btn-only-changes.dock-btn[aria-pressed="true"] {
+    #btn-only-changes.dock-btn[aria-pressed="true"],
+    #btn-filter-hf.dock-btn[aria-pressed="true"] {
       background: hsl(var(--primary) / 0.16);
       color: hsl(var(--primary-ink));
       box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.32);
+    }
+
+    .dock-count-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: hsl(var(--foreground) / 0.08);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1;
+    }
+    #btn-filter-hf.dock-btn[aria-pressed="true"] .dock-count-pill {
+      background: hsl(var(--primary) / 0.22);
+      color: hsl(var(--primary-ink));
     }
 
     /* ── AAA 10/10 Right Side Rail (Change Navigator & Delta Inspector) ────── */
@@ -1848,6 +2047,15 @@ __DIFF_JS__
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .nav-item-page {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .nav-item-right {
@@ -2833,9 +3041,13 @@ __DIFF_JS__
     <div class="header-right-wrap">
       <div class="header-cluster header-nav">
         <div class="seg-group" role="group" aria-label="View mode">
-          <button type="button" class="seg-btn" id="btn-mode-split" aria-pressed="true">
+          <button type="button" class="seg-btn" id="btn-mode-pages" aria-pressed="true">
+            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="i18n-mode-pages">Seiten</span>
+          </button>
+          <button type="button" class="seg-btn" id="btn-mode-split" aria-pressed="false">
             <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>
-            <span id="i18n-mode-split">Nebeneinander</span>
+            <span id="i18n-mode-split">Textfluss</span>
           </button>
           <button type="button" class="seg-btn" id="btn-mode-inline" aria-pressed="false">
             <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
@@ -3075,6 +3287,12 @@ __DIFF_JS__
         <svg class="icon" style="width:13px;height:13px;" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
         <span id="i18n-btn-only-changes">Nur Änderungen</span>
       </button>
+
+      <button type="button" class="dock-btn" id="btn-filter-hf" aria-pressed="true">
+        <svg class="icon" style="width:13px;height:13px;" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 8h18"/><path d="M3 16h18"/></svg>
+        <span id="i18n-btn-filter-hf">Ohne Kopf-/Fußzeile</span>
+        <span class="dock-count-pill" id="hf-count-badge" style="display:none">0</span>
+      </button>
     </div>
 
     <div class="dock-divider" aria-hidden="true"></div>
@@ -3182,10 +3400,19 @@ __DIFF_JS__
       de: {
         changesLabel: 'Änderungen',
         statTooltip: 'Gesamtzahl geänderter Absätze · Grün = Neu / Geändert · Rot = Entfernt / Geändert',
-        modeSplit: 'Nebeneinander',
-        modeSplitTitle: '2-Spalten-Ansicht: Links Vorher (Referenz), Rechts Nachher (direkt bearbeitbar)',
+        modePages: 'Seiten',
+        modePagesTitle: 'Original Seiten-Layout: Dokumentseiten als einzelne Blätter nebeneinander darstellen',
+        modeSplit: 'Textfluss',
+        modeSplitTitle: 'Endloser Textfluss: Beide Dokumente ohne Seitenumbrüche nebeneinander darstellen',
         modeInline: 'Kompakt',
-        modeInlineTitle: '1-Spalten-Leseansicht: Alle Änderungen kombiniert im Textfluss',
+        modeInlineTitle: '1-Spalten-Leseansicht: Alle Änderungen kombiniert im Seiten-Layout',
+        hfFilterBtn: 'Ohne Kopf-/Fußzeile',
+        hfFilterTitle: 'Kopf- und Fußzeilen sowie Seitenzahlen automatisch aus dem Diff herausfiltern (Taste H)',
+        pageLabel: 'Seite',
+        pageShort: 'S.',
+        pageOf: 'von',
+        pageUnchanged: 'Unverändert',
+        typeHf: 'Kopf-/Fußzeile',
         searchPlaceholder: 'Suchen…',
         searchTitle: 'Beide Dokumente durchsuchen (Taste /)',
         prevTitle: 'Vorherige Änderung anspringen (Taste K)',
@@ -3312,16 +3539,16 @@ __DIFF_JS__
               <div class="help-card-desc"><strong>Links (Vorher)</strong> liegt Ihr unverändertes Ausgangsdokument als Referenz. <strong>Rechts (Nachher)</strong> liegt der neue Stand, den Sie prüfen, anpassen und speichern.</div>
             </div>
             <div class="help-card">
-              <div class="help-card-title">Direkt im rechten Dokument bearbeiten</div>
-              <div class="help-card-desc">Fahren Sie rechts über einen Absatz: Mit <strong>Bearbeiten</strong> (oder Doppelklick) schreiben Sie den Absatz direkt um. Mit <strong>Vorher übernehmen</strong> setzen Sie eine Änderung mit 1 Klick auf den alten Stand zurück.</div>
+              <div class="help-card-title">Seiten-Layout & Kopf-/Fußzeilen-Filter</div>
+              <div class="help-card-desc">In der Ansicht <strong>Seiten</strong> bleiben originale Seitenumbrüche, Überschriften, Unterkapitel und Aufzählungen erhalten. Wiederkehrende Kopf-/Fußzeilen und Seitenzahlen werden automatisch aus dem Diff gefiltert (unten per <strong>Ohne Kopf-/Fußzeile</strong> umschaltbar).</div>
             </div>
             <div class="help-card">
-              <div class="help-card-title">Speichern & Exportieren (Rechts oben)</div>
-              <div class="help-card-desc">Über <strong>Speichern / Export</strong> in der rechten Dokumentleiste kopieren Sie den fertigen neuen Text mit 1 Klick oder speichern ihn als <strong>.txt</strong>, <strong>Word-Redline (.doc)</strong>, <strong>PDF</strong>, <strong>HTML</strong> oder <strong>Markdown</strong>.</div>
+              <div class="help-card-title">Direkt bearbeiten & speichern</div>
+              <div class="help-card-desc">Fahren Sie rechts über einen Absatz: Mit <strong>Bearbeiten</strong> (oder Doppelklick) passen Sie den Text an, mit <strong>Vorher übernehmen</strong> setzen Sie ihn zurück. Über <strong>Speichern / Export</strong> laden Sie das Ergebnis herunter.</div>
             </div>
             <div class="help-card">
               <div class="help-card-title">Tastenkürzel & 100 % Lokaler Schutz</div>
-              <div class="help-card-desc"><strong>J / K</strong> Nächste/Vorherige Änderung · <strong>/</strong> Suche · <strong>C</strong> Nur Änderungen · <strong>⌘Z / Strg+Z</strong> Rückgängig.<br/>Alle Daten bleiben zu 100 % lokal im Arbeitsspeicher Ihres Browsers (<code>connect-src 'none'</code>).</div>
+              <div class="help-card-desc"><strong>J / K</strong> Nächste/Vorherige Änderung · <strong>/</strong> Suche · <strong>C</strong> Nur Änderungen · <strong>H</strong> Kopf-/Fußzeilen · <strong>⌘Z</strong> Rückgängig.<br/>Alle Daten bleiben zu 100 % lokal im Browser (<code>connect-src 'none'</code>).</div>
             </div>
           </div>
         `,
@@ -3338,10 +3565,19 @@ __DIFF_JS__
       en: {
         changesLabel: 'changes',
         statTooltip: 'Total changed paragraphs · Green = Added / Modified · Red = Removed / Modified',
-        modeSplit: 'Side-by-Side',
-        modeSplitTitle: '2-column view: Left = Before (Reference), Right = After (Editable)',
+        modePages: 'Pages',
+        modePagesTitle: 'Original page layout: Render document pages as distinct paper sheets side-by-side',
+        modeSplit: 'Stream',
+        modeSplitTitle: 'Continuous stream: Show both documents side-by-side without page breaks',
         modeInline: 'Unified',
-        modeInlineTitle: '1-column reading view: All changes combined inline',
+        modeInlineTitle: '1-column reading view: All changes combined inline with page layout',
+        hfFilterBtn: 'No Header/Footer',
+        hfFilterTitle: 'Automatically filter running headers, footers, and page numbers from the diff (Key H)',
+        pageLabel: 'Page',
+        pageShort: 'p.',
+        pageOf: 'of',
+        pageUnchanged: 'Unchanged',
+        typeHf: 'Header/Footer',
         searchPlaceholder: 'Search…',
         searchTitle: 'Search across both documents (Key /)',
         prevTitle: 'Jump to previous change (Key K)',
@@ -3468,16 +3704,16 @@ __DIFF_JS__
               <div class="help-card-desc"><strong>Left (Before)</strong> holds your unchanged baseline document as a reference. <strong>Right (After)</strong> holds the new version that you review, edit, and export.</div>
             </div>
             <div class="help-card">
-              <div class="help-card-title">Edit directly in the right document</div>
-              <div class="help-card-desc">Hover any paragraph on the right: click <strong>Edit</strong> (or double-click) to rewrite it in place. Click <strong>Use old</strong> to revert any change back to the old version in 1 click.</div>
+              <div class="help-card-title">Page Layout & Header/Footer Filter</div>
+              <div class="help-card-desc">In <strong>Pages</strong> view, original page breaks, headings, sub-headings, and bullet lists are preserved. Repeating headers, footers, and page numbers are automatically filtered out (toggle via <strong>No Header/Footer</strong> in the bottom dock).</div>
             </div>
             <div class="help-card">
-              <div class="help-card-title">Save & Export (Top right of new version)</div>
-              <div class="help-card-desc">Use <strong>Save / Export</strong> in the right document bar to copy the clean final text in 1 click or download it as <strong>.txt</strong>, <strong>Word Redline (.doc)</strong>, <strong>PDF</strong>, <strong>HTML</strong>, or <strong>Markdown</strong>.</div>
+              <div class="help-card-title">Edit directly & Export</div>
+              <div class="help-card-desc">Hover any paragraph on the right: click <strong>Edit</strong> (or double-click) to rewrite it, or <strong>Use old</strong> to revert. Use <strong>Save / Export</strong> to copy or download the result.</div>
             </div>
             <div class="help-card">
               <div class="help-card-title">Shortcuts & 100% Local Privacy</div>
-              <div class="help-card-desc"><strong>J / K</strong> Next/Previous change · <strong>/</strong> Search · <strong>C</strong> Changes only · <strong>Cmd+Z / Ctrl+Z</strong> Undo.<br/>All data stays 100% in your browser's volatile memory (<code>connect-src 'none'</code>).</div>
+              <div class="help-card-desc"><strong>J / K</strong> Next/Previous change · <strong>/</strong> Search · <strong>C</strong> Changes only · <strong>H</strong> Headers/Footers · <strong>Cmd+Z</strong> Undo.<br/>All data stays 100% in your browser's volatile memory (<code>connect-src 'none'</code>).</div>
             </div>
           </div>
         `,
@@ -3495,7 +3731,10 @@ __DIFF_JS__
 
     const SAMPLES = {
       de: {
-        v1: `RAHMENVERTRAG ÜBER IT- UND PLANUNGSLEISTUNGEN
+        v1: `=== [SEITE 1] ===
+[[HF]] Rahmenvertrag IT- & Planungsleistungen · Fassung v1.0 (Stand: 12.03.2026) · Seite 1 von 3
+
+RAHMENVERTRAG ÜBER IT- UND PLANUNGSLEISTUNGEN
 
 Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin (nachfolgend „Auftraggeber“ genannt) und der Alpha Systems Engineering AG, Maximilianstraße 35, 80539 München (nachfolgend „Auftragnehmer“ genannt).
 
@@ -3503,13 +3742,25 @@ Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin
 
 (1) Der Auftragnehmer verpflichtet sich zur schlüsselfertigen Erstellung, Konfiguration und Dokumentation der Cloud-Kalkulationsplattform gemäß dem Lastenheft vom 12.03.2026 (Anlage 1).
 
+1.1 Kernmodule und Liefergegenstände
+
+• Modul A: Mengenermittlung und strukturierter LV-Import (GAEB DA XML 3.3)
+• Modul B: Urkalkulation, EKT-Aufgliederung und Zuschlagsberechnung (AGK / WuG)
+• Modul C: Standard-Berichtswesen und Preisspiegel-Export als PDF-Dokument
+
 (2) Nachträgliche Änderungswünsche des Auftraggebers (Change Requests) sind schriftlich einzureichen und werden auf Basis der vereinbarten Tagessätze gesondert vergütet, sofern sie den ursprünglichen Aufwand um mehr als 5,0 % überschreiten.
 
 (3) Der Auftragnehmer erbringt sämtliche Leistungen ausschließlich durch eigenes, festangestelltes Fachpersonal am Standort Deutschland.
 
+[[HF]] Vertraulich · BauTech GmbH / Alpha Systems AG · Seite 1 von 3
+=== [SEITE 2] ===
+[[HF]] Rahmenvertrag IT- & Planungsleistungen · Fassung v1.0 (Stand: 12.03.2026) · Seite 2 von 3
+
 § 2 Vergütung, Urkalkulation und Zahlungsbedingungen
 
 (1) Für die in § 1 genannten Leistungen vereinbaren die Parteien einen Pauschalfestpreis in Höhe von 145.000,00 € netto zuzüglich der gesetzlichen Umsatzsteuer.
+
+2.1 Kalkulationsgrundlagen und Zuschläge
 
 (2) Der Auftragnehmer hinterlegt vor Vertragsbeginn eine verschlossene Urkalkulation beim Auftraggeber, in der sämtliche Einzelkosten der Teilleistungen (EKT) sowie der kalkulierte Zuschlag für Allgemeine Geschäftskosten (AGK) in Höhe von 12,0 % und Wagnis und Gewinn (WuG) in Höhe von 6,0 % offengelegt sind.
 
@@ -3520,6 +3771,10 @@ Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin
 (1) Die produktive Bereitstellung (Go-Live) der Gesamtlösung erfolgt spätestens am 30.09.2026.
 
 (2) Gerät der Auftragnehmer mit dem verbindlichen Fertigstellungstermin in Verzug, verwirkt er für jede vollendete Kalenderwoche des Verzugs eine Vertragsstrafe in Höhe von 0,5 % der Netto-Auftragssumme, maximal jedoch 5,0 % der Gesamtauftragssumme.
+
+[[HF]] Vertraulich · BauTech GmbH / Alpha Systems AG · Seite 2 von 3
+=== [SEITE 3] ===
+[[HF]] Rahmenvertrag IT- & Planungsleistungen · Fassung v1.0 (Stand: 12.03.2026) · Seite 3 von 3
 
 § 4 Gewährleistung und Haftung
 
@@ -3539,8 +3794,13 @@ Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin
 
 (1) Dieser Vertrag kann von beiden Parteien mit einer Frist von 3 Monaten zum Quartalsende ordentlich gekündigt werden.
 
-(2) Es gilt ausschließlich das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Ausschließlicher Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist Berlin.`,
-        v2: `RAHMENVERTRAG ÜBER IT- UND PLANUNGSLEISTUNGEN
+(2) Es gilt ausschließlich das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Ausschließlicher Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist Berlin.
+
+[[HF]] Vertraulich · BauTech GmbH / Alpha Systems AG · Seite 3 von 3`,
+        v2: `=== [SEITE 1] ===
+[[HF]] Rahmenvertrag IT- & Planungsleistungen · Gegenentwurf v2.0 (Stand: 18.04.2026) · Seite 1 von 4
+
+RAHMENVERTRAG ÜBER IT- UND PLANUNGSLEISTUNGEN
 
 Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin (nachfolgend „Auftraggeber“ genannt) und der Alpha Systems Engineering AG, Maximilianstraße 35, 80539 München (nachfolgend „Auftragnehmer“ genannt).
 
@@ -3548,13 +3808,25 @@ Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin
 
 (1) Der Auftragnehmer verpflichtet sich zur schlüsselfertigen Erstellung, Konfiguration, Schulung und Dokumentation der Cloud-Kalkulationsplattform gemäß dem aktualisierten Lastenheft vom 18.04.2026 (Anlage 1).
 
+1.1 Kernmodule und Liefergegenstände
+
+• Modul A: Mengenermittlung und strukturierter LV-Import (GAEB DA XML 3.3 & BIM-IFC)
+• Modul B: Urkalkulation, EKT-Aufgliederung und Zuschlagsberechnung (AGK / WuG)
+• Modul C: Echtzeit-Nachtragsmanagement, Preisspiegel und automatisierter Soll-Ist-Abgleich
+
 (2) Nachträgliche Änderungswünsche des Auftraggebers (Change Requests) sind in Textform einzureichen und werden auf Basis der vereinbarten Tagessätze gesondert vergütet, sofern sie den ursprünglichen Aufwand um mehr als 10,0 % überschreiten.
 
 (3) Der Auftragnehmer ist berechtigt, nach vorheriger schriftlicher Zustimmung des Auftraggebers qualifizierte Nachunternehmer innerhalb der Europäischen Union einzusetzen.
 
+[[HF]] Vertraulich · BauTech GmbH / Alpha Systems AG · Seite 1 von 4
+=== [SEITE 2] ===
+[[HF]] Rahmenvertrag IT- & Planungsleistungen · Gegenentwurf v2.0 (Stand: 18.04.2026) · Seite 2 von 4
+
 § 2 Vergütung, Urkalkulation und Zahlungsbedingungen
 
 (1) Für die in § 1 genannten Leistungen vereinbaren die Parteien einen Pauschalfestpreis in Höhe von 168.500,00 € netto zuzüglich der gesetzlichen Umsatzsteuer.
+
+2.1 Kalkulationsgrundlagen und Zuschläge
 
 (2) Der Auftragnehmer hinterlegt vor Vertragsbeginn eine verschlossene Urkalkulation beim Auftraggeber, in der sämtliche Einzelkosten der Teilleistungen (EKT) sowie der kalkulierte Zuschlag für Allgemeine Geschäftskosten (AGK) in Höhe von 14,5 % und Wagnis und Gewinn (WuG) in Höhe von 7,5 % offengelegt sind.
 
@@ -3567,6 +3839,10 @@ Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin
 (1) Die produktive Bereitstellung (Go-Live) der Gesamtlösung erfolgt spätestens am 15.11.2026.
 
 (2) Gerät der Auftragnehmer mit dem verbindlichen Fertigstellungstermin schuldhaft in Verzug, verwirkt er für jede vollendete Kalenderwoche des Verzugs eine Vertragsstrafe in Höhe von 0,3 % der Netto-Auftragssumme, maximal jedoch 3,0 % der Gesamtauftragssumme.
+
+[[HF]] Vertraulich · BauTech GmbH / Alpha Systems AG · Seite 2 von 4
+=== [SEITE 3] ===
+[[HF]] Rahmenvertrag IT- & Planungsleistungen · Gegenentwurf v2.0 (Stand: 18.04.2026) · Seite 3 von 4
 
 § 4 Gewährleistung und Haftung
 
@@ -3586,10 +3862,15 @@ Zwischen der BauTech Projektentwicklung GmbH, Friedrichstraße 114, 10117 Berlin
 
 (1) Dieser Vertrag kann von beiden Parteien mit einer Frist von 6 Monaten zum Jahresende ordentlich gekündigt werden.
 
-(2) Es gilt ausschließlich das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Ausschließlicher Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist München.`,
+(2) Es gilt ausschließlich das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Ausschließlicher Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist München.
+
+[[HF]] Vertraulich · BauTech GmbH / Alpha Systems AG · Seite 3 von 4`,
       },
       en: {
-        v1: `MASTER SOFTWARE & ENGINEERING SERVICES AGREEMENT
+        v1: `=== [SEITE 1] ===
+[[HF]] Master Software & Engineering Agreement · Draft v1.0 (March 12, 2026) · Page 1 of 3
+
+MASTER SOFTWARE & ENGINEERING SERVICES AGREEMENT
 
 Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter referred to as "Client") and Alpha Systems Engineering Inc., 35 Market Street, San Francisco (hereinafter referred to as "Contractor").
 
@@ -3597,13 +3878,25 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
 (1) The Contractor undertakes to deliver, configure, and document the turnkey cloud cost-estimation platform in accordance with the Statement of Work dated March 12, 2026 (Exhibit A).
 
+1.1 Core Platform Modules and Deliverables
+
+• Module A: Quantity takeoff and structured BOQ import (GAEB DA XML 3.3)
+• Module B: Baseline cost calculation (Urkalkulation), unit cost breakdown, and overhead markup (Zuschlag)
+• Module C: Standard reporting and PDF bid comparison export
+
 (2) Subsequent change requests by the Client must be submitted in writing and shall be billed separately at the agreed daily rates if they exceed the baseline effort by more than 5.0%.
 
 (3) The Contractor shall perform all services exclusively using its own permanent, full-time engineering staff.
 
+[[HF]] Confidential · Apex Construction Ltd. / Alpha Systems Inc. · Page 1 of 3
+=== [SEITE 2] ===
+[[HF]] Master Software & Engineering Agreement · Draft v1.0 (March 12, 2026) · Page 2 of 3
+
 2. Fees, Baseline Cost Calculation and Payment Terms
 
 (1) For the services specified in Section 1, the parties agree on a fixed lump-sum fee of EUR 145,000.00 net plus applicable statutory value-added tax.
+
+2.1 Cost Calculation Basis and Overhead Markups
 
 (2) Prior to commencement, the Contractor shall deposit a sealed baseline cost calculation (Urkalkulation) disclosing all direct unit costs as well as the overhead markup (Zuschlag) of 12.0% and profit margin of 6.0%.
 
@@ -3614,6 +3907,10 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 (1) Production deployment (Go-Live) of the complete platform shall take place no later than September 30, 2026.
 
 (2) If the Contractor misses the binding completion date, liquidated damages of 0.5% of the net contract price shall apply per completed calendar week of delay, capped at 5.0% of the total contract value.
+
+[[HF]] Confidential · Apex Construction Ltd. / Alpha Systems Inc. · Page 2 of 3
+=== [SEITE 3] ===
+[[HF]] Master Software & Engineering Agreement · Draft v1.0 (March 12, 2026) · Page 3 of 3
 
 4. Warranty and Limitation of Liability
 
@@ -3633,8 +3930,13 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
 (1) Either party may terminate this Agreement for convenience with 3 months' prior written notice to the end of a calendar quarter.
 
-(2) This Agreement is governed by the laws of the Federal Republic of Germany. Exclusive venue for all disputes arising out of this Agreement is Berlin.`,
-        v2: `MASTER SOFTWARE & ENGINEERING SERVICES AGREEMENT
+(2) This Agreement is governed by the laws of the Federal Republic of Germany. Exclusive venue for all disputes arising out of this Agreement is Berlin.
+
+[[HF]] Confidential · Apex Construction Ltd. / Alpha Systems Inc. · Page 3 of 3`,
+        v2: `=== [SEITE 1] ===
+[[HF]] Master Software & Engineering Agreement · Counter-Proposal v2.0 (April 18, 2026) · Page 1 of 4
+
+MASTER SOFTWARE & ENGINEERING SERVICES AGREEMENT
 
 Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter referred to as "Client") and Alpha Systems Engineering Inc., 35 Market Street, San Francisco (hereinafter referred to as "Contractor").
 
@@ -3642,13 +3944,25 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
 (1) The Contractor undertakes to deliver, configure, train users on, and document the turnkey cloud cost-estimation platform in accordance with the updated Statement of Work dated April 18, 2026 (Exhibit A).
 
+1.1 Core Platform Modules and Deliverables
+
+• Module A: Quantity takeoff and structured BOQ import (GAEB DA XML 3.3 & BIM-IFC)
+• Module B: Baseline cost calculation (Urkalkulation), unit cost breakdown, and overhead markup (Zuschlag)
+• Module C: Real-time change order management, bid comparison, and automated target/actual variance analysis
+
 (2) Subsequent change requests by the Client may be submitted in text form and shall be billed separately at the agreed daily rates if they exceed the baseline effort by more than 10.0%.
 
 (3) The Contractor is entitled to engage qualified subcontractors within the European Union subject to the Client's prior written consent.
 
+[[HF]] Confidential · Apex Construction Ltd. / Alpha Systems Inc. · Page 1 of 4
+=== [SEITE 2] ===
+[[HF]] Master Software & Engineering Agreement · Counter-Proposal v2.0 (April 18, 2026) · Page 2 of 4
+
 2. Fees, Baseline Cost Calculation and Payment Terms
 
 (1) For the services specified in Section 1, the parties agree on a fixed lump-sum fee of EUR 168,500.00 net plus applicable statutory value-added tax.
+
+2.1 Cost Calculation Basis and Overhead Markups
 
 (2) Prior to commencement, the Contractor shall deposit a sealed baseline cost calculation (Urkalkulation) disclosing all direct unit costs as well as the overhead markup (Zuschlag) of 14.5% and profit margin of 7.5%.
 
@@ -3661,6 +3975,10 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 (1) Production deployment (Go-Live) of the complete platform shall take place no later than November 15, 2026.
 
 (2) If the Contractor culpably misses the binding completion date, liquidated damages of 0.3% of the net contract price shall apply per completed calendar week of delay, capped at 3.0% of the total contract value.
+
+[[HF]] Confidential · Apex Construction Ltd. / Alpha Systems Inc. · Page 2 of 4
+=== [SEITE 3] ===
+[[HF]] Master Software & Engineering Agreement · Counter-Proposal v2.0 (April 18, 2026) · Page 3 of 4
 
 4. Warranty and Limitation of Liability
 
@@ -3680,7 +3998,9 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
 (1) Either party may terminate this Agreement for convenience with 6 months' prior written notice to the end of a calendar year.
 
-(2) This Agreement is governed by the laws of the Federal Republic of Germany. Exclusive venue for all disputes arising out of this Agreement is Munich.`,
+(2) This Agreement is governed by the laws of the Federal Republic of Germany. Exclusive venue for all disputes arising out of this Agreement is Munich.
+
+[[HF]] Confidential · Apex Construction Ltd. / Alpha Systems Inc. · Page 3 of 4`,
       },
     };
 
@@ -3706,7 +4026,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       lang: initialLang,
       dark: initialDark,
       themeOverridden: false,
-      viewMode: isMobileViewport ? 'inline' : 'split',
+      viewMode: isMobileViewport ? 'inline' : 'pages',
       leftText: '',
       rightText: '',
       leftName: '',
@@ -3719,6 +4039,9 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       activeRowId: null,
       syncScroll: true,
       onlyChanges: false,
+      ignoreHeadersFooters: true,
+      filteredHfCount: 0,
+      rightAllBlocks: [],
       sidebarFilter: 'all',
       searchQuery: '',
       isProgrammaticScroll: false,
@@ -3753,6 +4076,9 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       document.getElementById('i18n-changes-label').textContent = t('changesLabel');
       setTooltip(document.getElementById('stat-summary'), t('statTooltip'));
 
+      const modePagesEl = document.getElementById('i18n-mode-pages');
+      if (modePagesEl) modePagesEl.textContent = t('modePages');
+      setTooltip(document.getElementById('btn-mode-pages'), t('modePagesTitle'));
       document.getElementById('i18n-mode-split').textContent = t('modeSplit');
       setTooltip(document.getElementById('btn-mode-split'), t('modeSplitTitle'));
       document.getElementById('i18n-mode-inline').textContent = t('modeInline');
@@ -3765,6 +4091,10 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
       document.getElementById('i18n-btn-only-changes').textContent = t('onlyChanges');
       setTooltip(document.getElementById('btn-only-changes'), t('onlyChangesTitle'));
+
+      const hfBtnLabel = document.getElementById('i18n-btn-filter-hf');
+      if (hfBtnLabel) hfBtnLabel.textContent = t('hfFilterBtn');
+      setTooltip(document.getElementById('btn-filter-hf'), t('hfFilterTitle'));
 
       document.getElementById('i18n-btn-text').textContent = t('textBtn');
       setTooltip(document.getElementById('btn-paste-modal'), t('textBtnTitle'));
@@ -3843,29 +4173,112 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     function setViewMode(mode) {
       state.viewMode = mode;
       document.body.classList.toggle('view-inline', mode === 'inline');
+      document.body.classList.toggle('view-stream', mode === 'split');
+      document.body.classList.toggle('view-pages', mode === 'pages');
+      const btnPages = document.getElementById('btn-mode-pages');
+      if (btnPages) btnPages.setAttribute('aria-pressed', String(mode === 'pages'));
       document.getElementById('btn-mode-split').setAttribute('aria-pressed', String(mode === 'split'));
       document.getElementById('btn-mode-inline').setAttribute('aria-pressed', String(mode === 'inline'));
       requestAnimationFrame(() => {
-        if (mode === 'split') equalizeRowHeights();
+        if (mode !== 'inline') equalizeRowHeights();
         scheduleGutterDraw();
       });
     }
 
-    function extractClauseRef(line, fallbackIndex, currentSectionRef = '') {
+    function isLikelyHeaderOrFooterLine(line) {
+      if (!line || line.length > 130) return false;
+      if (/^(?:Seite|Page|Blatt|S\.|p\.)\s*\d+(?:\s*(?:von|of|\/)\s*\d+)?$/i.test(line)) return true;
+      if (/^-\s*\d+\s*-$/.test(line)) return true;
+      if (/^.*(?:\bSeite|\bPage)\s+\d+\s*(?:von|of|\/)\s*\d+\s*$/i.test(line)) return true;
+      if (/^(?:Vertraulich|Confidential|Stand:|Fassung|Entwurf|Draft)\b.*(?:\bSeite|\bPage)\s+\d+/i.test(line)) {
+        return true;
+      }
+      return false;
+    }
+
+    function classifyBlockKind(line, isFirstContentBlock, isHeaderFooter) {
+      if (isHeaderFooter) return 'hf';
+      if (/^#\s+/.test(line)) return 'h1';
+      if (/^##\s+/.test(line)) return 'h2';
+      if (/^###\s+/.test(line)) return 'h3';
+
+      if (
+        isFirstContentBlock &&
+        line.length < 105 &&
+        !/^(§|\(\d+\)|\d+\.|[•‣▪◦–*-]\s)/.test(line) &&
+        (/^[A-ZÄÖÜ0-9\s,&/-]{10,}$/.test(line) || !/[.:;]$/.test(line))
+      ) {
+        return 'h1';
+      }
+
+      if (
+        /^(§\s*\d+[a-z]?|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+|\d+\.\s+[A-ZÄÖÜ])/i.test(
+          line
+        ) &&
+        line.length < 115
+      ) {
+        return 'h2';
+      }
+
+      if (
+        /^(\d+\.\d+(?:\.\d+)*)\s+[A-ZÄÖÜa-zäöü]/.test(line) &&
+        line.length < 105 &&
+        !/[.;]$/.test(line)
+      ) {
+        return 'h3';
+      }
+
+      if (/^[A-ZÄÖÜ\s&-]{10,}$/.test(line) && line.length < 105) {
+        return isFirstContentBlock ? 'h1' : 'h2';
+      }
+
+      if (/^[•‣▪◦–*-]\s+\S/.test(line)) {
+        return 'bullet';
+      }
+
+      if (/^(\(\d+\)|\([a-z]\)|\([ivx]+\)|\d+\)|[a-z]\))\s+\S/i.test(line)) {
+        return 'clause';
+      }
+
+      return 'p';
+    }
+
+    function extractListMarker(text, kind) {
+      if (!text) return null;
+      if (kind === 'bullet') {
+        const m = text.match(/^([•‣▪◦–*-])\s+(.*)$/s);
+        if (m) return { marker: '•', body: m[2] };
+      }
+      if (kind === 'clause') {
+        const m = text.match(/^(\(\d+\)|\([a-z]\)|\([ivx]+\)|\d+\)|[a-z]\))\s+(.*)$/is);
+        if (m) return { marker: m[1], body: m[2] };
+      }
+      return null;
+    }
+
+    function extractClauseRef(line, fallbackIndex, currentSectionRef = '', kind = 'p') {
+      if (kind === 'hf') return t('typeHf');
       const secMatch = line.match(/^(§\s*\d+[a-z]?|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i);
       if (secMatch) {
         return secMatch[1].replace(/\s+/g, ' ').trim();
       }
       const numHeadingMatch = line.match(/^(\d+\.)\s+[A-ZÄÖÜ]/);
-      if (numHeadingMatch && line.length < 110) {
+      if (numHeadingMatch && line.length < 115) {
         return numHeadingMatch[1];
       }
-      const subMatch = line.match(/^(\(\d+\)|\([a-z]\)|\d+(?:\.\d+)+|\d+\.)/);
+      const subHeadingMatch = line.match(/^(\d+\.\d+(?:\.\d+)*)\s+/);
+      if (subHeadingMatch && line.length < 115) {
+        return subHeadingMatch[1];
+      }
+      const subMatch = line.match(/^(\(\d+\)|\([a-z]\)|\d+(?:\.\d+)+|\d+\)|[a-z]\))/i);
       if (subMatch) {
         const sub = subMatch[1];
         return currentSectionRef ? `${currentSectionRef} ${sub}` : sub;
       }
-      return `#${fallbackIndex}`;
+      if (kind === 'bullet' && currentSectionRef) {
+        return `${currentSectionRef} •`;
+      }
+      return currentSectionRef ? `${currentSectionRef} #${fallbackIndex}` : `#${fallbackIndex}`;
     }
 
     function tokenizeWords(str) {
@@ -3880,16 +4293,44 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       const rawLines = normalized.split(/\n+/);
       const blocks = [];
       let currentSectionRef = '';
+      let currentPage = 1;
+      let hasExplicitPageMarkers = false;
+      let seenContentBlock = false;
 
       for (let i = 0; i < rawLines.length; i++) {
-        const line = rawLines[i].trim();
+        let line = rawLines[i].trim();
         if (!line) continue;
 
-        const isHeading =
-          /^(\S*\s*)?(§\s*\d+|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+|\d+\.\s+[A-ZÄÖÜ]|[A-ZÄÖÜ\s&-]{8,}$)/.test(line) &&
-          line.length < 110;
+        const pageBreakMatch = line.match(/^===\s*\[(?:SEITE|PAGE)\s*(\d+)\]\s*===$/i);
+        if (pageBreakMatch) {
+          currentPage = Math.max(1, parseInt(pageBreakMatch[1], 10) || currentPage + 1);
+          hasExplicitPageMarkers = true;
+          continue;
+        }
+        if (line === '\f') {
+          currentPage++;
+          hasExplicitPageMarkers = true;
+          continue;
+        }
 
-        if (isHeading) {
+        let isHeaderFooter = false;
+        if (line.startsWith('[[HF]]')) {
+          isHeaderFooter = true;
+          line = line.replace(/^\[\[HF\]\]\s*/, '').trim();
+          if (!line) continue;
+        } else if (isLikelyHeaderOrFooterLine(line)) {
+          isHeaderFooter = true;
+        }
+
+        const kind = classifyBlockKind(line, !seenContentBlock && !isHeaderFooter, isHeaderFooter);
+        if (!isHeaderFooter) {
+          seenContentBlock = true;
+          line = line.replace(/^#{1,3}\s+/, '').trim();
+        }
+
+        const isHeading = kind === 'h1' || kind === 'h2' || kind === 'h3';
+
+        if (kind === 'h2') {
           const secMatch = line.match(/^(§\s*\d+[a-z]?|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i);
           const numMatch = line.match(/^(\d+\.)\s+[A-ZÄÖÜ]/);
           if (secMatch) {
@@ -3903,17 +4344,45 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         const { words, set } = tokenizeWords(line);
         blocks.push({
           index: idx,
-          refCode: extractClauseRef(line, idx, currentSectionRef),
+          pageNum: currentPage,
+          hasExplicitPage: hasExplicitPageMarkers,
+          refCode: extractClauseRef(line, idx, currentSectionRef, kind),
+          sectionRef: currentSectionRef,
           text: line,
+          kind,
           isHeading,
+          isHeaderFooter,
           words,
           wordSet: set,
         });
       }
+
+      // If document had no explicit page markers (e.g. pasted text or flat DOCX), paginate cleanly by section/length
+      if (!hasExplicitPageMarkers && blocks.length > 0) {
+        let autoPage = 1;
+        let blocksOnCurrentPage = 0;
+        let charsOnCurrentPage = 0;
+        for (let i = 0; i < blocks.length; i++) {
+          const b = blocks[i];
+          const startsNewMajorSection =
+            b.kind === 'h2' && blocksOnCurrentPage >= 5 && charsOnCurrentPage >= 650;
+          const exceedsPageCapacity = blocksOnCurrentPage >= 10 || charsOnCurrentPage >= 1850;
+          if (i > 0 && (startsNewMajorSection || exceedsPageCapacity)) {
+            autoPage++;
+            blocksOnCurrentPage = 0;
+            charsOnCurrentPage = 0;
+          }
+          b.pageNum = autoPage;
+          blocksOnCurrentPage++;
+          charsOnCurrentPage += b.text.length;
+        }
+      }
+
       return blocks;
     }
 
     function computeBlockSimilarity(blockA, blockB) {
+      if (blockA.isHeaderFooter !== blockB.isHeaderFooter) return 0;
       if (blockA.text === blockB.text) return 1.0;
       if (blockA.isHeading !== blockB.isHeading) return 0;
       const lenA = blockA.words.length;
@@ -3923,7 +4392,8 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       const sameSpecificRef =
         blockA.refCode &&
         blockA.refCode === blockB.refCode &&
-        !blockA.refCode.startsWith('#');
+        !blockA.refCode.startsWith('#') &&
+        !blockA.refCode.includes('#');
 
       const maxPossible = (2.0 * Math.min(lenA, lenB)) / (lenA + lenB);
       if (maxPossible < 0.28 && !sameSpecificRef) return 0;
@@ -4035,13 +4505,21 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         });
       }
 
+      let monotonicPage = 1;
       return rawPairs.map((pair, idx) => {
         const rowId = `row-${idx + 1}`;
+        const rawPage =
+          (pair.right && pair.right.pageNum) ||
+          (pair.left && pair.left.pageNum) ||
+          monotonicPage;
+        monotonicPage = Math.max(monotonicPage, rawPage);
+
         if (pair.left && pair.right) {
           if (pair.left.text === pair.right.text) {
             return {
               id: rowId,
               rowNumber: idx + 1,
+              pageNum: monotonicPage,
               type: 'equal',
               leftBlock: pair.left,
               rightBlock: pair.right,
@@ -4053,6 +4531,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
             return {
               id: rowId,
               rowNumber: idx + 1,
+              pageNum: monotonicPage,
               type: 'modified',
               leftBlock: pair.left,
               rightBlock: pair.right,
@@ -4063,6 +4542,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
           return {
             id: rowId,
             rowNumber: idx + 1,
+            pageNum: monotonicPage,
             type: 'deleted',
             leftBlock: pair.left,
             rightBlock: null,
@@ -4072,6 +4552,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
           return {
             id: rowId,
             rowNumber: idx + 1,
+            pageNum: monotonicPage,
             type: 'inserted',
             leftBlock: null,
             rightBlock: pair.right,
@@ -4219,14 +4700,54 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       container.innerHTML = trustedHtmlString;
     }
 
+    function wrapMarkerAndBody(markerHtml, bodyHtml) {
+      return `<span class="clause-marker">${markerHtml}</span><div class="clause-body">${bodyHtml}</div>`;
+    }
+
     function renderLeftBlockHtml(row, query) {
+      const b = row.leftBlock;
+      if (!b) return '';
+      const split = extractListMarker(b.text, b.kind);
+
       if (row.type === 'equal') {
-        return escapeAndHighlightText(row.leftBlock.text, query);
+        if (split) {
+          return wrapMarkerAndBody(
+            escapeAndHighlightText(split.marker, query),
+            escapeAndHighlightText(split.body, query)
+          );
+        }
+        return escapeAndHighlightText(b.text, query);
       }
       if (row.type === 'deleted') {
-        return `<del class="tok-del">${escapeAndHighlightText(row.leftBlock.text, query)}</del>`;
+        if (split) {
+          return wrapMarkerAndBody(
+            `<del class="tok-del">${escapeAndHighlightText(split.marker, query)}</del>`,
+            `<del class="tok-del">${escapeAndHighlightText(split.body, query)}</del>`
+          );
+        }
+        return `<del class="tok-del">${escapeAndHighlightText(b.text, query)}</del>`;
       }
       if (row.type === 'modified') {
+        const rSplit = row.rightBlock ? extractListMarker(row.rightBlock.text, row.rightBlock.kind) : null;
+        if (split && rSplit) {
+          const bodyDiffs = computeCleanWordDiff(split.body, rSplit.body);
+          const sideParts = coalesceSideTokens(
+            bodyDiffs.filter(part => !part.added),
+            'removed'
+          );
+          const bodyHtml = sideParts
+            .map(part => {
+              const content = escapeAndHighlightText(part.value, query);
+              return part.removed ? `<del class="tok-del">${content}</del>` : content;
+            })
+            .join('');
+          const markerHtml =
+            split.marker === rSplit.marker
+              ? escapeAndHighlightText(split.marker, query)
+              : `<del class="tok-del">${escapeAndHighlightText(split.marker, query)}</del>`;
+          return wrapMarkerAndBody(markerHtml, bodyHtml);
+        }
+
         const sideParts = coalesceSideTokens(
           row.wordDiffs.filter(part => !part.added),
           'removed'
@@ -4242,13 +4763,49 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     }
 
     function renderRightBlockHtml(row, query) {
+      const b = row.rightBlock;
+      if (!b) return '';
+      const split = extractListMarker(b.text, b.kind);
+
       if (row.type === 'equal') {
-        return escapeAndHighlightText(row.rightBlock.text, query);
+        if (split) {
+          return wrapMarkerAndBody(
+            escapeAndHighlightText(split.marker, query),
+            escapeAndHighlightText(split.body, query)
+          );
+        }
+        return escapeAndHighlightText(b.text, query);
       }
       if (row.type === 'inserted') {
-        return `<ins class="tok-ins">${escapeAndHighlightText(row.rightBlock.text, query)}</ins>`;
+        if (split) {
+          return wrapMarkerAndBody(
+            `<ins class="tok-ins">${escapeAndHighlightText(split.marker, query)}</ins>`,
+            `<ins class="tok-ins">${escapeAndHighlightText(split.body, query)}</ins>`
+          );
+        }
+        return `<ins class="tok-ins">${escapeAndHighlightText(b.text, query)}</ins>`;
       }
       if (row.type === 'modified') {
+        const lSplit = row.leftBlock ? extractListMarker(row.leftBlock.text, row.leftBlock.kind) : null;
+        if (split && lSplit) {
+          const bodyDiffs = computeCleanWordDiff(lSplit.body, split.body);
+          const sideParts = coalesceSideTokens(
+            bodyDiffs.filter(part => !part.removed),
+            'added'
+          );
+          const bodyHtml = sideParts
+            .map(part => {
+              const content = escapeAndHighlightText(part.value, query);
+              return part.added ? `<ins class="tok-ins">${content}</ins>` : content;
+            })
+            .join('');
+          const markerHtml =
+            split.marker === lSplit.marker
+              ? escapeAndHighlightText(split.marker, query)
+              : `<ins class="tok-ins">${escapeAndHighlightText(split.marker, query)}</ins>`;
+          return wrapMarkerAndBody(markerHtml, bodyHtml);
+        }
+
         const sideParts = coalesceSideTokens(
           row.wordDiffs.filter(part => !part.removed),
           'added'
@@ -4309,17 +4866,57 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       return out;
     }
 
-    function renderUnifiedBlockHtml(row, query) {
+    function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
+      const primary = row.rightBlock || row.leftBlock;
+      const split = allowMarkerGrid && primary ? extractListMarker(primary.text, primary.kind) : null;
+
       if (row.type === 'equal') {
+        if (split) {
+          return wrapMarkerAndBody(
+            escapeAndHighlightText(split.marker, query),
+            escapeAndHighlightText(split.body, query)
+          );
+        }
         return escapeAndHighlightText(row.rightBlock.text, query);
       }
       if (row.type === 'deleted') {
+        if (split) {
+          return wrapMarkerAndBody(
+            `<del class="tok-del">${escapeAndHighlightText(split.marker, query)}</del>`,
+            `<del class="tok-del">${escapeAndHighlightText(split.body, query)}</del>`
+          );
+        }
         return `<del class="tok-del">${escapeAndHighlightText(row.leftBlock.text, query)}</del>`;
       }
       if (row.type === 'inserted') {
+        if (split) {
+          return wrapMarkerAndBody(
+            `<ins class="tok-ins">${escapeAndHighlightText(split.marker, query)}</ins>`,
+            `<ins class="tok-ins">${escapeAndHighlightText(split.body, query)}</ins>`
+          );
+        }
         return `<ins class="tok-ins">${escapeAndHighlightText(row.rightBlock.text, query)}</ins>`;
       }
       if (row.type === 'modified') {
+        const lSplit = row.leftBlock ? extractListMarker(row.leftBlock.text, row.leftBlock.kind) : null;
+        const rSplit = row.rightBlock ? extractListMarker(row.rightBlock.text, row.rightBlock.kind) : null;
+        if (allowMarkerGrid && lSplit && rSplit) {
+          const bodyDiffs = computeCleanWordDiff(lSplit.body, rSplit.body);
+          const bodyHtml = coalesceUnifiedTokens(bodyDiffs)
+            .map(part => {
+              const content = escapeAndHighlightText(part.value, query);
+              if (part.removed) return `<del class="tok-del">${content}</del>`;
+              if (part.added) return `<ins class="tok-ins">${content}</ins>`;
+              return content;
+            })
+            .join('');
+          const markerHtml =
+            lSplit.marker === rSplit.marker
+              ? escapeAndHighlightText(rSplit.marker, query)
+              : `<del class="tok-del">${escapeAndHighlightText(lSplit.marker, query)}</del> <ins class="tok-ins">${escapeAndHighlightText(rSplit.marker, query)}</ins>`;
+          return wrapMarkerAndBody(markerHtml, bodyHtml);
+        }
+
         return coalesceUnifiedTokens(row.wordDiffs)
           .map(part => {
             const content = escapeAndHighlightText(part.value, query);
@@ -4466,15 +5063,25 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       if (badgeEl) badgeEl.textContent = String(total);
       const mobFilterBtn = document.getElementById('mob-btn-only-changes');
       if (mobFilterBtn) mobFilterBtn.setAttribute('aria-pressed', String(state.onlyChanges));
+      const hfBtn = document.getElementById('btn-filter-hf');
+      if (hfBtn) hfBtn.setAttribute('aria-pressed', String(state.ignoreHeadersFooters));
+      const hfBadge = document.getElementById('hf-count-badge');
+      if (hfBadge) {
+        hfBadge.textContent = String(state.filteredHfCount);
+        hfBadge.style.display = state.filteredHfCount > 0 ? 'inline-flex' : 'none';
+      }
     }
 
-    function updateColumnMeta(side, blocksCount) {
+    function updateColumnMeta(side, blocksCount, pagesCount = 0) {
       const metaEl = document.getElementById(side === 'left' ? 'meta-left' : 'meta-right');
       const clearBtn = document.getElementById(side === 'left' ? 'btn-clear-left' : 'btn-clear-right');
       const fmt = side === 'left' ? state.leftFormat : state.rightFormat;
 
       if (blocksCount > 0) {
-        metaEl.textContent = fmt ? `${fmt} · ${blocksCount} ${t('unitPara')}` : `${blocksCount} ${t('unitPara')}`;
+        const pageStr = pagesCount > 0 ? `${pagesCount} ${t('pageShort')} · ` : '';
+        metaEl.textContent = fmt
+          ? `${fmt} · ${pageStr}${blocksCount} ${t('unitPara')}`
+          : `${pageStr}${blocksCount} ${t('unitPara')}`;
         metaEl.classList.add('is-visible');
         clearBtn.style.display = 'inline-flex';
       } else {
@@ -4484,15 +5091,39 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       }
     }
 
+    function getClauseTypeClasses(block) {
+      if (!block) return '';
+      const classes = [];
+      if (block.isHeading) classes.push('is-heading');
+      if (block.kind) classes.push(`kind-${block.kind}`);
+      if (extractListMarker(block.text, block.kind)) classes.push('has-marker');
+      return classes.join(' ');
+    }
+
     function runComparison() {
-      const leftBlocks = parseIntoBlocks(state.leftText);
-      const rightBlocks = parseIntoBlocks(state.rightText);
+      const allLeftBlocks = parseIntoBlocks(state.leftText);
+      const allRightBlocks = parseIntoBlocks(state.rightText);
+      state.rightAllBlocks = allRightBlocks;
+
+      const hfLeft = allLeftBlocks.filter(b => b.isHeaderFooter).length;
+      const hfRight = allRightBlocks.filter(b => b.isHeaderFooter).length;
+      state.filteredHfCount = Math.max(hfLeft, hfRight);
+
+      const leftBlocks = state.ignoreHeadersFooters
+        ? allLeftBlocks.filter(b => !b.isHeaderFooter)
+        : allLeftBlocks;
+      const rightBlocks = state.ignoreHeadersFooters
+        ? allRightBlocks.filter(b => !b.isHeaderFooter)
+        : allRightBlocks;
+
+      const leftPages = leftBlocks.reduce((m, b) => Math.max(m, b.pageNum || 1), 0);
+      const rightPages = rightBlocks.reduce((m, b) => Math.max(m, b.pageNum || 1), 0);
 
       document.getElementById('filename-left').textContent = state.leftName || t('noFileLeft');
       document.getElementById('filename-right').textContent = state.rightName || t('noFileRight');
 
-      updateColumnMeta('left', leftBlocks.length);
-      updateColumnMeta('right', rightBlocks.length);
+      updateColumnMeta('left', leftBlocks.length, leftPages);
+      updateColumnMeta('right', rightBlocks.length, rightPages);
 
       const bothLoaded = leftBlocks.length > 0 && rightBlocks.length > 0;
       document.body.classList.toggle('has-docs', leftBlocks.length > 0 || rightBlocks.length > 0);
@@ -4518,14 +5149,14 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         } else {
           setSafeContainerHtml(
             sheetLeft,
-            leftBlocks
+            `<div class="doc-page-card"><div class="doc-page-body">${leftBlocks
               .map(
                 b =>
-                  `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${
-                    b.isHeading ? 'is-heading' : ''
-                  }">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
+                  `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${getClauseTypeClasses(
+                    b
+                  )}">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
               )
-              .join('')
+              .join('')}</div></div>`
           );
         }
 
@@ -4534,14 +5165,14 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         } else {
           setSafeContainerHtml(
             sheetRight,
-            rightBlocks
+            `<div class="doc-page-card"><div class="doc-page-body">${rightBlocks
               .map(
                 b =>
-                  `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${
-                    b.isHeading ? 'is-heading' : ''
-                  }">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
+                  `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${getClauseTypeClasses(
+                    b
+                  )}">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
               )
-              .join('')
+              .join('')}</div></div>`
           );
         }
 
@@ -4591,7 +5222,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       }
 
       requestAnimationFrame(() => {
-        if (state.viewMode === 'split') equalizeRowHeights();
+        if (state.viewMode !== 'inline') equalizeRowHeights();
         scheduleGutterDraw();
       });
     }
@@ -4685,85 +5316,150 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       return `<div class="clause-actions">${editBtn}${revertBtn}</div>`;
     }
 
+    function renderPageCardHeaderHtml(pageNum, totalPages, rowsInPage) {
+      const sections = [];
+      for (const r of rowsInPage) {
+        const b = r.rightBlock || r.leftBlock;
+        if (b && b.sectionRef && !sections.includes(b.sectionRef)) {
+          sections.push(b.sectionRef);
+        }
+      }
+      const secRange =
+        sections.length === 1
+          ? sections[0]
+          : sections.length > 1
+          ? `${sections[0]} – ${sections[sections.length - 1]}`
+          : '';
+      const changeCount = rowsInPage.filter(r => r.type !== 'equal').length;
+      const pillLabel =
+        changeCount > 0 ? `${changeCount} ${escapeHtml(t('changesLabel'))}` : escapeHtml(t('pageUnchanged'));
+
+      return `
+        <header class="doc-page-header" aria-label="${escapeHtml(t('pageLabel'))} ${pageNum}">
+          <div class="page-head-left">
+            <span class="page-num-label">${escapeHtml(t('pageLabel'))} ${pageNum} ${escapeHtml(t('pageOf'))} ${totalPages}</span>
+            ${secRange ? `<span class="page-sec-range">· ${escapeHtml(secRange)}</span>` : ''}
+          </div>
+          <span class="page-change-pill ${changeCount === 0 ? 'is-clean' : ''}">${pillLabel}</span>
+        </header>
+      `;
+    }
+
     function renderDocumentPanes() {
-      const leftFragments = [];
-      const rightFragments = [];
-      const unifiedFragments = [];
       const q = state.searchQuery;
+      const pageGroups = new Map();
 
       state.alignedRows.forEach((row, idx) => {
-        const deferClass = idx > 14 ? 'deferred-block' : '';
-        const rightActionsHtml = renderRightActionsHtml(row);
-
-        if (row.leftBlock) {
-          const headingClass = row.leftBlock.isHeading ? 'is-heading' : '';
-          const stateClass =
-            row.type === 'equal'
-              ? 'state-equal'
-              : row.type === 'modified'
-              ? 'state-modified'
-              : 'state-deleted';
-
-          leftFragments.push(`
-            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-              <div class="clause ${stateClass} ${headingClass} ${deferClass}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div>
-            </div>
-          `);
-        } else {
-          leftFragments.push(`
-            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-              <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}"></div>
-            </div>
-          `);
-        }
-
-        if (row.rightBlock) {
-          const headingClass = row.rightBlock.isHeading ? 'is-heading' : '';
-          const stateClass =
-            row.type === 'equal'
-              ? 'state-equal'
-              : row.type === 'modified'
-              ? 'state-modified'
-              : 'state-inserted';
-
-          rightFragments.push(`
-            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-              <div class="clause ${stateClass} ${headingClass} ${deferClass}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}${rightActionsHtml}</div>
-            </div>
-          `);
-        } else {
-          rightFragments.push(`
-            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-              <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}">${rightActionsHtml}</div>
-            </div>
-          `);
-        }
-
-        const primaryBlock = row.rightBlock || row.leftBlock;
-        const uHeadingClass = primaryBlock && primaryBlock.isHeading ? 'is-heading' : '';
-        const uStateClass =
-          row.type === 'equal'
-            ? 'state-equal'
-            : row.type === 'modified'
-            ? 'state-modified'
-            : row.type === 'inserted'
-            ? 'state-inserted'
-            : 'state-deleted';
-
-        unifiedFragments.push(`
-          <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause ${uStateClass} ${uHeadingClass} ${deferClass}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q)}${rightActionsHtml}</div>
-          </div>
-        `);
+        const p = row.pageNum || 1;
+        if (!pageGroups.has(p)) pageGroups.set(p, []);
+        pageGroups.get(p).push({ row, idx });
       });
 
-      setSafeContainerHtml(sheetLeft, leftFragments.join(''));
-      setSafeContainerHtml(sheetRight, rightFragments.join(''));
-      setSafeContainerHtml(sheetUnified, unifiedFragments.join(''));
+      const totalPages = pageGroups.size || 1;
+      const leftPageCards = [];
+      const rightPageCards = [];
+      const unifiedPageCards = [];
+
+      for (const [pageNum, entries] of pageGroups.entries()) {
+        const rowsInPage = entries.map(e => e.row);
+        const pageHeaderHtml = renderPageCardHeaderHtml(pageNum, totalPages, rowsInPage);
+        const leftRowsHtml = [];
+        const rightRowsHtml = [];
+        const unifiedRowsHtml = [];
+
+        for (const { row, idx } of entries) {
+          const deferClass = idx > 18 ? 'deferred-block' : '';
+          const rightActionsHtml = renderRightActionsHtml(row);
+
+          if (row.leftBlock) {
+            const typeClasses = getClauseTypeClasses(row.leftBlock);
+            const stateClass =
+              row.type === 'equal'
+                ? 'state-equal'
+                : row.type === 'modified'
+                ? 'state-modified'
+                : 'state-deleted';
+
+            leftRowsHtml.push(`
+              <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+                <div class="clause ${stateClass} ${typeClasses} ${deferClass}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div>
+              </div>
+            `);
+          } else {
+            leftRowsHtml.push(`
+              <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+                <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}"></div>
+              </div>
+            `);
+          }
+
+          if (row.rightBlock) {
+            const typeClasses = getClauseTypeClasses(row.rightBlock);
+            const stateClass =
+              row.type === 'equal'
+                ? 'state-equal'
+                : row.type === 'modified'
+                ? 'state-modified'
+                : 'state-inserted';
+
+            rightRowsHtml.push(`
+              <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+                <div class="clause ${stateClass} ${typeClasses} ${deferClass}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}${rightActionsHtml}</div>
+              </div>
+            `);
+          } else {
+            rightRowsHtml.push(`
+              <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+                <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}">${rightActionsHtml}</div>
+              </div>
+            `);
+          }
+
+          const primaryBlock = row.rightBlock || row.leftBlock;
+          const uTypeClasses = getClauseTypeClasses(primaryBlock);
+          const uStateClass =
+            row.type === 'equal'
+              ? 'state-equal'
+              : row.type === 'modified'
+              ? 'state-modified'
+              : row.type === 'inserted'
+              ? 'state-inserted'
+              : 'state-deleted';
+
+          unifiedRowsHtml.push(`
+            <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
+              <div class="clause ${uStateClass} ${uTypeClasses} ${deferClass}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div>
+            </div>
+          `);
+        }
+
+        leftPageCards.push(`
+          <section class="doc-page-card" data-page="${pageNum}">
+            ${pageHeaderHtml}
+            <div class="doc-page-body">${leftRowsHtml.join('')}</div>
+          </section>
+        `);
+        rightPageCards.push(`
+          <section class="doc-page-card" data-page="${pageNum}">
+            ${pageHeaderHtml}
+            <div class="doc-page-body">${rightRowsHtml.join('')}</div>
+          </section>
+        `);
+        unifiedPageCards.push(`
+          <section class="doc-page-card" data-page="${pageNum}">
+            ${pageHeaderHtml}
+            <div class="doc-page-body">${unifiedRowsHtml.join('')}</div>
+          </section>
+        `);
+      }
+
+      setSafeContainerHtml(sheetLeft, leftPageCards.join(''));
+      setSafeContainerHtml(sheetRight, rightPageCards.join(''));
+      setSafeContainerHtml(sheetUnified, unifiedPageCards.join(''));
     }
 
     function equalizeRowHeights() {
-      if (state.viewMode !== 'split') return;
+      if (state.viewMode === 'inline') return;
       const leftAnchors = sheetLeft.querySelectorAll('.diff-row-anchor');
       const rightAnchors = sheetRight.querySelectorAll('.diff-row-anchor');
       const len = Math.min(leftAnchors.length, rightAnchors.length);
@@ -5008,6 +5704,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
             const typeLabel =
               row.type === 'modified' ? t('typeMod') : row.type === 'inserted' ? t('typeIns') : t('typeDel');
             const refCode = row.rightBlock ? row.rightBlock.refCode : row.leftBlock.refCode;
+            const pageNum = row.pageNum || 1;
             const deltaHtml = renderSidebarDeltaHtml(row, state.searchQuery);
 
             return `
@@ -5015,6 +5712,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
                 <div class="nav-item-head">
                   <div class="nav-item-loc">
                     <span class="nav-item-idx">${globalIdx}</span>
+                    <span class="nav-item-page">${escapeHtml(t('pageShort'))} ${pageNum}</span>
                     <span class="nav-item-ref">${escapeHtml(refCode)}</span>
                   </div>
                   <div class="nav-item-right">
@@ -5058,7 +5756,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     }
 
     function drawGutterConnectors() {
-      if (state.viewMode !== 'split') {
+      if (state.viewMode === 'inline') {
         connectorSvg.innerHTML = '';
         return;
       }
@@ -5147,7 +5845,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         document.querySelectorAll('.clause.deferred-block').forEach(el => {
           el.classList.remove('deferred-block');
         });
-        if (state.viewMode === 'split') {
+        if (state.viewMode !== 'inline') {
           equalizeRowHeights();
         }
 
@@ -5220,18 +5918,53 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       runComparison();
     }
 
-    function revertRowToOriginal(targetRowId) {
-      if (!state.alignedRows.length) return;
-      pushUndoSnapshot();
-      const nextBlocks = [];
-      for (const r of state.alignedRows) {
-        if (r.id === targetRowId) {
-          if (r.leftBlock) nextBlocks.push(r.leftBlock.text);
-        } else if (r.rightBlock) {
-          nextBlocks.push(r.rightBlock.text);
+    function rebuildRightTextFromRows(targetRowId, replacementText) {
+      const hasExplicit = state.rightAllBlocks && state.rightAllBlocks.some(b => b.hasExplicitPage);
+      const hfByPage = new Map();
+      if (state.ignoreHeadersFooters && state.rightAllBlocks) {
+        for (const b of state.rightAllBlocks) {
+          if (b.isHeaderFooter) {
+            const p = b.pageNum || 1;
+            if (!hfByPage.has(p)) hfByPage.set(p, []);
+            hfByPage.get(p).push(`[[HF]] ${b.text}`);
+          }
         }
       }
-      state.rightText = nextBlocks.join('\n\n');
+
+      const pagesMap = new Map();
+      for (const r of state.alignedRows) {
+        const p = r.pageNum || 1;
+        if (!pagesMap.has(p)) pagesMap.set(p, []);
+        if (r.id === targetRowId) {
+          if (replacementText) pagesMap.get(p).push(replacementText);
+        } else if (r.rightBlock) {
+          const prefix = r.rightBlock.isHeaderFooter ? '[[HF]] ' : '';
+          pagesMap.get(p).push(`${prefix}${r.rightBlock.text}`);
+        }
+      }
+
+      const outLines = [];
+      for (const [pageNum, contentLines] of pagesMap.entries()) {
+        if (hasExplicit) {
+          outLines.push(`=== [SEITE ${pageNum}] ===`);
+        }
+        const hfs = hfByPage.get(pageNum) || [];
+        if (hfs.length > 0) outLines.push(hfs[0]);
+        for (const line of contentLines) outLines.push(line);
+        if (hfs.length > 1) {
+          for (let k = 1; k < hfs.length; k++) outLines.push(hfs[k]);
+        }
+      }
+      return outLines.join('\n\n');
+    }
+
+    function revertRowToOriginal(targetRowId) {
+      if (!state.alignedRows.length) return;
+      const targetRow = state.alignedRows.find(r => r.id === targetRowId);
+      if (!targetRow) return;
+      pushUndoSnapshot();
+      const revertedText = targetRow.leftBlock ? targetRow.leftBlock.text : '';
+      state.rightText = rebuildRightTextFromRows(targetRowId, revertedText);
       runComparison();
     }
 
@@ -5271,7 +6004,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       const autoSize = () => {
         editor.style.height = 'auto';
         editor.style.height = `${Math.max(32, editor.scrollHeight)}px`;
-        if (state.viewMode === 'split') equalizeRowHeights();
+        if (state.viewMode !== 'inline') equalizeRowHeights();
         scheduleGutterDraw();
       };
       autoSize();
@@ -5288,20 +6021,12 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         if (newText === oldText) {
           clauseEl.classList.remove('is-editing');
           clauseEl.innerHTML = originalHtml;
-          if (state.viewMode === 'split') equalizeRowHeights();
+          if (state.viewMode !== 'inline') equalizeRowHeights();
           scheduleGutterDraw();
           return;
         }
         pushUndoSnapshot();
-        const nextBlocks = [];
-        for (const r of state.alignedRows) {
-          if (r.id === rowId) {
-            if (newText) nextBlocks.push(newText);
-          } else if (r.rightBlock) {
-            nextBlocks.push(r.rightBlock.text);
-          }
-        }
-        state.rightText = nextBlocks.join('\n\n');
+        state.rightText = rebuildRightTextFromRows(rowId, newText);
         runComparison();
       };
 
@@ -5310,7 +6035,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
         finished = true;
         clauseEl.classList.remove('is-editing');
         clauseEl.innerHTML = originalHtml;
-        if (state.viewMode === 'split') equalizeRowHeights();
+        if (state.viewMode !== 'inline') equalizeRowHeights();
         scheduleGutterDraw();
       };
 
@@ -5457,7 +6182,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     document.getElementById('center-gutter').addEventListener(
       'wheel',
       e => {
-        if (state.viewMode !== 'split') return;
+        if (state.viewMode === 'inline') return;
         paneRight.scrollTop += e.deltaY;
         paneLeft.scrollTop = paneRight.scrollTop;
         scheduleGutterDraw();
@@ -5592,7 +6317,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     let copyLabelTimer = null;
     function copyFinalTextToClipboard() {
       const finalText = state.alignedRows
-        .filter(r => r.rightBlock)
+        .filter(r => r.rightBlock && !r.rightBlock.isHeaderFooter)
         .map(r => r.rightBlock.text)
         .join('\n\n');
 
@@ -5655,7 +6380,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       const baseName = `DocDiff_${(state.rightName || 'Comparison').replace(/\.[^.]+$/, '')}`;
       if (type === 'txt') {
         const finalText = state.alignedRows
-          .filter(r => r.rightBlock)
+          .filter(r => r.rightBlock && !r.rightBlock.isHeaderFooter)
           .map(r => r.rightBlock.text)
           .join('\n\n');
         downloadBlob(finalText, 'text/plain;charset=utf-8', `${baseName}_Neu.txt`);
@@ -5673,34 +6398,49 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
 
     async function extractPdfText(arrayBuffer) {
       const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const pageTexts = [];
+      const pageSections = [];
 
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.0 });
+        const pageHeight = viewport.height || 842;
         const textContent = await page.getTextContent();
+
         let lastY = null;
         let currentLine = '';
-        const lines = [];
+        let currentLineY = 0;
+        const rawLines = [];
 
         for (const item of textContent.items) {
           const str = item.str;
           if (!str) continue;
           const y = item.transform ? item.transform[5] : 0;
 
-          if (lastY !== null && Math.abs(y - lastY) > 6) {
-            if (currentLine.trim()) lines.push(currentLine.trim());
-            if (Math.abs(y - lastY) > 16) lines.push('');
+          if (lastY !== null && Math.abs(y - lastY) > 5.5) {
+            if (currentLine.trim()) {
+              rawLines.push({ text: currentLine.trim(), y: currentLineY });
+            }
+            if (Math.abs(y - lastY) > 15) {
+              rawLines.push({ text: '', y });
+            }
             currentLine = str;
+            currentLineY = y;
           } else {
+            if (!currentLine) currentLineY = y;
             currentLine += (currentLine && !currentLine.endsWith(' ') && !str.startsWith(' ') ? ' ' : '') + str;
           }
           lastY = y;
         }
-        if (currentLine.trim()) lines.push(currentLine.trim());
+        if (currentLine.trim()) {
+          rawLines.push({ text: currentLine.trim(), y: currentLineY });
+        }
 
-        const paragraphs = [];
+        const paragraphs = [`=== [SEITE ${pageNum}] ===`];
         let buffer = '';
-        for (const line of lines) {
+
+        for (let i = 0; i < rawLines.length; i++) {
+          const entry = rawLines[i];
+          const line = entry.text;
           if (!line) {
             if (buffer) {
               paragraphs.push(buffer);
@@ -5708,8 +6448,26 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
             }
             continue;
           }
-          const isNewClause = /^(§\s*\d+|\(\d+\)|\d+\.\d*|\([a-z]\)|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+)\s/.test(line);
-          if (isNewClause && buffer) {
+
+          const inTopOrBottomMargin =
+            pdf.numPages > 1 &&
+            (entry.y > pageHeight * 0.91 || entry.y < pageHeight * 0.085) &&
+            line.length < 120;
+
+          if (inTopOrBottomMargin || isLikelyHeaderOrFooterLine(line)) {
+            if (buffer) {
+              paragraphs.push(buffer);
+              buffer = '';
+            }
+            paragraphs.push(`[[HF]] ${line}`);
+            continue;
+          }
+
+          const isNewStructuralBlock =
+            /^(§\s*\d+|\(\d+\)|\d+\.\d+|\d+\.|[•‣▪◦–*-]\s|\([a-z]\)|[a-z]\)|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i.test(
+              line
+            );
+          if (isNewStructuralBlock && buffer) {
             paragraphs.push(buffer);
             buffer = line;
           } else {
@@ -5717,12 +6475,64 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
           }
         }
         if (buffer) paragraphs.push(buffer);
-        pageTexts.push(paragraphs.join('\n\n'));
+        pageSections.push(paragraphs.join('\n\n'));
       }
-      return pageTexts.join('\n\n');
+      return pageSections.join('\n\n');
     }
 
     async function extractDocxText(arrayBuffer) {
+      if (window.mammoth && typeof window.mammoth.convertToHtml === 'function') {
+        const htmlResult = await window.mammoth.convertToHtml({ arrayBuffer });
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlResult.value || '', 'text/html');
+        const out = [];
+
+        const walkNodes = root => {
+          for (const node of root.children) {
+            const tag = node.tagName.toLowerCase();
+            if (tag === 'h1') {
+              const txt = (node.textContent || '').trim();
+              if (txt) out.push(`# ${txt}`);
+            } else if (tag === 'h2') {
+              const txt = (node.textContent || '').trim();
+              if (txt) out.push(`## ${txt}`);
+            } else if (tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') {
+              const txt = (node.textContent || '').trim();
+              if (txt) out.push(`### ${txt}`);
+            } else if (tag === 'ul') {
+              node.querySelectorAll(':scope > li').forEach(li => {
+                const txt = (li.textContent || '').replace(/\s+/g, ' ').trim();
+                if (txt) out.push(`• ${txt}`);
+              });
+            } else if (tag === 'ol') {
+              let idx = 1;
+              node.querySelectorAll(':scope > li').forEach(li => {
+                const txt = (li.textContent || '').replace(/\s+/g, ' ').trim();
+                if (txt) out.push(`(${idx++}) ${txt}`);
+              });
+            } else if (tag === 'table') {
+              node.querySelectorAll('tr').forEach(tr => {
+                const cells = Array.from(tr.querySelectorAll('th, td'))
+                  .map(c => (c.textContent || '').replace(/\s+/g, ' ').trim())
+                  .filter(Boolean);
+                if (cells.length) out.push(cells.join(' · '));
+              });
+            } else if (tag === 'p') {
+              const txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
+              if (txt) out.push(txt);
+            } else if (node.children && node.children.length > 0) {
+              walkNodes(node);
+            } else {
+              const txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
+              if (txt) out.push(txt);
+            }
+          }
+        };
+
+        walkNodes(doc.body);
+        if (out.length > 0) return out.join('\n\n');
+      }
+
       const result = await window.mammoth.extractRawText({ arrayBuffer });
       return result.value;
     }
@@ -5869,8 +6679,19 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     document.getElementById('mob-btn-prev').addEventListener('click', () => stepChange(-1));
     document.getElementById('mob-btn-next').addEventListener('click', () => stepChange(1));
 
+    const btnModePages = document.getElementById('btn-mode-pages');
+    if (btnModePages) btnModePages.addEventListener('click', () => setViewMode('pages'));
     document.getElementById('btn-mode-split').addEventListener('click', () => setViewMode('split'));
     document.getElementById('btn-mode-inline').addEventListener('click', () => setViewMode('inline'));
+
+    const btnFilterHf = document.getElementById('btn-filter-hf');
+    if (btnFilterHf) {
+      btnFilterHf.addEventListener('click', () => {
+        state.ignoreHeadersFooters = !state.ignoreHeadersFooters;
+        btnFilterHf.setAttribute('aria-pressed', String(state.ignoreHeadersFooters));
+        runComparison();
+      });
+    }
 
     const btnExportMenu = document.getElementById('btn-export-menu');
     const mobBtnExport = document.getElementById('mob-btn-export');
@@ -5941,6 +6762,9 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
       } else if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
         document.getElementById('btn-only-changes').click();
+      } else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        if (btnFilterHf) btnFilterHf.click();
       } else if (e.key === 'Escape') {
         closeMobileSheets();
       }
@@ -6114,7 +6938,7 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
     });
 
     document.getElementById('badge-editable').addEventListener('click', () => {
-      if (state.viewMode !== 'split') setViewMode('split');
+      if (state.viewMode === 'inline') setViewMode('pages');
       const firstRow = state.changeRows[0] || state.alignedRows[0];
       if (firstRow) {
         const clauseEl = sheetRight.querySelector(`.clause[data-row-id="${firstRow.id}"]`);
