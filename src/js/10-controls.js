@@ -10,6 +10,23 @@ function stepChange(direction) {
     nextIdx = (curIdx + direction + rows.length) % rows.length;
   }
   selectAndScrollToRow(rows[nextIdx].id, true, true);
+  announceActiveChange();
+}
+
+// "Change 3 of 19: p. 1, § 1 (2), modified" – read out after J / K or the step buttons.
+function announceActiveChange() {
+  const idx = state.changeRows.findIndex(r => r.id === state.activeRowId);
+  if (idx < 0) return;
+  const row = state.changeRows[idx];
+  const ref = [`${t('pageShort')} ${row.pageNum || 1}`, getDisplayRef(row)].filter(Boolean).join(', ');
+  announce(
+    formatMsg('announceStep', {
+      i: idx + 1,
+      n: state.changeRows.length,
+      ref,
+      type: getChangeTypeLabel(row),
+    })
+  );
 }
 
 document.getElementById('btn-prev').addEventListener('click', () => stepChange(-1));
@@ -73,28 +90,48 @@ window.addEventListener('click', () => {
 
 const searchInput = document.getElementById('search-input');
 
+function isTextEntryElement(el) {
+  if (!el) return false;
+  if (el.isContentEditable || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+  if (el.tagName !== 'INPUT') return false;
+  const nonText = ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file'];
+  return !nonText.includes((el.type || '').toLowerCase());
+}
+
 window.addEventListener('keydown', e => {
-  if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-    if (e.key === 'Escape') document.activeElement.blur();
+  if (e.defaultPrevented || e.isComposing) return;
+  const activeEl = document.activeElement;
+  if (isTextEntryElement(activeEl)) {
+    if (e.key === 'Escape' && activeEl === searchInput) activeEl.blur();
     return;
   }
-  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
-    if (state.undoStack.length > 0) {
-      e.preventDefault();
-      performUndo();
+  // Never act behind an open dialog.
+  if (document.querySelector('dialog[open]')) return;
+
+  const key = (e.key || '').toLowerCase();
+  if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+    // Only the explicit undo / redo combos are ours; Ctrl/Cmd+C, +K, +J, +H … stay with the browser.
+    if (key === 'z' && !e.shiftKey) {
+      if (state.undoStack.length > 0) {
+        e.preventDefault();
+        performUndo();
+      }
+    } else if ((key === 'z' && e.shiftKey) || (key === 'y' && !e.shiftKey)) {
+      if (state.redoStack.length > 0) {
+        e.preventDefault();
+        performRedo();
+      }
     }
     return;
   }
-  if (
-    ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z')) ||
-    ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === 'y' || e.key === 'Y'))
-  ) {
-    if (state.redoStack.length > 0) {
-      e.preventDefault();
-      performRedo();
-    }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'Escape') {
+    closeMobileSheets();
     return;
   }
+  // Single-character shortcuts (WCAG 2.1.4): can be switched off in the help dialog and
+  // only apply while a comparison is shown.
+  if (!state.singleKeyShortcuts || !document.body.classList.contains('is-comparing')) return;
   if (e.key === 'j' || e.key === 'J') {
     e.preventDefault();
     stepChange(1);
@@ -110,8 +147,6 @@ window.addEventListener('keydown', e => {
   } else if (e.key === 'h' || e.key === 'H') {
     e.preventDefault();
     if (btnFilterHf) btnFilterHf.click();
-  } else if (e.key === 'Escape') {
-    closeMobileSheets();
   }
 });
 
@@ -141,8 +176,7 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
   state.searchQuery = '';
-  state.undoStack = [];
-  state.redoStack = [];
+  resetEditHistory();
   searchInput.value = '';
   fileInputLeft.value = '';
   fileInputRight.value = '';
@@ -157,6 +191,7 @@ document.getElementById('btn-lang').addEventListener('click', () => {
     state.leftText = sample.v1;
     state.rightName = t('sampleRightName');
     state.rightText = sample.v2;
+    resetEditHistory();
   }
   applyTranslationsToStaticDom();
   runComparison();
@@ -221,6 +256,7 @@ document.getElementById('btn-swap-docs').addEventListener('click', () => {
   [state.leftText, state.rightText] = [state.rightText, state.leftText];
   [state.leftName, state.rightName] = [state.rightName, state.leftName];
   [state.leftFormat, state.rightFormat] = [state.rightFormat, state.leftFormat];
+  resetEditHistory();
   runComparison();
 });
 
@@ -242,9 +278,17 @@ const pasteModal = document.getElementById('paste-modal');
 const textareaLeft = document.getElementById('textarea-left');
 const textareaRight = document.getElementById('textarea-right');
 
+// The dialog shows plain text only: page breaks and header/footer metadata of loaded
+// documents are removed for display. If a side is applied unchanged, the loaded document
+// (with its metadata) is kept; edited or new text is sanitized, so typed text can never be
+// interpreted as metadata.
+const pasteModalShown = { left: '', right: '' };
+
 function openPasteModal() {
-  textareaLeft.value = state.leftText;
-  textareaRight.value = state.rightText;
+  pasteModalShown.left = docTextToPlainText(state.leftText);
+  pasteModalShown.right = docTextToPlainText(state.rightText);
+  textareaLeft.value = pasteModalShown.left;
+  textareaRight.value = pasteModalShown.right;
   pasteModal.showModal();
 }
 
@@ -252,8 +296,19 @@ document.getElementById('btn-paste-modal').addEventListener('click', openPasteMo
 document.getElementById('btn-close-modal').addEventListener('click', () => pasteModal.close());
 document.getElementById('btn-cancel-modal').addEventListener('click', () => pasteModal.close());
 document.getElementById('btn-apply-modal').addEventListener('click', () => {
-  state.leftText = textareaLeft.value;
-  state.rightText = textareaRight.value;
+  const leftChanged = textareaLeft.value !== pasteModalShown.left;
+  const rightChanged = textareaRight.value !== pasteModalShown.right;
+  if (leftChanged) {
+    state.leftText = sanitizeExternalText(textareaLeft.value);
+    state.leftName = '';
+    state.leftFormat = '';
+  }
+  if (rightChanged) {
+    state.rightText = sanitizeExternalText(textareaRight.value);
+    state.rightName = '';
+    state.rightFormat = '';
+  }
+  if (leftChanged || rightChanged) resetEditHistory();
   if (state.leftText.trim() && !state.leftName) {
     state.leftName = t('manualLeft');
     state.leftFormat = 'TEXT';
@@ -267,19 +322,30 @@ document.getElementById('btn-apply-modal').addEventListener('click', () => {
 });
 
 const helpModal = document.getElementById('help-modal');
-document.getElementById('btn-help').addEventListener('click', () => helpModal.showModal());
+const chkSingleKeyShortcuts = document.getElementById('chk-single-key-shortcuts');
+document.getElementById('btn-help').addEventListener('click', () => {
+  chkSingleKeyShortcuts.checked = state.singleKeyShortcuts;
+  helpModal.showModal();
+});
+chkSingleKeyShortcuts.addEventListener('change', () => {
+  state.singleKeyShortcuts = chkSingleKeyShortcuts.checked;
+});
 document.getElementById('btn-close-help').addEventListener('click', () => helpModal.close());
 document.getElementById('btn-ok-help').addEventListener('click', () => helpModal.close());
 document.getElementById('btn-help-sample').addEventListener('click', () => {
-  const sample = SAMPLES[state.lang] || SAMPLES.de;
-  state.leftName = t('sampleLeftName');
-  state.leftFormat = 'DEMO';
-  state.leftText = sample.v1;
-  state.rightName = t('sampleRightName');
-  state.rightFormat = 'DEMO';
-  state.rightText = sample.v2;
   helpModal.close();
-  runComparison();
+  loadSampleComparison();
+});
+
+// First-run legend: dismissible for this session only (nothing is stored).
+document.getElementById('btn-legend-close').addEventListener('click', () => {
+  state.legendDismissed = true;
+  document.body.classList.add('legend-dismissed');
+  (state.viewMode === 'inline' ? paneUnified : paneRight).focus({ preventScroll: true });
+  requestAnimationFrame(() => {
+    equalizeRowHeights();
+    scheduleGutterDraw();
+  });
 });
 
 document.getElementById('badge-editable').addEventListener('click', () => {
@@ -322,7 +388,6 @@ function showTooltipFor(target) {
   if (!text || !uiTooltip) return;
   activeTooltipTarget = target;
   uiTooltip.textContent = text;
-  uiTooltip.setAttribute('aria-hidden', 'false');
   uiTooltip.classList.add('is-visible');
 
   const rect = target.getBoundingClientRect();

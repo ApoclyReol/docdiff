@@ -124,14 +124,6 @@ wrapGlobalFunction('handleDropFiles', original =>
   }
 );
 
-wrapGlobalFunction('applyTranslationsToStaticDom', original =>
-  function applyTranslationsWithSession() {
-    const result = original.apply(this, arguments);
-    applySessionTranslations();
-    return result;
-  }
-);
-
 /* ── Accessible confirm / message dialog ────────────────────────────────── */
 const sessionDialog = document.getElementById('session-dialog');
 const sessionDialogTitle = document.getElementById('session-dialog-title');
@@ -158,9 +150,9 @@ function showSessionDialog({ title, body, confirmLabel, cancelLabel }) {
   sessionDialog.setAttribute('role', cancelLabel ? 'alertdialog' : 'dialog');
   return new Promise(resolve => {
     sessionDialogResolve = resolve;
+    // Like the other dialogs, initial focus goes to the title (autofocus) and the
+    // browser returns focus to the triggering control when the dialog closes.
     sessionDialog.showModal();
-    // The safe choice gets the initial focus.
-    (cancelLabel ? sessionDialogCancel : sessionDialogConfirm).focus();
   });
 }
 
@@ -194,6 +186,7 @@ function showSessionError(messageKey) {
 const SESSION_GUARDED_CLICKS = [
   { selector: '#btn-clear' },
   { selector: '#btn-clear-right' },
+  { selector: '#lp-clear-right' },
   { selector: '#btn-swap-docs' },
   { selector: '.btn-load-sample' },
   { selector: '#btn-help-sample' },
@@ -203,7 +196,7 @@ const SESSION_GUARDED_CLICKS = [
     selector: '#btn-apply-modal',
     when: () => {
       const ta = document.getElementById('textarea-right');
-      return !!ta && ta.value !== state.rightText;
+      return !!ta && ta.value !== pasteModalShown.right;
     },
   },
   {
@@ -484,6 +477,7 @@ async function applySessionData(session) {
     if (input) input.value = '';
   });
 
+  if (typeof clearImportNotice === 'function') clearImportNotice();
   setViewMode(session.view.mode);
   if (!!state.onlyChanges !== session.view.onlyChanges) {
     const onlyChangesBtn = document.getElementById('btn-only-changes');
@@ -548,13 +542,14 @@ document.addEventListener('click', e => {
     return;
   }
   if (e.target.closest('[data-session-action="save"]')) {
+    if (typeof closeExportMenu === 'function') closeExportMenu(false);
     if (typeof closeMobileSheets === 'function') closeMobileSheets();
     saveSession();
   }
 });
 
-// Exporting the edited result counts as saving it (print can be cancelled, so it does not).
-const SESSION_CLEANING_EXPORTS = ['copy', 'txt', 'word', 'html', 'md'];
+// Exporting the edited result (any export format, including print) counts as saving it.
+const SESSION_CLEANING_EXPORTS = ['copy', 'txt', 'word', 'html', 'md', 'print'];
 document.addEventListener('click', e => {
   if (!(e.target instanceof Element)) return;
   const item = e.target.closest('#export-menu [data-export]');
@@ -581,12 +576,3 @@ window.addEventListener(
   },
   true
 );
-
-function applySessionTranslations() {
-  const saveLabel = document.getElementById('i18n-exp-session');
-  if (saveLabel) saveLabel.textContent = t('sessionSave');
-  document.querySelectorAll('[data-i18n-session-open]').forEach(el => {
-    el.textContent = t('sessionOpen');
-  });
-  document.querySelectorAll('.btn-open-session').forEach(btn => setTooltip(btn, t('sessionOpenTitle')));
-}

@@ -107,77 +107,82 @@ __APP_CSS__
         </g>
       </svg>
       <span class="app-title">Doc Diff</span>
-      <div class="divider-v"></div>
-      <div class="stat-summary" id="stat-summary" aria-live="polite">
-        <span><strong id="count-all">0</strong> <span id="i18n-changes-label">Änderungen</span></span>
-        <span class="trenner">·</span>
-        <span style="color:hsl(var(--success-ink))">+<strong id="count-ins" style="color:inherit">0</strong></span>
-        <span style="color:hsl(var(--destructive-ink))">−<strong id="count-del" style="color:inherit">0</strong></span>
+      <div class="divider-v compare-only"></div>
+      <div class="stat-summary compare-only" id="stat-summary">
+        <span class="stat-total"><strong id="count-all">0</strong> <span id="i18n-changes-label">Änderungen</span></span>
+        <span class="stat-breakdown">
+          <span class="trenner" aria-hidden="true">·</span>
+          <span class="stat-mod"><strong id="count-mod">0</strong> <span data-i18n="statMod">geändert</span></span>
+          <span class="trenner" aria-hidden="true">·</span>
+          <span class="stat-ins"><strong id="count-ins">0</strong> <span data-i18n="statIns">neu</span></span>
+          <span class="trenner" aria-hidden="true">·</span>
+          <span class="stat-del"><strong id="count-del">0</strong> <span data-i18n="statDel">entfernt</span></span>
+        </span>
       </div>
     </div>
 
     <div class="header-right-wrap">
-      <div class="header-cluster header-nav">
-        <div class="seg-group" role="group" aria-label="View mode">
+      <div class="header-cluster header-nav compare-only">
+        <div class="seg-group" role="group" id="seg-view-mode" aria-label="Ansicht">
           <button type="button" class="seg-btn" id="btn-mode-pages" aria-pressed="true">
-            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <span id="i18n-mode-pages">Seiten</span>
           </button>
           <button type="button" class="seg-btn" id="btn-mode-split" aria-pressed="false">
-            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>
-            <span id="i18n-mode-split">Textfluss</span>
+            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>
+            <span id="i18n-mode-split">Nebeneinander</span>
           </button>
           <button type="button" class="seg-btn" id="btn-mode-inline" aria-pressed="false">
-            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
-            <span id="i18n-mode-inline">Kompakt</span>
+            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
+            <span id="i18n-mode-inline">Untereinander</span>
           </button>
         </div>
 
         <div class="search-box" id="search-box-wrap">
-          <svg class="icon" style="color:hsl(var(--muted-foreground))" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="search-input" placeholder="Suchen…" aria-label="Search" />
-          <span class="kbd-hint">/</span>
+          <svg class="icon" style="color:hsl(var(--muted-foreground))" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" id="search-input" placeholder="Suchen…" aria-label="In beiden Fassungen suchen" autocomplete="off" />
+          <kbd class="kbd-hint" aria-hidden="true">/</kbd>
         </div>
       </div>
 
       <div class="header-cluster header-tools">
-        <button type="button" class="btn" id="btn-paste-modal">
-          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          <span id="i18n-btn-text">Text einfügen</span>
+        <button type="button" class="btn btn-icon btn-ghost compare-only" id="btn-paste-modal">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span id="i18n-btn-text" class="sr-only">Text einfügen</span>
         </button>
 
-        <button type="button" class="btn btn-ghost" id="btn-clear">
-          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          <span id="i18n-btn-clear">Zurücksetzen</span>
+        <button type="button" class="btn compare-only" id="btn-clear">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          <span id="i18n-btn-clear">Neuer Vergleich</span>
         </button>
 
-        <button type="button" class="btn" id="btn-help">
-          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-          <span id="i18n-btn-help">Anleitung</span>
+        <div class="divider-v compare-only" aria-hidden="true"></div>
+
+        <button type="button" class="btn btn-ghost" id="btn-help">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          <span id="i18n-btn-help">Hilfe</span>
         </button>
 
-        <button type="button" class="btn btn-ghost font-mono" id="btn-lang" style="padding:0 8px;">
-          DE
-        </button>
+        <button type="button" class="btn btn-ghost" id="btn-lang">DE</button>
 
-        <button type="button" class="btn btn-icon btn-ghost" id="btn-theme" aria-label="Theme">
-          <svg class="icon" id="theme-icon" viewBox="0 0 24 24">
+        <button type="button" class="btn btn-icon btn-ghost" id="btn-theme">
+          <svg class="icon" id="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
           </svg>
         </button>
 
-        <button type="button" class="btn btn-icon" id="btn-toggle-sidebar" aria-pressed="true">
-          <svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
+        <button type="button" class="btn btn-icon btn-ghost compare-only" id="btn-toggle-sidebar" aria-pressed="true" aria-controls="sidebar">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
         </button>
       </div>
     </div>
   </header>
 
   <!-- ── 2. DOCUMENT BARS ───────────────────────────────────────────────────── -->
-  <div class="col-bars">
+  <section class="col-bars compare-only" id="col-bars" aria-label="Dokumente">
     <div class="col-bar col-bar-left">
       <div class="col-title-wrap">
-        <span class="col-role-pill col-role-old" id="i18n-col-left">1 · Vorher</span>
+        <span class="col-role-pill col-role-old" id="i18n-col-left">Alte Fassung</span>
         <span class="col-filename" id="filename-left">Kein Ausgangsdokument</span>
         <span class="col-meta-badge" id="meta-left"></span>
       </div>
@@ -192,15 +197,15 @@ __APP_CSS__
       </div>
     </div>
 
-    <div style="display:flex; align-items:center; justify-content:center;">
-      <button type="button" class="btn btn-icon btn-ghost" style="width:28px;height:28px;" id="btn-swap-docs">
+    <div class="col-swap">
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-swap-docs">
         <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
       </button>
     </div>
 
     <div class="col-bar col-bar-right">
       <div class="col-title-wrap">
-        <span class="col-role-pill col-role-new" id="i18n-col-right">2 · Nachher</span>
+        <span class="col-role-pill col-role-new" id="i18n-col-right">Neue Fassung</span>
         <span class="col-filename" id="filename-right">Kein neues Dokument</span>
         <span class="col-meta-badge" id="meta-right"></span>
         <button type="button" class="col-edit-pill" id="badge-editable">
@@ -242,9 +247,9 @@ __APP_CSS__
             <button type="button" class="dropdown-item" data-export="word" role="menuitem">
               <span class="dropdown-item-left">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span id="i18n-exp-word">Word-Redline (mit Änderungen)</span>
+                <span id="i18n-exp-word">Word-Redline (Änderungen nachverfolgen)</span>
               </span>
-              <span class="dropdown-ext">.doc</span>
+              <span class="dropdown-ext">.docx</span>
             </button>
             <button type="button" class="dropdown-item" data-export="print" role="menuitem">
               <span class="dropdown-item-left">
@@ -271,7 +276,7 @@ __APP_CSS__
             <button type="button" class="dropdown-item" data-session-action="save" role="menuitem">
               <span class="dropdown-item-left">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                <span id="i18n-exp-session">Sitzung speichern</span>
+                <span data-i18n="sessionSave">Sitzung speichern</span>
               </span>
               <span class="dropdown-ext">.docdiff</span>
             </button>
@@ -285,15 +290,30 @@ __APP_CSS__
         <span id="i18n-sidebar-title">Änderungen</span>
         <span class="sidebar-count-badge" id="sidebar-count-badge">0</span>
       </div>
-      <span class="sidebar-kbd-hint" id="sidebar-kbd-hint">J / K</span>
+      <span class="sidebar-kbd-hint" id="sidebar-kbd-hint"><kbd>J</kbd> / <kbd>K</kbd></span>
     </div>
-  </div>
+  </section>
+
+  <!-- ── 2b. FIRST-RUN LEGEND (dismissible, in-memory only) ───────────────── -->
+  <section class="legend-bar compare-only" id="legend-bar" aria-label="Legende">
+    <p class="legend-items">
+      <span class="legend-item"><del class="tok-del" data-i18n="legendDelSample">durchgestrichen</del> <span data-i18n="legendDel">= entfernt</span></span>
+      <span class="legend-item"><ins class="tok-ins" data-i18n="legendInsSample">grün</ins> <span data-i18n="legendIns">= neu</span></span>
+      <span class="legend-item"><span class="legend-swatch" aria-hidden="true"></span><span data-i18n="legendMod">blauer Rand = Absatz geändert</span></span>
+      <span class="legend-item fine-pointer-only"><kbd>J</kbd> / <kbd>K</kbd> <span data-i18n="legendKeys">= nächste / vorherige Änderung</span></span>
+      <span class="legend-item touch-only" data-i18n="legendTouch">Pfeile unten = nächste / vorherige Änderung</span>
+    </p>
+    <button type="button" class="btn btn-ghost btn-sm" id="btn-legend-close">
+      <span data-i18n="legendClose">Ausblenden</span>
+    </button>
+  </section>
 
   <!-- ── 3. MAIN WORKSPACE ──────────────────────────────────────────────────── -->
-  <main class="workspace">
-    <section class="doc-pane doc-pane-left" id="pane-left" data-side="left">
+  <main class="workspace" id="main">
+    <h1 class="sr-only compare-only" id="compare-heading" tabindex="-1">Doc Diff</h1>
+    <section class="doc-pane doc-pane-left" id="pane-left" data-side="left" tabindex="0" aria-label="Alte Fassung">
       <div class="drop-zone-overlay">
-        <div class="drop-box" id="i18n-drop-left">1 · Vorher (Alter Stand) hier ablegen (PDF / DOCX / TXT)</div>
+        <div class="drop-box" id="i18n-drop-left">Alte Fassung hier ablegen</div>
       </div>
       <div class="doc-sheet" id="sheet-left"></div>
     </section>
@@ -303,22 +323,145 @@ __APP_CSS__
       <svg id="connector-svg"></svg>
     </div>
 
-    <section class="doc-pane doc-pane-right" id="pane-right" data-side="right">
+    <section class="doc-pane doc-pane-right" id="pane-right" data-side="right" tabindex="0" aria-label="Neue Fassung">
       <div class="drop-zone-overlay">
-        <div class="drop-box" id="i18n-drop-right">2 · Nachher (Neuer Stand) hier ablegen (PDF / DOCX / TXT)</div>
+        <div class="drop-box" id="i18n-drop-right">Neue Fassung hier ablegen</div>
       </div>
       <div class="doc-sheet" id="sheet-right"></div>
     </section>
 
     <!-- Unified Inline Redline Pane -->
-    <section class="doc-pane-unified" id="pane-unified">
+    <section class="doc-pane-unified" id="pane-unified" tabindex="0" aria-label="Vergleich in einer Spalte">
       <div class="doc-sheet" id="sheet-unified"></div>
     </section>
 
-    <!-- Centered Zero-Friction Launchpad Overlay (when < 2 documents loaded) -->
-    <div class="empty-launchpad" id="empty-launchpad"></div>
+    <!-- Empty state = landing page (static markup, translated by JS; visible without JS) -->
+    <div class="empty-launchpad landing" id="empty-launchpad">
+      <div class="landing-inner">
+        <section class="landing-hero" aria-labelledby="landing-title">
+          <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n-html="heroTitle">Dokumente <del class="hero-del" aria-hidden="true">mühsam</del> <ins class="hero-ins">einfach</ins> vergleichen.</h1>
+          <p class="landing-sub" data-i18n="heroSub">PDF, Word oder Text: Jede Änderung wird Wort für Wort markiert. Ihre Dateien verlassen dabei nie Ihren Computer.</p>
+          <ul class="trust-list">
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustFree">Kostenlos &amp; Open Source (MIT)</span></li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustLocal">Keine Uploads – alles läuft lokal im Browser</span></li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustNoTracking">Keine Werbung, kein Tracking, keine Cookies</span></li>
+          </ul>
 
-    <aside class="sidebar-panel" id="sidebar">
+          <div class="drop-slots">
+          <div class="drop-slot" id="lp-slot-left" data-side="left">
+            <button type="button" class="drop-slot-btn" id="btn-empty-upload-left">
+              <span class="drop-slot-head">
+                <span class="drop-slot-num" aria-hidden="true">1</span>
+                <span class="drop-slot-title" id="lp-left-title" data-i18n="slotLeftTitle">Alte Fassung</span>
+              </span>
+              <span class="drop-slot-hint" id="lp-left-hint" data-i18n="slotHint">PDF (mit Text), Word (.docx), Text</span>
+              <span class="drop-slot-cta">
+                <span class="drop-slot-cta-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span id="lp-left-cta" data-i18n="slotChoose">Datei wählen</span></span>
+                <span class="drop-slot-drag fine-pointer-only" data-i18n="slotDrag">oder hierher ziehen</span>
+              </span>
+            </button>
+            <button type="button" class="drop-slot-clear" id="lp-clear-left" hidden aria-label="Alte Fassung entfernen" data-i18n-label="slotClearLeft"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          <div class="drop-slot" id="lp-slot-right" data-side="right">
+            <button type="button" class="drop-slot-btn" id="btn-empty-upload-right">
+              <span class="drop-slot-head">
+                <span class="drop-slot-num" aria-hidden="true">2</span>
+                <span class="drop-slot-title" id="lp-right-title" data-i18n="slotRightTitle">Neue Fassung</span>
+              </span>
+              <span class="drop-slot-hint" id="lp-right-hint" data-i18n="slotHint">PDF (mit Text), Word (.docx), Text</span>
+              <span class="drop-slot-cta">
+                <span class="drop-slot-cta-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span id="lp-right-cta" data-i18n="slotChoose">Datei wählen</span></span>
+                <span class="drop-slot-drag fine-pointer-only" data-i18n="slotDrag">oder hierher ziehen</span>
+              </span>
+            </button>
+            <button type="button" class="drop-slot-clear" id="lp-clear-right" hidden aria-label="Neue Fassung entfernen" data-i18n-label="slotClearRight"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          </div>
+          <p class="drop-both-hint fine-pointer-only" data-i18n="dropBothHint">Sie können auch beide Dateien auf einmal hierher ziehen – die erste gilt als alte Fassung.</p>
+
+          <div class="landing-secondary">
+            <button type="button" class="btn btn-load-sample" id="btn-lp-sample">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+              <span data-i18n="loadSample">Beispiel ansehen</span>
+            </button>
+            <button type="button" class="btn btn-open-paste" id="btn-lp-paste">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span data-i18n="pasteText">Text einfügen</span>
+            </button>
+            <button type="button" class="btn btn-open-session" id="btn-lp-session">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+              <span data-i18n="sessionOpen">Sitzung öffnen</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="landing-section" aria-labelledby="how-title">
+          <h2 id="how-title" data-i18n="howTitle">So funktioniert’s</h2>
+          <ol class="how-steps">
+            <li><span class="how-num" aria-hidden="true">1</span><span><strong data-i18n="how1Title">Zwei Fassungen wählen</strong> <span data-i18n="how1Text">Als PDF, Word-Datei oder eingefügten Text. Die Dateien werden nur in diesem Browser-Tab gelesen.</span></span></li>
+            <li><span class="how-num" aria-hidden="true">2</span><span><strong data-i18n="how2Title">Änderungen durchgehen</strong> <span data-i18n="how2Text">Entferntes ist rot durchgestrichen, Neues grün markiert. Die Liste rechts führt von Änderung zu Änderung.</span></span></li>
+            <li><span class="how-num" aria-hidden="true">3</span><span><strong data-i18n="how3Title">Ergebnis sichern, wenn Sie es brauchen</strong> <span data-i18n="how3Text">Als Word-Datei mit markierten Änderungen, als PDF oder als Bericht speichern.</span></span></li>
+          </ol>
+        </section>
+
+        <section class="landing-section" aria-labelledby="scope-title">
+          <h2 id="scope-title" data-i18n="scopeTitle">Was es kann – und was nicht</h2>
+          <div class="scope-grid">
+            <div class="scope-col scope-can">
+              <h3 data-i18n="scopeCanTitle">Kann</h3>
+              <ul>
+                <li data-i18n="scopeCan1">PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen</li>
+                <li data-i18n="scopeCan2">Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge</li>
+                <li data-i18n="scopeCan3">Seiten wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet</li>
+                <li data-i18n="scopeCan5">Verschobene Absätze als „verschoben“ kennzeichnen</li>
+                <li data-i18n="scopeCan4">Ohne Internet arbeiten – als einzelne HTML-Datei</li>
+              </ul>
+            </div>
+            <div class="scope-col scope-cannot">
+              <h3 data-i18n="scopeCannotTitle">Kann nicht</h3>
+              <ul>
+                <li data-i18n="scopeCannot1">Gescannte PDFs lesen – es gibt keine Texterkennung (OCR)</li>
+                <li data-i18n="scopeCannot2">Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern</li>
+                <li data-i18n="scopeCannot3">Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="landing-section" aria-labelledby="faq-title">
+          <h2 id="faq-title" data-i18n="faqTitle">Häufige Fragen</h2>
+          <details class="faq-item">
+            <summary data-i18n="faqUploadQ">Wie kann ich prüfen, dass nichts hochgeladen wird?</summary>
+            <div class="faq-answer" data-i18n-html="faqUploadA">
+              <p>Die Seite enthält eine Sicherheitsregel (Content-Security-Policy), mit der Ihr Browser jede Netzwerkverbindung aus der Seite heraus sperrt. Ihre Dateien werden nur im Arbeitsspeicher dieses Tabs gelesen und beim Schließen verworfen.</p>
+              <p>So prüfen Sie es selbst: Öffnen Sie die Entwicklerwerkzeuge Ihres Browsers (F12), wählen Sie den Reiter „Netzwerk“ und laden Sie dann ein Dokument – es erscheint keine Anfrage. Oder laden Sie die Offline-Datei herunter, trennen Sie die Internetverbindung und öffnen Sie sie: Alles funktioniert weiter.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faqOfflineQ">Kann ich Doc Diff offline nutzen?</summary>
+            <div class="faq-answer" data-i18n-html="faqOfflineA">
+              <p>Ja. Laden Sie <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> herunter (eine einzelne Datei, etwa 2,5&nbsp;MB) und öffnen Sie sie per Doppelklick im Browser – ohne Installation und ohne Internet.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faqWhoQ">Wer steckt dahinter? Wo ist der Quellcode?</summary>
+            <div class="faq-answer" data-i18n-html="faqWhoA">
+              <p>Doc Diff ist ein privates Open-Source-Projekt von Tobias Schnorpfeil – ohne Firma, Werbung oder Datensammlung dahinter. Der vollständige Quellcode steht unter MIT-Lizenz <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">auf GitHub</a>: Sie können ihn prüfen, selbst bauen oder selbst betreiben.</p>
+            </div>
+          </details>
+        </section>
+
+        <footer class="landing-footer">
+          <button type="button" class="lp-link btn-open-privacy" data-i18n="footerPrivacy">Impressum &amp; Datenschutz</button>
+          <span aria-hidden="true">·</span>
+          <a class="lp-link" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" data-i18n="footerSource">Quellcode auf GitHub</a>
+          <span aria-hidden="true">·</span>
+          <span data-i18n="footerLicense">MIT-Lizenz</span>
+        </footer>
+      </div>
+    </div>
+
+    <aside class="sidebar-panel" id="sidebar" aria-labelledby="i18n-sidebar-title">
       <div class="mobile-sheet-header">
         <div class="sheet-grabber" aria-hidden="true"></div>
         <div class="mobile-sheet-title-row">
@@ -326,20 +469,20 @@ __APP_CSS__
           <button type="button" class="mobile-sheet-done" id="btn-close-sidebar-sheet">Fertig</button>
         </div>
       </div>
-      <div class="sidebar-filter-bar" id="sidebar-filter-bar" role="tablist" aria-label="Filter">
-        <button type="button" class="sidebar-filter-btn is-active" data-sidebar-filter="all" aria-selected="true">
+      <div class="sidebar-filter-bar" id="sidebar-filter-bar" role="group" aria-label="Filter" data-i18n-label="filterGroupLabel">
+        <button type="button" class="sidebar-filter-btn is-active" data-sidebar-filter="all" aria-pressed="true">
           <span id="i18n-filter-all">Alle</span>
           <span class="sidebar-filter-count" id="filter-count-all">0</span>
         </button>
-        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="modified" aria-selected="false">
+        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="modified" aria-pressed="false">
           <span id="i18n-filter-mod">Geändert</span>
           <span class="sidebar-filter-count mod" id="filter-count-mod">0</span>
         </button>
-        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="inserted" aria-selected="false">
+        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="inserted" aria-pressed="false">
           <span id="i18n-filter-ins">Neu</span>
           <span class="sidebar-filter-count ins" id="filter-count-ins">0</span>
         </button>
-        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="deleted" aria-selected="false">
+        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="deleted" aria-pressed="false">
           <span id="i18n-filter-del">Entfernt</span>
           <span class="sidebar-filter-count del" id="filter-count-del">0</span>
         </button>
@@ -349,19 +492,19 @@ __APP_CSS__
         <button type="button" class="privacy-status" id="btn-privacy-info">
           <span id="i18n-footer-privacy">Impressum & Datenschutz</span>
         </button>
-        <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;">GitHub</a>
+        <a class="sidebar-footer-link" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </aside>
   </main>
 
   <!-- ── 3b. FROSTED GLASS FLOATING ACTION BAR (Bottom-Mid HUD) ─────────────── -->
-  <nav class="floating-action-bar" id="floating-action-bar" aria-label="Comparison controls">
+  <nav class="floating-action-bar compare-only" id="floating-action-bar" aria-label="Navigation durch die Änderungen" data-i18n-label="dockLabel">
     <div class="dock-cluster dock-stepper">
-      <button type="button" class="dock-icon-btn" id="btn-prev" aria-label="Previous change">
+      <button type="button" class="dock-icon-btn" id="btn-prev">
         <svg class="icon" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
       </button>
       <button type="button" class="dock-step-badge" id="dock-step-count">0 / 0</button>
-      <button type="button" class="dock-icon-btn" id="btn-next" aria-label="Next change">
+      <button type="button" class="dock-icon-btn" id="btn-next">
         <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
       </button>
     </div>
@@ -384,10 +527,10 @@ __APP_CSS__
     <div class="dock-divider" aria-hidden="true"></div>
 
     <div class="dock-cluster dock-history" id="history-group">
-      <button type="button" class="dock-icon-btn" id="btn-undo" disabled aria-label="Undo">
+      <button type="button" class="dock-icon-btn" id="btn-undo" disabled>
         <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
       </button>
-      <button type="button" class="dock-icon-btn" id="btn-redo" disabled aria-label="Redo">
+      <button type="button" class="dock-icon-btn" id="btn-redo" disabled>
         <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
       </button>
     </div>
@@ -395,20 +538,20 @@ __APP_CSS__
 
   <!-- ── 4. MOBILE iOS SHEET BACKDROP & THUMB-ZONE BOTTOM BAR ───────────────── -->
   <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop" aria-hidden="true"></div>
-  <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Mobile navigation">
+  <nav class="mobile-bottom-bar compare-only" id="mobile-bottom-bar" aria-label="Navigation durch die Änderungen" data-i18n-label="dockLabel">
     <div class="mob-stepper">
-      <button type="button" class="mob-step-btn" id="mob-btn-prev" aria-label="Previous change">
+      <button type="button" class="mob-step-btn" id="mob-btn-prev" aria-label="Vorherige Änderung" data-i18n-label="prevLabel">
         <svg class="icon" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
       </button>
       <span class="mob-step-count" id="mob-step-count">0/0</span>
-      <button type="button" class="mob-step-btn" id="mob-btn-next" aria-label="Next change">
+      <button type="button" class="mob-step-btn" id="mob-btn-next" aria-label="Nächste Änderung" data-i18n-label="nextLabel">
         <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
       </button>
     </div>
 
     <button type="button" class="mob-bar-btn" id="mob-btn-only-changes" aria-pressed="false">
       <svg class="icon" style="width:13px;height:13px;" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-      <span id="i18n-mob-filter">Nur Änd.</span>
+      <span id="i18n-mob-filter">Nur Änderungen</span>
     </button>
 
     <button type="button" class="mob-bar-btn" id="mob-btn-changes" aria-pressed="false">
@@ -426,26 +569,29 @@ __APP_CSS__
   <!-- ── INSTANT UI TOOLTIP ─────────────────────────────────────────────────── -->
   <div class="ui-tooltip" id="ui-tooltip" role="tooltip" aria-hidden="true"></div>
 
+  <!-- ── SCREEN-READER STATUS (one polite live region for counts & navigation) ─ -->
+  <div class="sr-only" id="sr-status" role="status" aria-live="polite" aria-atomic="true"></div>
+
   <!-- ── TEXT MODAL ─────────────────────────────────────────────────────────── -->
   <dialog class="prime-dialog" id="paste-modal" closedby="any" aria-labelledby="i18n-modal-paste-title">
     <div class="dialog-header">
-      <span id="i18n-modal-paste-title">Texte direkt eingeben oder einfügen</span>
-      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-modal" aria-label="Close">
+      <h2 class="dialog-title" id="i18n-modal-paste-title">Text einfügen</h2>
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-modal" aria-label="Schließen" data-i18n-label="close">
         <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
     <div class="dialog-body">
       <div class="dialog-col">
-        <label for="textarea-left" id="i18n-modal-left-label">1 · Vorher — Alter Stand (Links)</label>
-        <textarea class="dialog-textarea" id="textarea-left" spellcheck="false"></textarea>
+        <label for="textarea-left" id="i18n-modal-left-label">Alte Fassung</label>
+        <textarea class="dialog-textarea" id="textarea-left" spellcheck="false" autofocus></textarea>
       </div>
       <div class="dialog-col">
-        <label for="textarea-right" id="i18n-modal-right-label">2 · Nachher — Neuer Stand (Rechts)</label>
+        <label for="textarea-right" id="i18n-modal-right-label">Neue Fassung</label>
         <textarea class="dialog-textarea" id="textarea-right" spellcheck="false"></textarea>
       </div>
     </div>
     <div class="dialog-footer">
-      <button type="button" class="btn btn-ghost btn-open-session dialog-footer-start"><span data-i18n-session-open>Sitzung öffnen</span></button>
+      <button type="button" class="btn btn-ghost btn-open-session dialog-footer-start" data-i18n="sessionOpen">Sitzung öffnen</button>
       <button type="button" class="btn" id="btn-cancel-modal">Abbrechen</button>
       <button type="button" class="btn btn-primary" id="btn-apply-modal">Jetzt vergleichen</button>
     </div>
@@ -454,14 +600,20 @@ __APP_CSS__
   <!-- ── HELP / GUIDE MODAL ─────────────────────────────────────────────────── -->
   <dialog class="prime-dialog dialog-md" id="help-modal" closedby="any" aria-labelledby="i18n-help-title">
     <div class="dialog-header">
-      <span id="i18n-help-title">Kurzanleitung — So funktioniert Doc Diff</span>
-      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-help" aria-label="Close">
+      <h2 class="dialog-title" id="i18n-help-title" tabindex="-1" autofocus>So funktioniert Doc Diff</h2>
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-help" aria-label="Schließen" data-i18n-label="close">
         <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
-    <div class="dialog-body-single" id="i18n-help-body"></div>
+    <div class="dialog-body-single">
+      <div id="i18n-help-body"></div>
+      <label class="help-setting">
+        <input type="checkbox" id="chk-single-key-shortcuts" checked />
+        <span data-i18n="shortcutsToggle">Tastenkürzel mit einzelnen Buchstaben verwenden (J, K, C, H, /)</span>
+      </label>
+    </div>
     <div class="dialog-footer">
-      <button type="button" class="btn btn-load-sample" id="btn-help-sample">Beispiel laden</button>
+      <button type="button" class="btn" id="btn-help-sample">Beispiel ansehen</button>
       <button type="button" class="btn btn-primary" id="btn-ok-help">Verstanden</button>
     </div>
   </dialog>
@@ -469,8 +621,8 @@ __APP_CSS__
   <!-- ── PRIVACY & LEGAL MODAL ──────────────────────────────────────────────── -->
   <dialog class="prime-dialog dialog-sm" id="privacy-modal" closedby="any" aria-labelledby="i18n-privacy-title">
     <div class="dialog-header">
-      <span id="i18n-privacy-title">Impressum & Datenschutz</span>
-      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-privacy" aria-label="Close">
+      <h2 class="dialog-title" id="i18n-privacy-title" tabindex="-1" autofocus>Impressum &amp; Datenschutz</h2>
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-privacy" aria-label="Schließen" data-i18n-label="close">
         <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
@@ -483,7 +635,7 @@ __APP_CSS__
   <!-- ── SESSION CONFIRM / MESSAGE DIALOG (unsaved edits, session file errors) ── -->
   <dialog class="prime-dialog dialog-sm" id="session-dialog" aria-labelledby="session-dialog-title" aria-describedby="session-dialog-body">
     <div class="dialog-header">
-      <span id="session-dialog-title"></span>
+      <h2 class="dialog-title" id="session-dialog-title" tabindex="-1" autofocus></h2>
     </div>
     <div class="dialog-body-single">
       <p id="session-dialog-body" class="session-dialog-text"></p>
