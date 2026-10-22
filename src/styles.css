@@ -1163,7 +1163,8 @@ body.is-comparing .empty-launchpad {
 
 .clause.deferred-block {
   content-visibility: auto;
-  contain-intrinsic-size: auto none auto 48px;
+  /* Deliberately fractional: 06b-row-layout.js recognizes never-rendered placeholders by it */
+  contain-intrinsic-size: auto none auto 47.25px;
 }
 .clause.deferred-block.is-hovered,
 .clause.deferred-block.is-active,
@@ -1409,6 +1410,25 @@ body.is-comparing .empty-launchpad {
   gap: 4px;
   cursor: pointer;
   transition: color 80ms ease-out, background-color 80ms ease-out;
+}
+/* Icons as CSS masks (same 24px stroke icons as svg.icon) to keep per-clause markup small */
+.clause-action-btn[class*="icon-"]::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask: var(--btn-icon) center / 12px 12px no-repeat;
+  mask: var(--btn-icon) center / 12px 12px no-repeat;
+}
+.clause-action-btn.icon-edit {
+  --btn-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z'/%3E%3C/svg%3E");
+}
+.clause-action-btn.icon-insert {
+  --btn-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='M12 5v14'/%3E%3C/svg%3E");
+}
+.clause-action-btn.icon-revert {
+  --btn-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E");
 }
 .clause-action-btn:hover {
   background: hsl(var(--ton-2));
@@ -2963,5 +2983,72 @@ dialog.prime-dialog::backdrop {
   }
   .clause.deferred-block {
     content-visibility: visible !important;
+  }
+}
+
+/* Comparison progress (role="status", created by 06a-compare-async.js) */
+.compare-status {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  z-index: 200;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  box-shadow: 0 0 0 1px hsl(var(--border)), 0 4px 16px hsl(0 0% 0% / 0.12);
+  font-size: var(--text-sm);
+  transform: translate(-50%, -6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+.compare-status.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.compare-status-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--border));
+  border-top-color: hsl(var(--foreground));
+  animation: compareStatusSpin 700ms linear infinite;
+}
+.compare-status.is-done .compare-status-spinner {
+  display: none;
+}
+@keyframes compareStatusSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+body.is-diff-busy .doc-sheet {
+  opacity: 0.6;
+  transition: opacity 120ms ease-out;
+}
+
+/* Reduced motion: no smooth scrolling, transitions or animations */
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body,
+  .doc-pane,
+  .doc-pane-unified,
+  #sidebar-list {
+    scroll-behavior: auto !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+  .compare-status-spinner {
+    animation: none !important;
   }
 }

@@ -1,21 +1,12 @@
-function runComparison() {
-  const allLeftBlocks = parseIntoBlocks(state.leftText);
-  const allRightBlocks = parseIntoBlocks(state.rightText);
-  state.rightAllBlocks = allRightBlocks;
+// Applies a comparison result (from the worker, the sync fallback or the incremental fast path)
+// to the state and the DOM. `opts.changedRowId` marks an incremental single-row update.
+// runComparison() itself lives in 06a-compare-async.js.
+function applyComparisonResult(request, result, opts = {}) {
+  lastComparison = { request, result };
+  state.rightAllBlocks = result.allRightBlocks;
+  state.filteredHfCount = result.filteredHfCount;
 
-  const hfLeft = allLeftBlocks.filter(b => b.isHeaderFooter).length;
-  const hfRight = allRightBlocks.filter(b => b.isHeaderFooter).length;
-  state.filteredHfCount = Math.max(hfLeft, hfRight);
-
-  const leftBlocks = state.ignoreHeadersFooters
-    ? allLeftBlocks.filter(b => !b.isHeaderFooter)
-    : allLeftBlocks;
-  const rightBlocks = state.ignoreHeadersFooters
-    ? allRightBlocks.filter(b => !b.isHeaderFooter)
-    : allRightBlocks;
-
-  const leftPages = leftBlocks.reduce((m, b) => Math.max(m, b.pageNum || 1), 0);
-  const rightPages = rightBlocks.reduce((m, b) => Math.max(m, b.pageNum || 1), 0);
+  const { leftBlocks, rightBlocks, leftPages, rightPages } = result;
 
   document.getElementById('filename-left').textContent = state.leftName || t('noFileLeft');
   document.getElementById('filename-right').textContent = state.rightName || t('noFileRight');
@@ -34,6 +25,8 @@ function runComparison() {
   const emptyLaunchpad = document.getElementById('empty-launchpad');
 
   if (!bothLoaded) {
+    cancelPaneRender();
+    resetRowLayoutRegistry();
     state.alignedRows = [];
     state.changeRows = [];
     document.getElementById('count-all').textContent = '0';
@@ -90,7 +83,7 @@ function runComparison() {
     emptyLaunchpad.innerHTML = '';
   }
 
-  state.alignedRows = alignDocumentBlocks(leftBlocks, rightBlocks);
+  state.alignedRows = result.alignedRows;
   state.changeRows = state.alignedRows.filter(r => r.type !== 'equal');
 
   const modCount = state.alignedRows.filter(r => r.type === 'modified').length;
@@ -101,28 +94,22 @@ function runComparison() {
   document.getElementById('count-ins').textContent = String(insCount + modCount);
   document.getElementById('count-del').textContent = String(delCount + modCount);
 
-  renderDocumentPanes();
+  // Edits, reverts, undo and redo usually change a single row: patch it in place instead of
+  // re-rendering all three panes. Clauses of the active row get `is-active` while rendering.
+  if (!(opts.changedRowId !== undefined && patchRenderedRow(opts.changedRowId))) {
+    renderDocumentPanes();
+  }
   renderSidebarList(true);
   renderMinimap();
   updateMobileBarState();
   updateUndoRedoButtons();
 
   if (state.activeRowId) {
-    document.querySelectorAll(`[data-row-id="${state.activeRowId}"]`).forEach(el => {
-      if (
-        el.classList.contains('clause') ||
-        el.classList.contains('nav-item') ||
-        el.classList.contains('minimap-tick')
-      ) {
-        el.classList.add('is-active');
-      }
-    });
+    const tick = minimapTrack.querySelector(`.minimap-tick[data-row-id="${state.activeRowId}"]`);
+    if (tick) tick.classList.add('is-active');
   }
 
-  requestAnimationFrame(() => {
-    if (state.viewMode !== 'inline') equalizeRowHeights();
-    scheduleGutterDraw();
-  });
+  scheduleGutterDraw();
 }
 
 function bindEmptyStateButtons() {
@@ -200,16 +187,16 @@ function bindEmptyStateButtons() {
   });
 }
 
+// Rendered for every clause of the right and unified panes, so it is kept lean: icons are CSS
+// masks (`.icon-edit` etc. in styles.css) instead of inline SVG (~12k fewer DOM nodes for an
+// 80-page contract).
 function renderRightActionsHtml(row) {
   const editLabel = row.rightBlock ? t('editBtn') : t('editInsertBtn');
-  const editSvg = row.rightBlock
-    ? '<svg class="icon" style="width:12px;height:12px;" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>'
-    : '<svg class="icon" style="width:12px;height:12px;" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
-  const revertSvg = '<svg class="icon" style="width:12px;height:12px;" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
-  const editBtn = `<button type="button" class="clause-action-btn" data-edit-row="${row.id}">${editSvg}<span>${escapeHtml(editLabel)}</span></button>`;
+  const editIcon = row.rightBlock ? 'icon-edit' : 'icon-insert';
+  const editBtn = `<button type="button" class="clause-action-btn ${editIcon}" data-edit-row="${row.id}">${escapeHtml(editLabel)}</button>`;
   const revertBtn =
     row.type !== 'equal'
-      ? `<button type="button" class="clause-action-btn is-revert" data-revert-row="${row.id}">${revertSvg}<span>${escapeHtml(t('revertBtn'))}</span></button>`
+      ? `<button type="button" class="clause-action-btn is-revert icon-revert" data-revert-row="${row.id}">${escapeHtml(t('revertBtn'))}</button>`
       : '';
   return `<div class="clause-actions">${editBtn}${revertBtn}</div>`;
 }
@@ -243,150 +230,180 @@ function renderPageCardHeaderHtml(pageNum, totalPages, rowsInPage) {
   `;
 }
 
-function renderDocumentPanes() {
-  const q = state.searchQuery;
-  const pageGroups = new Map();
+function getRowStateClass(row, side) {
+  if (row.type === 'equal') return 'state-equal';
+  if (row.type === 'modified') return 'state-modified';
+  if (side === 'left') return 'state-deleted';
+  if (side === 'right') return 'state-inserted';
+  return row.type === 'inserted' ? 'state-inserted' : 'state-deleted';
+}
 
+// HTML of one aligned row in the three panes (left, right, unified). Kept free of
+// indentation whitespace: every whitespace text node is a DOM node to parse and lay out.
+function renderRowAnchorsHtml(row, idx, q) {
+  const deferClass = idx > 18 ? ' deferred-block' : '';
+  const activeClass = row.id === state.activeRowId ? ' is-active' : '';
+  const extra = deferClass + activeClass;
+  const rightActionsHtml = renderRightActionsHtml(row);
+  const anchorOpen = `<div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">`;
+
+  const left = row.leftBlock
+    ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'left')} ${getClauseTypeClasses(row.leftBlock)}${extra}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div></div>`
+    : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}"></div></div>`;
+
+  const right = row.rightBlock
+    ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'right')} ${getClauseTypeClasses(row.rightBlock)}${extra}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}${rightActionsHtml}</div></div>`
+    : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}">${rightActionsHtml}</div></div>`;
+
+  const primaryBlock = row.rightBlock || row.leftBlock;
+  const unified = `${anchorOpen}<div class="clause ${getRowStateClass(row, 'unified')} ${getClauseTypeClasses(primaryBlock)}${extra}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div></div>`;
+
+  return { left, right, unified };
+}
+
+// Pane rendering is chunked: the first pages are rendered synchronously, the rest in short
+// background tasks so that no single task blocks the main thread for long (an 80-page contract
+// produces ~50k DOM nodes). flushPaneRender() completes a pending render on demand.
+let paneRenderJob = null;
+const PANE_RENDER_FIRST_PAGES = 6;
+const PANE_RENDER_CHUNK_MS = 14;
+
+function renderDocumentPanes() {
+  cancelPaneRender();
+  resetRowLayoutRegistry();
+
+  const pageGroups = new Map();
   state.alignedRows.forEach((row, idx) => {
     const p = row.pageNum || 1;
     if (!pageGroups.has(p)) pageGroups.set(p, []);
     pageGroups.get(p).push({ row, idx });
   });
 
-  const totalPages = pageGroups.size || 1;
-  const leftPageCards = [];
-  const rightPageCards = [];
-  const unifiedPageCards = [];
+  setSafeContainerHtml(sheetLeft, '');
+  setSafeContainerHtml(sheetRight, '');
+  setSafeContainerHtml(sheetUnified, '');
 
-  for (const [pageNum, entries] of pageGroups.entries()) {
-    const rowsInPage = entries.map(e => e.row);
-    const pageHeaderHtml = renderPageCardHeaderHtml(pageNum, totalPages, rowsInPage);
-    const leftRowsHtml = [];
-    const rightRowsHtml = [];
-    const unifiedRowsHtml = [];
-
-    for (const { row, idx } of entries) {
-      const deferClass = idx > 18 ? 'deferred-block' : '';
-      const rightActionsHtml = renderRightActionsHtml(row);
-
-      if (row.leftBlock) {
-        const typeClasses = getClauseTypeClasses(row.leftBlock);
-        const stateClass =
-          row.type === 'equal'
-            ? 'state-equal'
-            : row.type === 'modified'
-            ? 'state-modified'
-            : 'state-deleted';
-
-        leftRowsHtml.push(`
-          <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause ${stateClass} ${typeClasses} ${deferClass}" data-row-id="${row.id}">${renderLeftBlockHtml(row, q)}</div>
-          </div>
-        `);
-      } else {
-        leftRowsHtml.push(`
-          <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}"></div>
-          </div>
-        `);
-      }
-
-      if (row.rightBlock) {
-        const typeClasses = getClauseTypeClasses(row.rightBlock);
-        const stateClass =
-          row.type === 'equal'
-            ? 'state-equal'
-            : row.type === 'modified'
-            ? 'state-modified'
-            : 'state-inserted';
-
-        rightRowsHtml.push(`
-          <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause ${stateClass} ${typeClasses} ${deferClass}" data-row-id="${row.id}">${renderRightBlockHtml(row, q)}${rightActionsHtml}</div>
-          </div>
-        `);
-      } else {
-        rightRowsHtml.push(`
-          <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-            <div class="clause state-placeholder ${deferClass}" data-row-id="${row.id}">${rightActionsHtml}</div>
-          </div>
-        `);
-      }
-
-      const primaryBlock = row.rightBlock || row.leftBlock;
-      const uTypeClasses = getClauseTypeClasses(primaryBlock);
-      const uStateClass =
-        row.type === 'equal'
-          ? 'state-equal'
-          : row.type === 'modified'
-          ? 'state-modified'
-          : row.type === 'inserted'
-          ? 'state-inserted'
-          : 'state-deleted';
-
-      unifiedRowsHtml.push(`
-        <div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">
-          <div class="clause ${uStateClass} ${uTypeClasses} ${deferClass}" data-row-id="${row.id}">${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div>
-        </div>
-      `);
-    }
-
-    leftPageCards.push(`
-      <section class="doc-page-card" data-page="${pageNum}">
-        ${pageHeaderHtml}
-        <div class="doc-page-body">${leftRowsHtml.join('')}</div>
-      </section>
-    `);
-    rightPageCards.push(`
-      <section class="doc-page-card" data-page="${pageNum}">
-        ${pageHeaderHtml}
-        <div class="doc-page-body">${rightRowsHtml.join('')}</div>
-      </section>
-    `);
-    unifiedPageCards.push(`
-      <section class="doc-page-card" data-page="${pageNum}">
-        ${pageHeaderHtml}
-        <div class="doc-page-body">${unifiedRowsHtml.join('')}</div>
-      </section>
-    `);
-  }
-
-  setSafeContainerHtml(sheetLeft, leftPageCards.join(''));
-  setSafeContainerHtml(sheetRight, rightPageCards.join(''));
-  setSafeContainerHtml(sheetUnified, unifiedPageCards.join(''));
+  const job = {
+    pages: Array.from(pageGroups.entries()),
+    totalPages: pageGroups.size || 1,
+    next: 0,
+    timer: null,
+  };
+  paneRenderJob = job;
+  renderPaneChunk(job, PANE_RENDER_FIRST_PAGES, 0);
+  schedulePaneRenderChunk(job);
 }
 
-function equalizeRowHeights() {
-  if (state.viewMode === 'inline') return;
-  const leftAnchors = sheetLeft.querySelectorAll('.diff-row-anchor');
-  const rightAnchors = sheetRight.querySelectorAll('.diff-row-anchor');
-  const len = Math.min(leftAnchors.length, rightAnchors.length);
-
-  for (let i = 0; i < len; i++) {
-    const lBlock = leftAnchors[i].firstElementChild;
-    const rBlock = rightAnchors[i].firstElementChild;
-    if (!lBlock || !rBlock) continue;
-    lBlock.style.minHeight = '';
-    rBlock.style.minHeight = '';
+function renderPageCardsHtml(pageNum, entries, totalPages, q) {
+  const pageHeaderHtml = renderPageCardHeaderHtml(pageNum, totalPages, entries.map(e => e.row));
+  const leftRows = [];
+  const rightRows = [];
+  const unifiedRows = [];
+  for (const { row, idx } of entries) {
+    const html = renderRowAnchorsHtml(row, idx, q);
+    leftRows.push(html.left);
+    rightRows.push(html.right);
+    unifiedRows.push(html.unified);
   }
-
-  const heights = new Array(len);
-  for (let i = 0; i < len; i++) {
-    const lBlock = leftAnchors[i].firstElementChild;
-    const rBlock = rightAnchors[i].firstElementChild;
-    if (!lBlock || !rBlock) {
-      heights[i] = 0;
-      continue;
-    }
-    heights[i] = Math.max(lBlock.offsetHeight, rBlock.offsetHeight);
-  }
-
-  for (let i = 0; i < len; i++) {
-    if (!heights[i]) continue;
-    leftAnchors[i].firstElementChild.style.minHeight = `${heights[i]}px`;
-    rightAnchors[i].firstElementChild.style.minHeight = `${heights[i]}px`;
-  }
+  const card = rowsHtml =>
+    `<section class="doc-page-card" data-page="${pageNum}">${pageHeaderHtml}<div class="doc-page-body">${rowsHtml.join('')}</div></section>`;
+  return { left: card(leftRows), right: card(rightRows), unified: card(unifiedRows) };
 }
+
+function renderPaneChunk(job, minPages, budgetMs) {
+  if (job !== paneRenderJob || job.next >= job.pages.length) return;
+  const t0 = performance.now();
+  const q = state.searchQuery;
+  const left = [];
+  const right = [];
+  const unified = [];
+  let count = 0;
+  while (
+    job.next < job.pages.length &&
+    (count < minPages || performance.now() - t0 < budgetMs)
+  ) {
+    const [pageNum, entries] = job.pages[job.next++];
+    const html = renderPageCardsHtml(pageNum, entries, job.totalPages, q);
+    left.push(html.left);
+    right.push(html.right);
+    unified.push(html.unified);
+    count++;
+  }
+  const firstNewCard = sheetLeft.children.length;
+  sheetLeft.insertAdjacentHTML('beforeend', left.join(''));
+  sheetRight.insertAdjacentHTML('beforeend', right.join(''));
+  sheetUnified.insertAdjacentHTML('beforeend', unified.join(''));
+  registerRenderedCards(firstNewCard);
+  if (job.next >= job.pages.length) paneRenderJob = null;
+}
+
+function schedulePaneRenderChunk(job) {
+  if (job !== paneRenderJob) return;
+  job.timer = setTimeout(() => {
+    job.timer = null;
+    renderPaneChunk(job, 1, PANE_RENDER_CHUNK_MS);
+    if (paneRenderJob === job) schedulePaneRenderChunk(job);
+    else scheduleGutterDraw();
+  }, 0);
+}
+
+function flushPaneRender() {
+  const job = paneRenderJob;
+  if (!job) return;
+  clearTimeout(job.timer);
+  renderPaneChunk(job, Infinity, Infinity);
+}
+
+function cancelPaneRender() {
+  if (paneRenderJob) clearTimeout(paneRenderJob.timer);
+  paneRenderJob = null;
+}
+
+// Re-renders one row in all three panes (search highlights, edits). Returns false if the row
+// is not in the DOM yet.
+function rerenderRowInPlace(row) {
+  const els = getRowElements(row.id);
+  if (!els.l || !els.r || !els.u) return false;
+  const html = renderRowAnchorsHtml(row, row.rowNumber - 1, state.searchQuery);
+  const replaceAnchor = (clauseEl, anchorHtml) => {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = anchorHtml;
+    const anchor = tpl.content.firstElementChild;
+    clauseEl.parentElement.replaceWith(anchor);
+    return anchor.firstElementChild;
+  };
+  const l = replaceAnchor(els.l, html.left);
+  const r = replaceAnchor(els.r, html.right);
+  const u = replaceAnchor(els.u, html.unified);
+  registerRowElements(row.id, l, r, u);
+  return true;
+}
+
+// Incremental update after an edit / revert / undo that changed a single row (same row ids).
+function patchRenderedRow(changedRowId) {
+  flushPaneRender();
+  if (changedRowId === null) return true;
+  const row = state.alignedRows.find(r => r.id === changedRowId);
+  if (!row || !rerenderRowInPlace(row)) return false;
+
+  const pageRows = state.alignedRows.filter(r => (r.pageNum || 1) === (row.pageNum || 1));
+  const totalPages = sheetLeft.children.length || 1;
+  const headerHtml = renderPageCardHeaderHtml(row.pageNum || 1, totalPages, pageRows);
+  const els = getRowElements(row.id);
+  for (const el of [els.l, els.r, els.u]) {
+    const header = el.closest('.doc-page-card')?.querySelector(':scope > .doc-page-header');
+    if (!header) continue;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = headerHtml.trim();
+    header.replaceWith(tpl.content.firstElementChild);
+  }
+  return true;
+}
+
+// Rows are kept height-aligned between the left and right panes by a ResizeObserver that also
+// notices width changes (see 06b-row-layout.js), so there is nothing left to do here. Kept for
+// existing callers (resize, sidebar toggle, view mode switch).
+function equalizeRowHeights() {}
 
 function truncateClean(str, maxLen = 40) {
   const clean = str.replace(/\s+/g, ' ').trim();

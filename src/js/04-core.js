@@ -222,7 +222,7 @@ function computeBlockSimilarity(blockA, blockB) {
   return sameSpecificRef ? Math.max(wordSim, 0.42) : wordSim;
 }
 
-function alignDocumentBlocks(leftBlocks, rightBlocks) {
+function alignDocumentBlocks(leftBlocks, rightBlocks, onProgress) {
   const totalN = leftBlocks.length;
   const totalM = rightBlocks.length;
   if (totalN === 0 && totalM === 0) return [];
@@ -256,59 +256,7 @@ function alignDocumentBlocks(leftBlocks, rightBlocks) {
   }
 
   if (n > 0 || m > 0) {
-    const dp = Array.from({ length: n + 1 }, () => new Float32Array(m + 1));
-    const ptr = Array.from({ length: n + 1 }, () => new Uint8Array(m + 1));
-    const GAP_PENALTY = -0.22;
-
-    for (let i = 1; i <= n; i++) {
-      dp[i][0] = i * GAP_PENALTY;
-      ptr[i][0] = 2;
-    }
-    for (let j = 1; j <= m; j++) {
-      dp[0][j] = j * GAP_PENALTY;
-      ptr[0][j] = 3;
-    }
-
-    for (let i = 1; i <= n; i++) {
-      for (let j = 1; j <= m; j++) {
-        const sim = computeBlockSimilarity(midLeft[i - 1], midRight[j - 1]);
-        const matchScore = sim >= 0.28 ? sim : -0.5;
-        const scoreDiag = dp[i - 1][j - 1] + matchScore;
-        const scoreUp = dp[i - 1][j] + GAP_PENALTY;
-        const scoreLeft = dp[i][j - 1] + GAP_PENALTY;
-
-        if (scoreDiag >= scoreUp && scoreDiag >= scoreLeft) {
-          dp[i][j] = scoreDiag;
-          ptr[i][j] = 1;
-        } else if (scoreUp >= scoreLeft) {
-          dp[i][j] = scoreUp;
-          ptr[i][j] = 2;
-        } else {
-          dp[i][j] = scoreLeft;
-          ptr[i][j] = 3;
-        }
-      }
-    }
-
-    const midPairs = [];
-    let i = n;
-    let j = m;
-    while (i > 0 || j > 0) {
-      const move = ptr[i][j];
-      if (i > 0 && j > 0 && move === 1) {
-        midPairs.push({ left: midLeft[i - 1], right: midRight[j - 1] });
-        i--;
-        j--;
-      } else if (i > 0 && (j === 0 || move === 2)) {
-        midPairs.push({ left: midLeft[i - 1], right: null });
-        i--;
-      } else {
-        midPairs.push({ left: null, right: midRight[j - 1] });
-        j--;
-      }
-    }
-    midPairs.reverse();
-    for (const pair of midPairs) rawPairs.push(pair);
+    for (const pair of alignMiddleBlocks(midLeft, midRight, onProgress)) rawPairs.push(pair);
   }
 
   for (let s = 0; s < suffixLen; s++) {
@@ -320,59 +268,60 @@ function alignDocumentBlocks(leftBlocks, rightBlocks) {
 
   let monotonicPage = 1;
   return rawPairs.map((pair, idx) => {
-    const rowId = `row-${idx + 1}`;
     const rawPage =
       (pair.right && pair.right.pageNum) ||
       (pair.left && pair.left.pageNum) ||
       monotonicPage;
     monotonicPage = Math.max(monotonicPage, rawPage);
+    return buildAlignedRow(pair, idx, monotonicPage);
+  });
+}
 
-    if (pair.left && pair.right) {
-      if (pair.left.text === pair.right.text) {
-        return {
-          id: rowId,
-          rowNumber: idx + 1,
-          pageNum: monotonicPage,
-          type: 'equal',
-          leftBlock: pair.left,
-          rightBlock: pair.right,
-          wordDiffs: [{ value: pair.left.text }],
-        };
-      } else {
-        const wordDiffs = computeCleanWordDiff(pair.left.text, pair.right.text);
-
-        return {
-          id: rowId,
-          rowNumber: idx + 1,
-          pageNum: monotonicPage,
-          type: 'modified',
-          leftBlock: pair.left,
-          rightBlock: pair.right,
-          wordDiffs,
-        };
-      }
-    } else if (pair.left && !pair.right) {
+function buildAlignedRow(pair, idx, pageNum) {
+  const rowId = `row-${idx + 1}`;
+  if (pair.left && pair.right) {
+    if (pair.left.text === pair.right.text) {
       return {
         id: rowId,
         rowNumber: idx + 1,
-        pageNum: monotonicPage,
-        type: 'deleted',
+        pageNum,
+        type: 'equal',
         leftBlock: pair.left,
-        rightBlock: null,
-        wordDiffs: [{ value: pair.left.text, removed: true }],
-      };
-    } else {
-      return {
-        id: rowId,
-        rowNumber: idx + 1,
-        pageNum: monotonicPage,
-        type: 'inserted',
-        leftBlock: null,
         rightBlock: pair.right,
-        wordDiffs: [{ value: pair.right.text, added: true }],
+        wordDiffs: [{ value: pair.left.text }],
       };
     }
-  });
+    const wordDiffs = computeCleanWordDiff(pair.left.text, pair.right.text);
+    return {
+      id: rowId,
+      rowNumber: idx + 1,
+      pageNum,
+      type: 'modified',
+      leftBlock: pair.left,
+      rightBlock: pair.right,
+      wordDiffs,
+    };
+  }
+  if (pair.left && !pair.right) {
+    return {
+      id: rowId,
+      rowNumber: idx + 1,
+      pageNum,
+      type: 'deleted',
+      leftBlock: pair.left,
+      rightBlock: null,
+      wordDiffs: [{ value: pair.left.text, removed: true }],
+    };
+  }
+  return {
+    id: rowId,
+    rowNumber: idx + 1,
+    pageNum,
+    type: 'inserted',
+    leftBlock: null,
+    rightBlock: pair.right,
+    wordDiffs: [{ value: pair.right.text, added: true }],
+  };
 }
 
 function escapeHtml(str) {

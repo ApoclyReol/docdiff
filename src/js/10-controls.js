@@ -224,18 +224,13 @@ document.getElementById('btn-swap-docs').addEventListener('click', () => {
   runComparison();
 });
 
+// Search never re-aligns: after a short debounce only rows whose highlighting changes are
+// re-rendered in place (see applySearchQuery in 06c-search.js).
+let searchDebounceTimer = null;
 searchInput.addEventListener('input', e => {
-  state.searchQuery = e.target.value;
-  if (state.alignedRows.length > 0) {
-    renderDocumentPanes();
-    renderSidebarList(true);
-    requestAnimationFrame(() => {
-      equalizeRowHeights();
-      scheduleGutterDraw();
-    });
-  } else {
-    runComparison();
-  }
+  const value = e.target.value;
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => applySearchQuery(value), SEARCH_DEBOUNCE_MS);
 });
 
 const pasteModal = document.getElementById('paste-modal');

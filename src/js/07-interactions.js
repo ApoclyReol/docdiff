@@ -40,8 +40,7 @@ function drawGutterConnectors() {
   const w = gutterRect.width;
 
   targetIds.forEach(rowId => {
-    const leftEl = sheetLeft.querySelector(`.clause[data-row-id="${rowId}"]`);
-    const rightEl = sheetRight.querySelector(`.clause[data-row-id="${rowId}"]`);
+    const { l: leftEl, r: rightEl } = getRowElements(rowId);
     if (!leftEl || !rightEl) return;
 
     const lRect = leftEl.getBoundingClientRect();
@@ -57,103 +56,120 @@ function drawGutterConnectors() {
   connectorSvg.innerHTML = paths.join('');
 }
 
+// Elements of a row across panes, sidebar and minimap, without scanning the whole document.
+function getRowDecoratedElements(rowId) {
+  if (!rowId) return [];
+  const els = getRowElements(rowId);
+  const out = [els.l, els.r, els.u].filter(Boolean);
+  const nav = sidebarList.querySelector(`.nav-item[data-row-id="${rowId}"]`);
+  if (nav) out.push(nav);
+  const tick = minimapTrack.querySelector(`.minimap-tick[data-row-id="${rowId}"]`);
+  if (tick) out.push(tick);
+  return out;
+}
+
 function setHoveredRow(rowId) {
   if (state.hoveredRowId === rowId) return;
+  const prevId = state.hoveredRowId;
   state.hoveredRowId = rowId;
 
-  document.querySelectorAll('.clause.is-hovered, .nav-item.is-hovered').forEach(el => {
-    el.classList.remove('is-hovered');
-  });
-
+  for (const el of getRowDecoratedElements(prevId)) el.classList.remove('is-hovered');
   if (rowId) {
-    document.querySelectorAll(`[data-row-id="${rowId}"]`).forEach(el => {
-      if (el.classList.contains('clause') || el.classList.contains('nav-item')) {
-        el.classList.add('is-hovered');
-      }
-    });
+    for (const el of getRowDecoratedElements(rowId)) {
+      if (!el.classList.contains('minimap-tick')) el.classList.add('is-hovered');
+    }
   }
   scheduleGutterDraw();
 }
 
-let programmaticScrollTimer = null;
+function prefersReducedMotion() {
+  return Boolean(
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
 
+function scrollBehavior(smooth) {
+  return smooth && !prefersReducedMotion() ? 'smooth' : 'auto';
+}
+
+let programmaticScrollTimer = null;
+let lastActiveRowId = null;
+
+function getScrollTargetTop(pane, targetEl) {
+  const paneRect = pane.getBoundingClientRect();
+  const targetRect = targetEl.getBoundingClientRect();
+  const offsetInContent = pane.scrollTop + (targetRect.top - paneRect.top);
+  const leadSpace = Math.max(24, Math.min(130, Math.round(pane.clientHeight * 0.22)));
+  return Math.max(0, Math.round(offsetInContent - leadSpace));
+}
+
+// Only the previously active and the newly active row are touched: no re-render, no
+// document-wide queries, and no forced re-measurement of every row.
 function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true) {
+  const prevIds = new Set([lastActiveRowId, state.activeRowId]);
   state.activeRowId = rowId;
-  document
-    .querySelectorAll('.clause.is-active, .clause.is-jump-flash, .nav-item.is-active, .minimap-tick.is-active')
-    .forEach(el => {
-      el.classList.remove('is-active', 'is-jump-flash');
-    });
+  lastActiveRowId = rowId;
+  for (const id of prevIds) {
+    for (const el of getRowDecoratedElements(id)) el.classList.remove('is-active', 'is-jump-flash');
+  }
 
   updateMobileBarState();
   updateSidebarHeaderState();
   if (!rowId) return;
 
-  document.querySelectorAll(`[data-row-id="${rowId}"]`).forEach(el => {
-    if (
-      el.classList.contains('clause') ||
-      el.classList.contains('nav-item') ||
-      el.classList.contains('minimap-tick')
-    ) {
-      el.classList.add('is-active');
-      if (scrollPanes && el.classList.contains('clause')) {
-        el.classList.add('is-jump-flash');
-      }
-    }
-  });
+  // The target may sit in a page that is still waiting to be rendered.
+  if (!getRowElements(rowId).l) flushPaneRender();
 
-  const leftTarget = sheetLeft.querySelector(`.clause[data-row-id="${rowId}"]`);
-  const rightTarget = sheetRight.querySelector(`.clause[data-row-id="${rowId}"]`);
-  const unifiedTarget = sheetUnified.querySelector(`.clause[data-row-id="${rowId}"]`);
+  const els = getRowElements(rowId);
+  for (const el of getRowDecoratedElements(rowId)) {
+    el.classList.add('is-active');
+    if (scrollPanes && el.classList.contains('clause')) {
+      el.classList.add('is-jump-flash');
+    }
+  }
+
   const navTarget = sidebarList.querySelector(`.nav-item[data-row-id="${rowId}"]`);
+  const behavior = scrollBehavior(smooth);
 
   if (scrollPanes) {
-    // Materialize deferred blocks so exact heights are measured before jumping
-    document.querySelectorAll('.clause.deferred-block').forEach(el => {
-      el.classList.remove('deferred-block');
-    });
-    if (state.viewMode !== 'inline') {
-      equalizeRowHeights();
-    }
-
     state.isProgrammaticScroll = true;
     clearTimeout(programmaticScrollTimer);
 
-    const getScrollTargetTop = (pane, targetEl) => {
-      const paneRect = pane.getBoundingClientRect();
-      const targetRect = targetEl.getBoundingClientRect();
-      const offsetInContent = pane.scrollTop + (targetRect.top - paneRect.top);
-      const leadSpace = Math.max(24, Math.min(130, Math.round(pane.clientHeight * 0.22)));
-      return Math.max(0, Math.round(offsetInContent - leadSpace));
-    };
-
-    if (state.viewMode === 'inline' && unifiedTarget) {
-      const topOffset = getScrollTargetTop(paneUnified, unifiedTarget);
-      paneUnified.scrollTo({ top: topOffset, behavior: smooth ? 'smooth' : 'auto' });
-    } else {
-      if (leftTarget) {
-        const topOffset = getScrollTargetTop(paneLeft, leftTarget);
-        paneLeft.scrollTo({ top: topOffset, behavior: smooth ? 'smooth' : 'auto' });
-      }
-      if (rightTarget) {
-        const topOffset = getScrollTargetTop(paneRight, rightTarget);
-        paneRight.scrollTo({ top: topOffset, behavior: smooth ? 'smooth' : 'auto' });
-      }
+    const targets =
+      state.viewMode === 'inline'
+        ? [[paneUnified, els.u]]
+        : [
+            [paneLeft, els.l],
+            [paneRight, els.r],
+          ];
+    for (const [pane, target] of targets) {
+      if (target) pane.scrollTo({ top: getScrollTargetTop(pane, target), behavior });
     }
 
     programmaticScrollTimer = setTimeout(
       () => {
         state.isProgrammaticScroll = false;
+        // Rows rendered for the first time during the scroll may have changed height above
+        // the target (content-visibility); settle on the exact position.
+        if (state.activeRowId === rowId) {
+          for (const [pane, target] of targets) {
+            if (!target || !target.isConnected) continue;
+            const top = getScrollTargetTop(pane, target);
+            const drift = Math.abs(pane.scrollTop - top);
+            // Skip if the user has scrolled away in the meantime.
+            if (drift > 2 && drift < pane.clientHeight) pane.scrollTo({ top, behavior: 'auto' });
+          }
+        }
         scheduleGutterDraw();
       },
-      smooth ? 480 : 50
+      behavior === 'smooth' ? 480 : 50
     );
   } else {
     scheduleGutterDraw();
   }
 
   if (navTarget) {
-    navTarget.scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+    navTarget.scrollIntoView({ block: 'nearest', behavior });
   }
 }
 
@@ -268,10 +284,10 @@ function startInlineClauseEdit(clauseEl, rowId) {
   clauseEl.appendChild(editor);
   clauseEl.appendChild(helperBar);
 
+  // Row heights follow the editor automatically (ResizeObserver in 06b-row-layout.js).
   const autoSize = () => {
     editor.style.height = 'auto';
     editor.style.height = `${Math.max(32, editor.scrollHeight)}px`;
-    if (state.viewMode !== 'inline') equalizeRowHeights();
     scheduleGutterDraw();
   };
   autoSize();
@@ -288,7 +304,7 @@ function startInlineClauseEdit(clauseEl, rowId) {
     if (newText === oldText) {
       clauseEl.classList.remove('is-editing');
       clauseEl.innerHTML = originalHtml;
-      if (state.viewMode !== 'inline') equalizeRowHeights();
+      resetEqualizedRowHeights(rowId);
       scheduleGutterDraw();
       return;
     }
@@ -302,7 +318,7 @@ function startInlineClauseEdit(clauseEl, rowId) {
     finished = true;
     clauseEl.classList.remove('is-editing');
     clauseEl.innerHTML = originalHtml;
-    if (state.viewMode !== 'inline') equalizeRowHeights();
+    resetEqualizedRowHeights(rowId);
     scheduleGutterDraw();
   };
 

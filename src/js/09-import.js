@@ -1,4 +1,5 @@
 async function extractPdfText(arrayBuffer) {
+  await ensurePdfJsWorker();
   const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
   const pageSections = [];
 

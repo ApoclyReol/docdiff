@@ -33,6 +33,7 @@ for (const placeholder of [
   '__PDF_WORKER_JS__',
   '__MAMMOTH_JS__',
   '__DIFF_JS__',
+  '__DIFF_WORKER_SOURCE__',
 ]) {
   assert.ok(!siteHtml.includes(placeholder), `Unreplaced placeholder found: ${placeholder}`);
 }
@@ -117,5 +118,8 @@ for (const siteFile of ['CNAME', 'og-image.png', 'impressum.html', 'datenschutz.
   assert.ok(fs.existsSync(p), `Missing required site file: site/${siteFile}`);
 }
 assert.equal(fs.readFileSync(path.join(root, 'site', 'CNAME'), 'utf8').trim(), 'docdiff.app', 'CNAME must be docdiff.app');
+
+// 6. The comparison Web Worker must produce exactly the main-thread results
+await import('./check-diff-worker.mjs');
 
 console.log(`✓ All security, privacy, legal, standalone, and i18n checks passed (${deKeys.length} i18n keys verified).`);
