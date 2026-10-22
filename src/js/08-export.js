@@ -155,6 +155,7 @@ function handleExportAction(type) {
     state.rightName = t('sampleRightName');
     state.rightFormat = 'DEMO';
     state.rightText = sample.v2;
+    resetEditHistory();
     runComparison();
   }
   if (type === 'copy') {

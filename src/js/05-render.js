@@ -32,6 +32,7 @@ function renderLeftBlockHtml(row, query) {
   const split = extractListMarker(b.text, b.kind);
 
   if (row.type === 'equal') {
+    if (row.markerOnly) return renderMarkerOnlyHtml(row, 'left', query);
     if (split) {
       return wrapMarkerAndBody(
         escapeAndHighlightText(split.marker, query),
@@ -66,7 +67,7 @@ function renderLeftBlockHtml(row, query) {
       const markerHtml =
         split.marker === rSplit.marker
           ? escapeAndHighlightText(split.marker, query)
-          : `<del class="tok-del">${escapeAndHighlightText(split.marker, query)}</del>`;
+          : `<del class="tok-del tok-marker">${escapeAndHighlightText(split.marker, query)}</del>`;
       return wrapMarkerAndBody(markerHtml, bodyHtml);
     }
 
@@ -90,6 +91,7 @@ function renderRightBlockHtml(row, query) {
   const split = extractListMarker(b.text, b.kind);
 
   if (row.type === 'equal') {
+    if (row.markerOnly) return renderMarkerOnlyHtml(row, 'right', query);
     if (split) {
       return wrapMarkerAndBody(
         escapeAndHighlightText(split.marker, query),
@@ -124,7 +126,7 @@ function renderRightBlockHtml(row, query) {
       const markerHtml =
         split.marker === lSplit.marker
           ? escapeAndHighlightText(split.marker, query)
-          : `<ins class="tok-ins">${escapeAndHighlightText(split.marker, query)}</ins>`;
+          : `<ins class="tok-ins tok-marker">${escapeAndHighlightText(split.marker, query)}</ins>`;
       return wrapMarkerAndBody(markerHtml, bodyHtml);
     }
 
@@ -193,6 +195,7 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
   const split = allowMarkerGrid && primary ? extractListMarker(primary.text, primary.kind) : null;
 
   if (row.type === 'equal') {
+    if (row.markerOnly) return renderMarkerOnlyHtml(row, 'unified', query, allowMarkerGrid);
     if (split) {
       return wrapMarkerAndBody(
         escapeAndHighlightText(split.marker, query),
@@ -235,7 +238,7 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
       const markerHtml =
         lSplit.marker === rSplit.marker
           ? escapeAndHighlightText(rSplit.marker, query)
-          : `<del class="tok-del">${escapeAndHighlightText(lSplit.marker, query)}</del> <ins class="tok-ins">${escapeAndHighlightText(rSplit.marker, query)}</ins>`;
+          : `<del class="tok-del tok-marker">${escapeAndHighlightText(lSplit.marker, query)}</del> <ins class="tok-ins tok-marker">${escapeAndHighlightText(rSplit.marker, query)}</ins>`;
       return wrapMarkerAndBody(markerHtml, bodyHtml);
     }
 
@@ -249,6 +252,23 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
       .join('');
   }
   return '';
+}
+
+// Renumbered block (only the list marker / heading number changed): the body is unchanged,
+// the old and new marker are shown in a muted style. Not counted as a change.
+function renderMarkerOnlyHtml(row, side, query, allowMarkerGrid = true) {
+  const oldMarker = row.oldMarker || '';
+  const newMarker = row.newMarker || '';
+  const block = side === 'left' ? row.leftBlock : row.rightBlock;
+  const body = block.text.slice((side === 'left' ? oldMarker : newMarker).length).trim();
+  const delHtml = `<del class="tok-del tok-marker">${escapeAndHighlightText(oldMarker, query)}</del>`;
+  const insHtml = `<ins class="tok-ins tok-marker">${escapeAndHighlightText(newMarker, query)}</ins>`;
+  const markerHtml = side === 'left' ? delHtml : side === 'right' ? insHtml : `${delHtml} ${insHtml}`;
+  const split = extractListMarker(block.text, block.kind);
+  if (split && allowMarkerGrid) {
+    return wrapMarkerAndBody(markerHtml, escapeAndHighlightText(split.body, query));
+  }
+  return `${markerHtml} ${escapeAndHighlightText(body, query)}`;
 }
 
 function renderGhostSheet() {
@@ -419,5 +439,6 @@ function getClauseTypeClasses(block) {
   if (block.isHeading) classes.push('is-heading');
   if (block.kind) classes.push(`kind-${block.kind}`);
   if (extractListMarker(block.text, block.kind)) classes.push('has-marker');
+  if (block.indent > 0) classes.push(`indent-${Math.min(block.indent, 4)}`);
   return classes.join(' ');
 }
