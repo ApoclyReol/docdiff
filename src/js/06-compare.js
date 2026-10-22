@@ -152,6 +152,7 @@ function loadSampleComparison() {
 }
 
 function clearLandingSide(side) {
+  cancelPendingUploads(side);
   if (side === 'left') {
     state.leftText = '';
     state.leftName = '';

@@ -675,6 +675,12 @@ async function readDocumentFile(file) {
 // clear), is discarded so the comparison always shows the latest choice.
 const uploadSeq = { left: 0, right: 0 };
 
+// Called when the user clears a side (or everything): a file still being read for that side
+// must not appear afterwards, even if the side was already empty.
+function cancelPendingUploads(side) {
+  for (const s of side ? [side] : ['left', 'right']) uploadSeq[s]++;
+}
+
 // opts.keepNotice: do not clear an earlier notice on success (multi-file drops).
 async function handleFileUpload(file, side, opts = {}) {
   if (!file) return false;
@@ -788,6 +794,7 @@ fileInputLeft.addEventListener('change', e => handleFileUpload(e.target.files[0]
 fileInputRight.addEventListener('change', e => handleFileUpload(e.target.files[0], 'right'));
 
 document.getElementById('btn-clear-left').addEventListener('click', () => {
+  cancelPendingUploads('left');
   state.leftText = '';
   state.leftName = '';
   state.leftFormat = '';
@@ -797,6 +804,7 @@ document.getElementById('btn-clear-left').addEventListener('click', () => {
 });
 
 document.getElementById('btn-clear-right').addEventListener('click', () => {
+  cancelPendingUploads('right');
   state.rightText = '';
   state.rightName = '';
   state.rightFormat = '';

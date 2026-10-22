@@ -166,6 +166,7 @@ btnOnlyChanges.addEventListener('click', toggleOnlyChanges);
 mobBtnOnlyChanges.addEventListener('click', toggleOnlyChanges);
 
 document.getElementById('btn-clear').addEventListener('click', () => {
+  cancelPendingUploads();
   state.leftText = '';
   state.rightText = '';
   state.leftName = '';

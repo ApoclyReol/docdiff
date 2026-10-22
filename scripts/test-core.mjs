@@ -221,9 +221,10 @@ test('samples: expected change counts (de + en)', () => {
   for (const lang of ['de', 'en']) {
     const { rows, hfCount } = compare(core.SAMPLES[lang].v1, core.SAMPLES[lang].v2);
     const c = countTypes(rows);
-    // 16 modified clauses + the running header whose version/date changed (shown once).
-    assert.deepEqual(c, { modified: 17, inserted: 2, deleted: 1, moved: 0, markerOnly: 0 }, lang);
-    assert.equal(hfCount, 10, `${lang}: hidden header/footer lines`);
+    // 16 modified clauses + the running header whose version/date changed, shown on each of
+    // its 3 pages (change-preserving header/footer filter; previously shown once).
+    assert.deepEqual(c, { modified: 19, inserted: 2, deleted: 1, moved: 0, markerOnly: 0 }, lang);
+    assert.equal(hfCount, 6, `${lang}: hidden header/footer lines (identical in both versions)`);
     const hfRow = rows.find(r => r.leftBlock && r.leftBlock.kind === 'hf');
     assert.ok(hfRow && hfRow.type === 'modified', `${lang}: changed header must be visible`);
   }
@@ -312,16 +313,16 @@ test('pasted text: running "Vertraulich · Seite n von m" lines are hidden only 
   assert.equal(twice[3].isHeaderFooter, true);
 });
 
-test('header/footer that differs between versions is shown once; page numbers stay hidden', () => {
+test('header/footer that differs between versions is shown at every occurrence; page numbers stay hidden', () => {
   const doc = header =>
     [1, 2, 3]
       .map(p => [`${P}${p}`, HF(`${header} · Seite ${p} von 3`), `Absatz ${p} bleibt gleich.`, HF(`- ${p} -`)].join('\n\n'))
       .join('\n\n');
   const { rows, hfCount } = compare(doc('Entwurf v1 (Stand 12.03.2026)'), doc('Entwurf v2 (Stand 18.04.2026)'));
   const visibleHf = rows.filter(r => (r.leftBlock || r.rightBlock).kind === 'hf');
-  assert.equal(visibleHf.length, 1);
-  assert.equal(visibleHf[0].type, 'modified');
-  assert.equal(hfCount, 10);
+  assert.equal(visibleHf.length, 3);
+  assert.ok(visibleHf.every(r => r.type === 'modified'));
+  assert.equal(hfCount, 6, 'only the identical page labels stay hidden');
   const same = compare(doc('Entwurf v1'), doc('Entwurf v1'));
   assert.equal(same.changes.length, 0);
   assert.equal(same.hfCount, 12);
@@ -589,9 +590,86 @@ test('header/footer of a PDF is not reported against a version without any (DOCX
   const docx = 'Titel\n\nErster Absatz.\n\nZweiter Absatz.';
   assert.equal(compare(docx, pdf).changes.length, 0);
   assert.equal(compare(pdf, docx).changes.length, 0);
-  // PDF vs PDF: a header that differs is still shown once.
+  // PDF vs PDF: a header that differs is shown on both pages.
   const pdf2 = pdf.replace(/Fassung 1\.0/g, 'Fassung 2.0');
-  assert.equal(compare(pdf, pdf2).changes.length, 1);
+  assert.equal(compare(pdf, pdf2).changes.length, 2);
+});
+
+/* ── Change-preserving header/footer filter ────────────────────────────── */
+
+// n pages, each: header, body paragraph, footer. edit(page, parts) may change any part.
+function pagedDoc(n, edit = () => {}) {
+  const out = [];
+  for (let p = 1; p <= n; p++) {
+    const parts = {
+      header: `Bauvertrag Kita – Fassung 1.0`,
+      body: [`Absatz ${p}: Der Auftragnehmer erbringt die Leistung nach Plan ${p}.`],
+      footer: `Vertraulich · Seite ${p} von ${n}`,
+    };
+    edit(p, parts);
+    out.push(P + p, ...(parts.header ? [HF(parts.header)] : []), ...parts.body, ...(parts.footer ? [HF(parts.footer)] : []));
+  }
+  return out.join('\n\n');
+}
+
+test('hf filter: a running header changed on only one page out of ten is shown on that page', () => {
+  const a = pagedDoc(10);
+  const b = pagedDoc(10, (p, parts) => { if (p === 7) parts.header = 'Bauvertrag Kita – Fassung 1.1'; });
+  const r = compare(a, b);
+  assert.equal(r.changes.length, 1, JSON.stringify(r.changes.map(c => [c.leftBlock && c.leftBlock.text, c.rightBlock && c.rightBlock.text])));
+  assert.equal(r.changes[0].type, 'modified');
+  assert.equal(r.changes[0].pageNum, 7);
+  assert.equal(r.hfCount, 38, 'badge: only the 2 × 19 identical running lines are counted');
+});
+
+test('hf filter: a footer changed on all pages is shown on every page', () => {
+  const a = pagedDoc(10);
+  const b = pagedDoc(10, (p, parts) => { parts.footer = `Streng vertraulich · Seite ${p} von 10`; });
+  const r = compare(a, b);
+  assert.equal(r.changes.length, 10);
+  assert.ok(r.changes.every(c => c.type === 'modified' && c.leftBlock.isHeaderFooter));
+  assert.equal(r.hfCount, 20, 'only the unchanged headers stay hidden');
+});
+
+test('hf filter: a running line removed from one page (or added) is reported', () => {
+  const a = pagedDoc(10);
+  const removed = compare(a, pagedDoc(10, (p, parts) => { if (p === 4) parts.header = ''; }));
+  assert.equal(removed.changes.length, 1);
+  assert.equal(removed.changes[0].type, 'deleted');
+  assert.equal(removed.changes[0].pageNum, 4);
+  const added = compare(pagedDoc(10, (p, parts) => { if (p === 4) parts.header = ''; }), a);
+  assert.equal(added.changes.length, 1);
+  assert.equal(added.changes[0].type, 'inserted');
+  // Inserting a whole page shifts the slots but must not unhide the other pages' lines.
+  const extraPage = pagedDoc(11).replace('Seite 11 von 11', 'Seite 11 von 11');
+  const shifted = compare(a, extraPage);
+  assert.ok(shifted.changes.every(c => c.pageNum >= 10), JSON.stringify(shifted.changes.map(c => c.pageNum)));
+});
+
+test('hf filter: deletion inside a repeated near-top body line (misdetected as header) is reported', () => {
+  // The repetitive LibreOffice fixture: identical clause text near the top of most pages is
+  // classified as a running line by the PDF reader. Deleting a sentence of it on one page
+  // must still show up.
+  const clause = '(3) Der Auftragnehmer verpflichtet sich, die Leistungen fachgerecht auszuführen.';
+  const a = pagedDoc(6, (p, parts) => { parts.header = clause; });
+  const b = pagedDoc(6, (p, parts) => {
+    parts.header = p === 2 ? '(3) Der Auftragnehmer verpflichtet sich.' : clause;
+  });
+  const r = compare(a, b);
+  assert.ok(r.changes.length >= 1, 'change inside the repeated line is shown');
+  assert.ok(r.changes.every(c => c.pageNum === 2));
+  const removed = compare(a, pagedDoc(6, (p, parts) => { parts.header = p === 2 ? '' : clause; }));
+  assert.equal(removed.changes.length, 1);
+  assert.equal(removed.changes[0].leftBlock.text, clause);
+});
+
+test('hf filter: identical running lines stay hidden, filter off shows everything', () => {
+  const a = pagedDoc(10);
+  const same = compare(a, a);
+  assert.equal(same.changes.length, 0);
+  assert.equal(same.hfCount, 40);
+  const b = pagedDoc(10, (p, parts) => { if (p === 7) parts.header = 'Bauvertrag Kita – Fassung 1.1'; });
+  assert.equal(compare(a, b, false).changes.length, 1);
 });
 
 for (const f of failures) console.error(f);

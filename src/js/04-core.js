@@ -149,37 +149,88 @@ function detectRepeatingMarginLines(pages, yTolerance = 0.03) {
   return result;
 }
 
+// Position of a header/footer line on its page: 'T' before the page's first body line,
+// 'B' after it; '' for documents without pages. Returns one entry per header/footer block.
+function headerFooterSlots(blocks) {
+  const out = [];
+  let page = null;
+  let seenBody = false;
+  for (const b of blocks) {
+    if (b.pageNum !== page) {
+      page = b.pageNum;
+      seenBody = false;
+    }
+    if (!b.isHeaderFooter) {
+      seenBody = true;
+      continue;
+    }
+    out.push({ block: b, band: b.hasExplicitPage ? (seenBody ? 'B' : 'T') : '' });
+  }
+  return out;
+}
+
+// Longest common subsequence of two token arrays: returns [matchedA, matchedB] as boolean
+// arrays. Uses jsdiff's diffArrays (Myers) when available; otherwise a multiset fallback that
+// only keeps tokens hidden when both versions contain them equally often.
+function matchTokenSequences(a, b) {
+  const matchedA = new Array(a.length).fill(false);
+  const matchedB = new Array(b.length).fill(false);
+  const diffLib = getDiffLibrary();
+  if (diffLib && typeof diffLib.diffArrays === 'function') {
+    let i = 0;
+    let j = 0;
+    for (const part of diffLib.diffArrays(a, b)) {
+      const n = part.count !== undefined ? part.count : part.value.length;
+      if (part.added) j += n;
+      else if (part.removed) i += n;
+      else {
+        for (let k = 0; k < n; k++) {
+          matchedA[i++] = true;
+          matchedB[j++] = true;
+        }
+      }
+    }
+    return [matchedA, matchedB];
+  }
+  const count = arr => arr.reduce((m, t) => m.set(t, (m.get(t) || 0) + 1), new Map());
+  const ca = count(a);
+  const cb = count(b);
+  a.forEach((t, k) => { matchedA[k] = ca.get(t) === cb.get(t); });
+  b.forEach((t, k) => { matchedB[k] = ca.get(t) === cb.get(t); });
+  return [matchedA, matchedB];
+}
+
 /**
- * Cross-version safety net: a header/footer line whose text differs between the two
- * versions (beyond page numbers) is never hidden. The first occurrence of each such
- * distinct line stays visible (flag `hfVisible`), so the change shows up in the diff once
- * instead of once per page. Pure page-number labels always stay hidden.
+ * Change-preserving header/footer filter. Hiding running headers/footers must never hide a
+ * change, so the hidden candidates of both versions are matched against each other as
+ * sequences of (band, text) tokens in document order, with page numbers normalised away
+ * (normalizeHfCompareKey). Matching in order pairs the occurrences page by page, also when
+ * pages were inserted or removed. Only matched occurrences stay hidden; every unmatched one
+ * (a header changed on one page, a footer changed on all pages, a repeated line deleted on
+ * one page, an extra occurrence) is made visible at that occurrence (flag `hfVisible`) and
+ * diffed like body text.
+ * Exceptions, which stay hidden: pure page-number labels ("Seite 3 von 9": they change
+ * whenever the page count changes, not with the content), and the running lines of a PDF
+ * compared with a version that has no pages and no header/footer lines at all (DOCX, pasted
+ * text): there is nothing to compare them with, they are layout, not a change.
  * Mutates the blocks; returns the number of header/footer blocks that remain hidden.
  */
 function reconcileHeaderFooterBlocks(leftBlocks, rightBlocks) {
   const hfL = leftBlocks.filter(b => b.isHeaderFooter);
   const hfR = rightBlocks.filter(b => b.isHeaderFooter);
-  if (leftBlocks.length && rightBlocks.length) {
-    const keysL = new Set(hfL.map(b => normalizeHfCompareKey(b.text)));
-    const keysR = new Set(hfR.map(b => normalizeHfCompareKey(b.text)));
-    const unhide = (blocks, otherKeys) => {
-      const shown = new Set();
-      for (const b of blocks) {
-        if (isPageNumberLabel(b.text)) continue;
-        const key = normalizeHfCompareKey(b.text);
-        if (otherKeys.has(key) || shown.has(key)) continue;
-        shown.add(key);
-        b.hfVisible = true;
-      }
-    };
-    // A version without any page structure and without header/footer lines (DOCX, pasted text)
-    // has nothing to compare a PDF's running headers against: they stay hidden instead of being
-    // reported as inserted/deleted text on a DOCX-vs-PDF comparison.
+  for (const b of hfL.concat(hfR)) delete b.hfVisible;
+  if (leftBlocks.length && rightBlocks.length && (hfL.length || hfR.length)) {
     const paginated = blocks => blocks.some(b => b.hasExplicitPage);
     const comparable = paginated(leftBlocks) === paginated(rightBlocks) || (hfL.length > 0 && hfR.length > 0);
     if (comparable) {
-      unhide(hfL, keysR);
-      unhide(hfR, keysL);
+      const candidates = blocks =>
+        headerFooterSlots(blocks).filter(slot => !isPageNumberLabel(slot.block.text));
+      const slotsL = candidates(leftBlocks);
+      const slotsR = candidates(rightBlocks);
+      const token = slot => `${slot.band}|${normalizeHfCompareKey(slot.block.text)}`;
+      const [matchedL, matchedR] = matchTokenSequences(slotsL.map(token), slotsR.map(token));
+      slotsL.forEach((slot, k) => { if (!matchedL[k]) slot.block.hfVisible = true; });
+      slotsR.forEach((slot, k) => { if (!matchedR[k]) slot.block.hfVisible = true; });
     }
   }
   return [...hfL, ...hfR].filter(b => !b.hfVisible).length;
