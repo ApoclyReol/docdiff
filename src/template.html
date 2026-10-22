@@ -36,15 +36,15 @@
   <meta property="og:site_name" content="Doc Diff" />
   <meta property="og:title" content="Doc Diff — Dokumente einfach vergleichen" />
   <meta property="og:description" content="Alle Änderungen in Verträgen, Angeboten und Texten (PDF, Word, Text) sofort auf einen Blick erkennen." />
-  <meta property="og:image" content="https://docdiff.app/og-image.png" />
+  <meta property="og:image" content="https://docdiff.app/og-image.png?v=2" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="2400" />
   <meta property="og:image:height" content="1260" />
-  <meta property="og:image:alt" content="Doc Diff — Dokumente einfach vergleichen (PDF, Word, Text)" />
+  <meta property="og:image:alt" content="Doc Diff: Dokumente einfach vergleichen. Zwei Vertragsfassungen nebeneinander, entfernter Text rot durchgestrichen, neuer Text grün markiert." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Doc Diff — Dokumente einfach vergleichen" />
   <meta name="twitter:description" content="Alle Änderungen in Verträgen, Angeboten und Texten (PDF, Word, Text) sofort auf einen Blick erkennen." />
-  <meta name="twitter:image" content="https://docdiff.app/og-image.png" />
+  <meta name="twitter:image" content="https://docdiff.app/og-image.png?v=2" />
 
   <!-- Standalone Inlined Libraries (PDF.js + PDF Worker + Mammoth DOCX + jsdiff) -->
   <script>
@@ -69,6 +69,7 @@ __APP_CSS__
 
   <input type="file" id="file-input-left" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
   <input type="file" id="file-input-right" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
+  <input type="file" id="file-input-session" accept=".docdiff" style="display:none" />
 
   <!-- ── 1. HEADER BAR ──────────────────────────────────────────────────────── -->
   <header class="header-bar">
@@ -272,6 +273,14 @@ __APP_CSS__
               </span>
               <span class="dropdown-ext">.md</span>
             </button>
+            <div class="dropdown-divider" role="separator"></div>
+            <button type="button" class="dropdown-item" data-session-action="save" role="menuitem">
+              <span class="dropdown-item-left">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span data-i18n="sessionSave">Sitzung speichern</span>
+              </span>
+              <span class="dropdown-ext">.docdiff</span>
+            </button>
           </div>
         </div>
       </div>
@@ -331,8 +340,8 @@ __APP_CSS__
     <div class="empty-launchpad landing" id="empty-launchpad">
       <div class="landing-inner">
         <section class="landing-hero" aria-labelledby="landing-title">
-          <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n="heroTitle">Sehen Sie Wort für Wort, was sich zwischen zwei Fassungen geändert hat.</h1>
-          <p class="landing-sub" data-i18n="heroSub">Für Verträge, Ausschreibungen und andere Dokumente. Ihre Dateien verlassen dabei nie Ihren Computer.</p>
+          <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n-html="heroTitle">Dokumente <del class="hero-del" aria-hidden="true">mühsam</del> <ins class="hero-ins">einfach</ins> vergleichen.</h1>
+          <p class="landing-sub" data-i18n="heroSub">PDF, Word oder Text: Jede Änderung wird Wort für Wort markiert. Ihre Dateien verlassen dabei nie Ihren Computer.</p>
           <ul class="trust-list">
             <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustFree">Kostenlos &amp; Open Source (MIT)</span></li>
             <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustLocal">Keine Uploads – alles läuft lokal im Browser</span></li>
@@ -380,7 +389,10 @@ __APP_CSS__
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               <span data-i18n="pasteText">Text einfügen</span>
             </button>
-            <!-- Further secondary start actions (e.g. "Sitzung öffnen") belong here, as .btn buttons. -->
+            <button type="button" class="btn btn-open-session" id="btn-lp-session">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+              <span data-i18n="sessionOpen">Sitzung öffnen</span>
+            </button>
           </div>
         </section>
 
@@ -580,6 +592,7 @@ __APP_CSS__
       </div>
     </div>
     <div class="dialog-footer">
+      <button type="button" class="btn btn-ghost btn-open-session dialog-footer-start" data-i18n="sessionOpen">Sitzung öffnen</button>
       <button type="button" class="btn" id="btn-cancel-modal">Abbrechen</button>
       <button type="button" class="btn btn-primary" id="btn-apply-modal">Jetzt vergleichen</button>
     </div>
@@ -620,6 +633,19 @@ __APP_CSS__
     </div>
   </dialog>
 
+  <!-- ── SESSION CONFIRM / MESSAGE DIALOG (unsaved edits, session file errors) ── -->
+  <dialog class="prime-dialog dialog-sm" id="session-dialog" aria-labelledby="session-dialog-title" aria-describedby="session-dialog-body">
+    <div class="dialog-header">
+      <h2 class="dialog-title" id="session-dialog-title" tabindex="-1" autofocus></h2>
+    </div>
+    <div class="dialog-body-single">
+      <p id="session-dialog-body" class="session-dialog-text"></p>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="btn" id="session-dialog-cancel"></button>
+      <button type="button" class="btn btn-primary" id="session-dialog-confirm"></button>
+    </div>
+  </dialog>
   <script>
 __APP_JS__
   </script>

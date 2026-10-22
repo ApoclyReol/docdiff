@@ -140,6 +140,22 @@ const I18N = {
     compareBusy: 'Dokumente werden verglichen …',
     readingFile: 'Lese',
     readError: 'Fehler beim Lesen der Datei',
+    sessionSave: 'Sitzung speichern',
+    sessionOpen: 'Sitzung öffnen',
+    sessionOpenTitle: 'Gespeicherte Sitzung (.docdiff) öffnen und weiterarbeiten',
+    sessionDiscardTitle: 'Ungespeicherte Bearbeitungen verwerfen?',
+    sessionDiscardBody:
+      'Sie haben Absätze der neuen Fassung bearbeitet, die noch nicht gespeichert oder exportiert wurden. Wenn Sie fortfahren, gehen diese Bearbeitungen verloren.\n\nTipp: Unter „Speichern / Export“ → „Sitzung speichern“ sichern Sie Ihren Stand vorher als Datei.',
+    sessionDiscardConfirm: 'Verwerfen und fortfahren',
+    sessionErrorTitle: 'Sitzung kann nicht geöffnet werden',
+    sessionErrorInvalid:
+      'Die Datei ist keine gültige Doc-Diff-Sitzung (.docdiff) oder sie ist beschädigt. Es wurde nichts verändert.',
+    sessionErrorTooLarge: 'Die Datei ist zu groß (maximal 50 MB). Es wurde nichts verändert.',
+    sessionErrorVersion:
+      'Diese Sitzung wurde mit einer neueren Version von Doc Diff gespeichert und kann hier nicht geöffnet werden. Es wurde nichts verändert.',
+    sessionNothingTitle: 'Nichts zu speichern',
+    sessionNothingBody: 'Laden Sie zuerst ein Dokument, um eine Sitzung zu speichern.',
+    sessionOk: 'OK',
     noticeClose: 'Hinweis schließen',
     errUnsupportedType: 'Dieses Dateiformat wird nicht unterstützt. Bitte PDF, Word (.docx), HTML oder reinen Text (.txt, .md) verwenden.',
     errLegacyDoc: 'Alte Word-Dateien (.doc) werden nicht unterstützt. Bitte in Word als .docx speichern und erneut laden.',
@@ -188,6 +204,10 @@ const I18N = {
           <h3 class="help-card-title">Ihre Daten bleiben bei Ihnen</h3>
           <p class="help-card-desc">Die Seite verbietet Ihrem Browser jede Netzwerkverbindung. Ihre Dateien werden nur im Arbeitsspeicher dieses Tabs gelesen und beim Schließen verworfen – nichts wird hochgeladen oder dauerhaft gespeichert.</p>
         </section>
+        <section class="help-card help-card-wide">
+          <h3 class="help-card-title">Später weiterarbeiten</h3>
+          <p class="help-card-desc">Mit <strong>Speichern / Export → Sitzung speichern</strong> laden Sie eine <code>.docdiff</code>-Datei herunter. Über <strong>Sitzung öffnen</strong> (oder per Drag &amp; Drop) arbeiten Sie später genau dort weiter. Die Datei enthält den vollständigen Text beider Fassungen samt Ihren Bearbeitungen – bewahren Sie sie so sorgfältig auf wie die Dokumente selbst.</p>
+        </section>
       </div>
     `,
     footerPrivacy: 'Impressum & Datenschutz',
@@ -224,8 +244,8 @@ const I18N = {
     legendTouch: 'Pfeile unten = nächste / vorherige Änderung',
     legendClose: 'Ausblenden',
     shortcutsToggle: 'Tastenkürzel mit einzelnen Buchstaben verwenden (J, K, C, H, /)',
-    heroTitle: 'Sehen Sie Wort für Wort, was sich zwischen zwei Fassungen geändert hat.',
-    heroSub: 'Für Verträge, Ausschreibungen und andere Dokumente. Ihre Dateien verlassen dabei nie Ihren Computer.',
+    heroTitle: 'Dokumente <del class="hero-del" aria-hidden="true">mühsam</del> <ins class="hero-ins">einfach</ins> vergleichen.',
+    heroSub: 'PDF, Word oder Text: Jede Änderung wird Wort für Wort markiert. Ihre Dateien verlassen dabei nie Ihren Computer.',
     trustFree: 'Kostenlos & Open Source (MIT)',
     trustLocal: 'Keine Uploads – alles läuft lokal im Browser',
     trustNoTracking: 'Keine Werbung, kein Tracking, keine Cookies',
@@ -418,6 +438,22 @@ const I18N = {
     compareBusy: 'Comparing documents …',
     readingFile: 'Reading',
     readError: 'Failed to read file',
+    sessionSave: 'Save session',
+    sessionOpen: 'Open session',
+    sessionOpenTitle: 'Open a saved session (.docdiff) and continue working',
+    sessionDiscardTitle: 'Discard unsaved edits?',
+    sessionDiscardBody:
+      'You have edited paragraphs of the new version that have not been saved or exported yet. If you continue, these edits will be lost.\n\nTip: use "Save / Export" → "Save session" to keep your work as a file first.',
+    sessionDiscardConfirm: 'Discard and continue',
+    sessionErrorTitle: 'Cannot open session',
+    sessionErrorInvalid:
+      'This file is not a valid Doc Diff session (.docdiff) or it is damaged. Nothing was changed.',
+    sessionErrorTooLarge: 'This file is too large (50 MB maximum). Nothing was changed.',
+    sessionErrorVersion:
+      'This session was saved by a newer version of Doc Diff and cannot be opened here. Nothing was changed.',
+    sessionNothingTitle: 'Nothing to save',
+    sessionNothingBody: 'Load a document first to save a session.',
+    sessionOk: 'OK',
     noticeClose: 'Dismiss message',
     errUnsupportedType: 'This file format is not supported. Please use PDF, Word (.docx), HTML or plain text (.txt, .md).',
     errLegacyDoc: 'Legacy Word files (.doc) are not supported. Please save the file as .docx in Word and load it again.',
@@ -466,6 +502,10 @@ const I18N = {
           <h3 class="help-card-title">Your data stays with you</h3>
           <p class="help-card-desc">The page forbids your browser from making any network connection. Your files are only read into this tab’s memory and discarded when you close it – nothing is uploaded or stored.</p>
         </section>
+        <section class="help-card help-card-wide">
+          <h3 class="help-card-title">Continue later</h3>
+          <p class="help-card-desc"><strong>Save / Export → Save session</strong> downloads a <code>.docdiff</code> file. Open it later via <strong>Open session</strong> (or drag &amp; drop) to pick up exactly where you left off. The file contains the full text of both versions including your edits – store it as carefully as the documents themselves.</p>
+        </section>
       </div>
     `,
     footerPrivacy: 'Legal & Privacy',
@@ -502,8 +542,8 @@ const I18N = {
     legendTouch: 'Arrows at the bottom = next / previous change',
     legendClose: 'Dismiss',
     shortcutsToggle: 'Use single-letter keyboard shortcuts (J, K, C, H, /)',
-    heroTitle: 'See word by word what changed between two versions of a document.',
-    heroSub: 'For contracts, tenders and other documents. Your files never leave your computer.',
+    heroTitle: 'Compare documents <del class="hero-del" aria-hidden="true">by hand</del> <ins class="hero-ins">easily</ins>.',
+    heroSub: 'PDF, Word or text: every change is marked word by word. Your files never leave your computer.',
     trustFree: 'Free & open source (MIT)',
     trustLocal: 'No uploads – everything runs locally in your browser',
     trustNoTracking: 'No ads, no tracking, no cookies',
