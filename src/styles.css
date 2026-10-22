@@ -2197,6 +2197,19 @@ dialog.prime-dialog::backdrop {
   gap: 10px;
 }
 
+.dialog-footer .dialog-footer-start {
+  margin-right: auto;
+}
+.help-session-note {
+  margin: 0;
+}
+.session-dialog-text {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: hsl(var(--foreground));
+  white-space: pre-line;
+}
+
 /* ── Responsive Tiers: Desktop, Laptop, Tablet, Mobile ───────────────── */
 .header-right-wrap {
   display: flex;

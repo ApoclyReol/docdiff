@@ -124,6 +124,22 @@ const I18N = {
     unitPara: 'Abs.',
     readingFile: 'Lese',
     readError: 'Fehler beim Lesen der Datei',
+    sessionSave: 'Sitzung speichern',
+    sessionOpen: 'Sitzung öffnen',
+    sessionOpenTitle: 'Gespeicherte Sitzung (.docdiff) öffnen und weiterarbeiten',
+    sessionDiscardTitle: 'Ungespeicherte Bearbeitungen verwerfen?',
+    sessionDiscardBody:
+      'Sie haben Absätze im neuen Stand bearbeitet, die noch nicht gespeichert oder exportiert wurden. Wenn Sie fortfahren, gehen diese Bearbeitungen verloren.\n\nTipp: Unter „Speichern / Export“ → „Sitzung speichern“ sichern Sie Ihren Stand vorher als Datei.',
+    sessionDiscardConfirm: 'Verwerfen und fortfahren',
+    sessionErrorTitle: 'Sitzung kann nicht geöffnet werden',
+    sessionErrorInvalid:
+      'Die Datei ist keine gültige Doc-Diff-Sitzung (.docdiff) oder sie ist beschädigt. Es wurde nichts verändert.',
+    sessionErrorTooLarge: 'Die Datei ist zu groß (maximal 50 MB). Es wurde nichts verändert.',
+    sessionErrorVersion:
+      'Diese Sitzung wurde mit einer neueren Version von Doc Diff gespeichert und kann hier nicht geöffnet werden. Es wurde nichts verändert.',
+    sessionNothingTitle: 'Nichts zu speichern',
+    sessionNothingBody: 'Laden Sie zuerst ein Dokument, um eine Sitzung zu speichern.',
+    sessionOk: 'OK',
     manualLeft: 'Manueller Text (Vorher)',
     manualRight: 'Manueller Text (Nachher)',
     modalPasteTitle: 'Texte direkt eingeben oder einfügen',
@@ -155,6 +171,7 @@ const I18N = {
           <div class="help-card-desc"><strong>J / K</strong> Nächste/Vorherige Änderung · <strong>/</strong> Suche · <strong>C</strong> Nur Änderungen · <strong>H</strong> Kopf-/Fußzeilen · <strong>⌘Z</strong> Rückgängig.<br/>Alle Daten bleiben zu 100 % lokal im Browser (<code>connect-src 'none'</code>).</div>
         </div>
       </div>
+      <p class="help-session-note"><strong>Sitzung speichern & später weiterarbeiten:</strong> Doc Diff speichert nichts im Browser. Mit <strong>Speichern / Export → Sitzung speichern</strong> laden Sie eine <code>.docdiff</code>-Datei herunter, die Sie später über <strong>Sitzung öffnen</strong> (oder per Drag & Drop) wieder öffnen. Die Datei enthält den vollständigen Text beider Dokumente samt Ihren Bearbeitungen — bewahren Sie sie so sorgfältig auf wie die Dokumente selbst.</p>
     `,
     footerPrivacy: 'Impressum & Datenschutz',
     privacyTitle: 'Impressum & Datenschutz',
@@ -289,6 +306,22 @@ const I18N = {
     unitPara: 'paras',
     readingFile: 'Reading',
     readError: 'Failed to read file',
+    sessionSave: 'Save session',
+    sessionOpen: 'Open session',
+    sessionOpenTitle: 'Open a saved session (.docdiff) and continue working',
+    sessionDiscardTitle: 'Discard unsaved edits?',
+    sessionDiscardBody:
+      'You have edited paragraphs in the new version that have not been saved or exported yet. If you continue, these edits will be lost.\n\nTip: use "Save / Export" → "Save session" to keep your work as a file first.',
+    sessionDiscardConfirm: 'Discard and continue',
+    sessionErrorTitle: 'Cannot open session',
+    sessionErrorInvalid:
+      'This file is not a valid Doc Diff session (.docdiff) or it is damaged. Nothing was changed.',
+    sessionErrorTooLarge: 'This file is too large (50 MB maximum). Nothing was changed.',
+    sessionErrorVersion:
+      'This session was saved by a newer version of Doc Diff and cannot be opened here. Nothing was changed.',
+    sessionNothingTitle: 'Nothing to save',
+    sessionNothingBody: 'Load a document first to save a session.',
+    sessionOk: 'OK',
     manualLeft: 'Pasted text (Before)',
     manualRight: 'Pasted text (After)',
     modalPasteTitle: 'Type or paste texts directly',
@@ -320,6 +353,7 @@ const I18N = {
           <div class="help-card-desc"><strong>J / K</strong> Next/Previous change · <strong>/</strong> Search · <strong>C</strong> Changes only · <strong>H</strong> Headers/Footers · <strong>Cmd+Z</strong> Undo.<br/>All data stays 100% in your browser's volatile memory (<code>connect-src 'none'</code>).</div>
         </div>
       </div>
+      <p class="help-session-note"><strong>Save a session & continue later:</strong> Doc Diff stores nothing in your browser. <strong>Save / Export → Save session</strong> downloads a <code>.docdiff</code> file that you can reopen later via <strong>Open session</strong> (or drag & drop). The file contains the full text of both documents including your edits — store it as carefully as the documents themselves.</p>
     `,
     footerPrivacy: 'Legal & Privacy',
     privacyTitle: 'Legal Notice & Privacy',

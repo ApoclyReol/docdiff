@@ -68,6 +68,7 @@ __APP_CSS__
 
   <input type="file" id="file-input-left" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
   <input type="file" id="file-input-right" accept=".pdf,.docx,.txt,.md,.html" style="display:none" />
+  <input type="file" id="file-input-session" accept=".docdiff" style="display:none" />
 
   <!-- ── 1. HEADER BAR ──────────────────────────────────────────────────────── -->
   <header class="header-bar">
@@ -266,6 +267,14 @@ __APP_CSS__
               </span>
               <span class="dropdown-ext">.md</span>
             </button>
+            <div class="dropdown-divider" role="separator"></div>
+            <button type="button" class="dropdown-item" data-session-action="save" role="menuitem">
+              <span class="dropdown-item-left">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span id="i18n-exp-session">Sitzung speichern</span>
+              </span>
+              <span class="dropdown-ext">.docdiff</span>
+            </button>
           </div>
         </div>
       </div>
@@ -436,6 +445,7 @@ __APP_CSS__
       </div>
     </div>
     <div class="dialog-footer">
+      <button type="button" class="btn btn-ghost btn-open-session dialog-footer-start"><span data-i18n-session-open>Sitzung öffnen</span></button>
       <button type="button" class="btn" id="btn-cancel-modal">Abbrechen</button>
       <button type="button" class="btn btn-primary" id="btn-apply-modal">Jetzt vergleichen</button>
     </div>
@@ -470,6 +480,19 @@ __APP_CSS__
     </div>
   </dialog>
 
+  <!-- ── SESSION CONFIRM / MESSAGE DIALOG (unsaved edits, session file errors) ── -->
+  <dialog class="prime-dialog dialog-sm" id="session-dialog" aria-labelledby="session-dialog-title" aria-describedby="session-dialog-body">
+    <div class="dialog-header">
+      <span id="session-dialog-title"></span>
+    </div>
+    <div class="dialog-body-single">
+      <p id="session-dialog-body" class="session-dialog-text"></p>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="btn" id="session-dialog-cancel"></button>
+      <button type="button" class="btn btn-primary" id="session-dialog-confirm"></button>
+    </div>
+  </dialog>
   <script>
 __APP_JS__
   </script>

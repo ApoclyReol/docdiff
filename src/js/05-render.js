@@ -339,6 +339,10 @@ function renderLaunchpadHtml(leftCount, rightCount) {
           <svg class="icon" style="width:13px;height:13px;" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           <span>${escapeHtml(t('loadSample'))}</span>
         </button>
+        <button type="button" class="btn btn-ghost btn-open-session" data-tooltip="${escapeHtml(t('sessionOpenTitle'))}">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+          <span>${escapeHtml(t('sessionOpen'))}</span>
+        </button>
       </div>
 
       <div class="launchpad-footer">
