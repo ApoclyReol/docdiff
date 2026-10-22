@@ -2965,3 +2965,178 @@ dialog.prime-dialog::backdrop {
     content-visibility: visible !important;
   }
 }
+
+/* ── Print view (built by preparePrintView() on beforeprint / "PDF / Print") ──
+   A dedicated, row-aligned rendering for paper: no UI chrome, a header with both file names
+   and the date, page numbers in the page margin, and redline marks that survive greyscale
+   printing (strike-through for removed text, underline for added text). */
+#print-view {
+  display: none;
+}
+
+@media print {
+  body.has-print-view > :not(#print-view) {
+    display: none !important;
+  }
+  body.has-print-view #print-view {
+    display: block !important;
+    font-family: "Geist", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.45;
+    color: #000;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #print-view .pv-head {
+    border-bottom: 1.5pt solid #000;
+    padding-bottom: 6pt;
+    margin-bottom: 10pt;
+    break-after: avoid;
+  }
+  #print-view .pv-title {
+    font-size: 14pt;
+    font-weight: 700;
+    margin-bottom: 4pt;
+  }
+  #print-view .pv-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2pt 14pt;
+    font-size: 8.5pt;
+    color: #333;
+  }
+  #print-view .pv-legend {
+    margin-top: 4pt;
+    font-size: 8.5pt;
+    color: #333;
+  }
+  #print-view del.tok-del,
+  #print-view ins.tok-ins {
+    padding: 0 1pt;
+    border-radius: 1pt;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  #print-view del.tok-del {
+    color: #8a0021;
+    background: #ffe3e8;
+    text-decoration: line-through;
+    text-decoration-thickness: 1pt;
+  }
+  #print-view ins.tok-ins {
+    color: #0d5a26;
+    background: #dcf7e4;
+    text-decoration: underline;
+    text-decoration-thickness: 1pt;
+    text-underline-offset: 1.5pt;
+    font-weight: 600;
+  }
+  #print-view .pv-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  #print-view .pv-page-head {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  #print-view .pv-table thead {
+    display: table-header-group;
+  }
+  #print-view .pv-table thead th {
+    text-align: left;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #333;
+    padding: 3pt 6pt;
+    border-bottom: 1pt solid #888;
+    overflow-wrap: anywhere;
+  }
+  #print-view .pv-page-head th {
+    text-align: left;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #555;
+    padding: 6pt 6pt 2pt;
+  }
+  #print-view .pv-row,
+  #print-view .pv-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  #print-view .pv-cell {
+    vertical-align: top;
+    padding: 3pt 6pt;
+    border-bottom: 0.5pt solid #ddd;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+  #print-view .pv-cell + .pv-cell {
+    border-left: 0.5pt solid #bbb;
+  }
+  #print-view .pv-empty {
+    background: repeating-linear-gradient(135deg, transparent 0 4pt, #eee 4pt 5pt);
+  }
+  #print-view .pv-cell.kind-h1,
+  #print-view .pv-row.kind-h1 {
+    font-size: 12pt;
+    font-weight: 700;
+  }
+  #print-view .pv-cell.kind-h2,
+  #print-view .pv-row.kind-h2 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    break-after: avoid;
+  }
+  #print-view .pv-cell.kind-h3,
+  #print-view .pv-row.kind-h3 {
+    font-weight: 600;
+    break-after: avoid;
+  }
+  #print-view .pv-cell.kind-hf,
+  #print-view .pv-row.kind-hf {
+    font-size: 7.5pt;
+    font-style: italic;
+    color: #555;
+  }
+  #print-view .clause-marker {
+    display: inline-block;
+    min-width: 2.2em;
+  }
+  #print-view .clause-body {
+    display: inline;
+  }
+  #print-view .pv-tag {
+    display: block;
+    font-size: 7pt;
+    font-weight: 600;
+    font-style: normal;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #444;
+  }
+  #print-view .pv-modified > .pv-cell,
+  #print-view .pv-inline .pv-modified {
+    border-left: 2pt solid #1d4ed8;
+  }
+  #print-view .pv-deleted > .pv-cell:first-child,
+  #print-view .pv-inline .pv-deleted {
+    border-left: 2pt dashed #8a0021;
+  }
+  #print-view .pv-inserted > .pv-cell:last-child,
+  #print-view .pv-inline .pv-inserted {
+    border-left: 2pt double #0d5a26;
+  }
+  #print-view .pv-inline .pv-row {
+    padding: 2pt 0 2pt 8pt;
+    margin-bottom: 5pt;
+  }
+  #print-view .pv-inline .pv-equal {
+    border-left: 2pt solid transparent;
+  }
+  #print-view .pv-empty-note {
+    font-style: italic;
+    color: #444;
+  }
+}

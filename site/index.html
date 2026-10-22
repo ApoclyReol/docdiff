@@ -3092,6 +3092,181 @@ dialog.prime-dialog::backdrop {
   }
 }
 
+/* ── Print view (built by preparePrintView() on beforeprint / "PDF / Print") ──
+   A dedicated, row-aligned rendering for paper: no UI chrome, a header with both file names
+   and the date, page numbers in the page margin, and redline marks that survive greyscale
+   printing (strike-through for removed text, underline for added text). */
+#print-view {
+  display: none;
+}
+
+@media print {
+  body.has-print-view > :not(#print-view) {
+    display: none !important;
+  }
+  body.has-print-view #print-view {
+    display: block !important;
+    font-family: "Geist", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.45;
+    color: #000;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #print-view .pv-head {
+    border-bottom: 1.5pt solid #000;
+    padding-bottom: 6pt;
+    margin-bottom: 10pt;
+    break-after: avoid;
+  }
+  #print-view .pv-title {
+    font-size: 14pt;
+    font-weight: 700;
+    margin-bottom: 4pt;
+  }
+  #print-view .pv-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2pt 14pt;
+    font-size: 8.5pt;
+    color: #333;
+  }
+  #print-view .pv-legend {
+    margin-top: 4pt;
+    font-size: 8.5pt;
+    color: #333;
+  }
+  #print-view del.tok-del,
+  #print-view ins.tok-ins {
+    padding: 0 1pt;
+    border-radius: 1pt;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  #print-view del.tok-del {
+    color: #8a0021;
+    background: #ffe3e8;
+    text-decoration: line-through;
+    text-decoration-thickness: 1pt;
+  }
+  #print-view ins.tok-ins {
+    color: #0d5a26;
+    background: #dcf7e4;
+    text-decoration: underline;
+    text-decoration-thickness: 1pt;
+    text-underline-offset: 1.5pt;
+    font-weight: 600;
+  }
+  #print-view .pv-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  #print-view .pv-page-head {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  #print-view .pv-table thead {
+    display: table-header-group;
+  }
+  #print-view .pv-table thead th {
+    text-align: left;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #333;
+    padding: 3pt 6pt;
+    border-bottom: 1pt solid #888;
+    overflow-wrap: anywhere;
+  }
+  #print-view .pv-page-head th {
+    text-align: left;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #555;
+    padding: 6pt 6pt 2pt;
+  }
+  #print-view .pv-row,
+  #print-view .pv-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  #print-view .pv-cell {
+    vertical-align: top;
+    padding: 3pt 6pt;
+    border-bottom: 0.5pt solid #ddd;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+  #print-view .pv-cell + .pv-cell {
+    border-left: 0.5pt solid #bbb;
+  }
+  #print-view .pv-empty {
+    background: repeating-linear-gradient(135deg, transparent 0 4pt, #eee 4pt 5pt);
+  }
+  #print-view .pv-cell.kind-h1,
+  #print-view .pv-row.kind-h1 {
+    font-size: 12pt;
+    font-weight: 700;
+  }
+  #print-view .pv-cell.kind-h2,
+  #print-view .pv-row.kind-h2 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    break-after: avoid;
+  }
+  #print-view .pv-cell.kind-h3,
+  #print-view .pv-row.kind-h3 {
+    font-weight: 600;
+    break-after: avoid;
+  }
+  #print-view .pv-cell.kind-hf,
+  #print-view .pv-row.kind-hf {
+    font-size: 7.5pt;
+    font-style: italic;
+    color: #555;
+  }
+  #print-view .clause-marker {
+    display: inline-block;
+    min-width: 2.2em;
+  }
+  #print-view .clause-body {
+    display: inline;
+  }
+  #print-view .pv-tag {
+    display: block;
+    font-size: 7pt;
+    font-weight: 600;
+    font-style: normal;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #444;
+  }
+  #print-view .pv-modified > .pv-cell,
+  #print-view .pv-inline .pv-modified {
+    border-left: 2pt solid #1d4ed8;
+  }
+  #print-view .pv-deleted > .pv-cell:first-child,
+  #print-view .pv-inline .pv-deleted {
+    border-left: 2pt dashed #8a0021;
+  }
+  #print-view .pv-inserted > .pv-cell:last-child,
+  #print-view .pv-inline .pv-inserted {
+    border-left: 2pt double #0d5a26;
+  }
+  #print-view .pv-inline .pv-row {
+    padding: 2pt 0 2pt 8pt;
+    margin-bottom: 5pt;
+  }
+  #print-view .pv-inline .pv-equal {
+    border-left: 2pt solid transparent;
+  }
+  #print-view .pv-empty-note {
+    font-style: italic;
+    color: #444;
+  }
+}
+
   </style>
 </head>
 <body>
@@ -3271,9 +3446,9 @@ dialog.prime-dialog::backdrop {
             <button type="button" class="dropdown-item" data-export="word" role="menuitem">
               <span class="dropdown-item-left">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span id="i18n-exp-word">Word-Redline (mit Änderungen)</span>
+                <span id="i18n-exp-word">Word-Redline (Änderungen nachverfolgen)</span>
               </span>
-              <span class="dropdown-ext">.doc</span>
+              <span class="dropdown-ext">.docx</span>
             </button>
             <button type="button" class="dropdown-item" data-export="print" role="menuitem">
               <span class="dropdown-item-left">
@@ -3536,9 +3711,48 @@ const I18N = {
     expTxt: 'Neuen Stand speichern',
     copiedLabel: 'Kopiert',
     expPdf: 'PDF / Druckansicht',
-    expWord: 'Word-Redline (mit Änderungen)',
+    expWord: 'Word-Redline (Änderungen nachverfolgen)',
     expHtml: 'HTML-Vergleichsbericht',
     expMd: 'Markdown-Bericht',
+    exportFallbackLeft: 'Originaldokument',
+    exportFallbackRight: 'Neue Fassung',
+    exportTitleFmt: 'Vergleich: {left} → {right}',
+    exportVs: 'vs.',
+    exportCountsFmt: '{total} Änderungen ({mod} geändert, {ins} neu, {del} entfernt)',
+    exportLabelOriginal: 'Original (vorher)',
+    exportLabelRevised: 'Neue Fassung (nachher)',
+    exportLabelCreated: 'Erstellt am',
+    exportLabelChanges: 'Änderungen',
+    exportLabelScope: 'Umfang',
+    exportLabelHf: 'Kopf-/Fußzeilen',
+    exportLabelDetail: 'Angabe',
+    exportScopeFull: 'Vollständiges Dokument',
+    exportScopeChanges: 'Nur Änderungen (Filter „Nur Änderungen“ aktiv, unveränderte Absätze ausgelassen)',
+    exportHfIgnored: 'ausgeblendet (nicht verglichen)',
+    exportHfIgnoredCount: 'ausgeblendet ({n} Zeilen nicht verglichen)',
+    exportHfIncluded: 'mitverglichen',
+    exportSummaryHeading: 'Zusammenfassung',
+    exportCountTotal: 'Änderungen gesamt',
+    exportChangesHeading: 'Änderungsübersicht',
+    exportChangeListCaption: 'Alle Änderungen mit Fundstelle. Ein Klick auf die Fundstelle springt zur Stelle im Redline.',
+    exportColRef: 'Fundstelle',
+    exportColType: 'Art',
+    exportColChange: 'Änderung',
+    exportRedlineHeading: 'Redline (vorher → nachher)',
+    exportLegendLabel: 'Legende',
+    exportLegendIns: 'eingefügt',
+    exportLegendDel: 'gelöscht',
+    exportNoChanges: 'Keine Unterschiede gefunden: Beide Fassungen sind inhaltlich identisch.',
+    exportFooterNote: 'Erstellt mit Doc Diff. Alle Inhalte wurden lokal im Browser verarbeitet, es wurden keine Daten hochgeladen.',
+    a11yRemovedStart: '[gelöscht:',
+    a11yRemovedEnd: ']',
+    a11yAddedStart: '[eingefügt:',
+    a11yAddedEnd: ']',
+    docxSubject: 'Redline mit nachverfolgten Änderungen',
+    docxNote: 'Alle Abweichungen sind als nachverfolgte Änderungen (Autor „Doc Diff“) eingetragen. In Word unter „Überprüfen“ einzeln oder alle auf einmal annehmen bzw. ablehnen.',
+    exportFileFinal: 'Endfassung',
+    exportFileRedline: 'Redline',
+    exportFileReport: 'Bericht',
     editBtn: 'Bearbeiten',
     editInsertBtn: 'Einfügen',
     editTitle: 'Diesen Absatz im neuen Stand direkt bearbeiten (oder Doppelklick)',
@@ -3701,9 +3915,48 @@ const I18N = {
     expTxt: 'Save new version (.txt)',
     copiedLabel: 'Copied',
     expPdf: 'PDF / Print view',
-    expWord: 'Word Redline (with changes)',
+    expWord: 'Word redline (tracked changes)',
     expHtml: 'HTML Diff Report',
     expMd: 'Markdown Report',
+    exportFallbackLeft: 'Original document',
+    exportFallbackRight: 'Revised document',
+    exportTitleFmt: 'Comparison: {left} → {right}',
+    exportVs: 'vs.',
+    exportCountsFmt: '{total} changes ({mod} modified, {ins} added, {del} removed)',
+    exportLabelOriginal: 'Original (before)',
+    exportLabelRevised: 'Revised (after)',
+    exportLabelCreated: 'Created',
+    exportLabelChanges: 'Changes',
+    exportLabelScope: 'Scope',
+    exportLabelHf: 'Headers/footers',
+    exportLabelDetail: 'Detail',
+    exportScopeFull: 'Full document',
+    exportScopeChanges: 'Changes only (“Changes only” filter active, unchanged paragraphs omitted)',
+    exportHfIgnored: 'ignored (not compared)',
+    exportHfIgnoredCount: 'ignored ({n} lines not compared)',
+    exportHfIncluded: 'included in the comparison',
+    exportSummaryHeading: 'Summary',
+    exportCountTotal: 'Total changes',
+    exportChangesHeading: 'List of changes',
+    exportChangeListCaption: 'All changes with their clause reference. Select a reference to jump to it in the redline.',
+    exportColRef: 'Reference',
+    exportColType: 'Type',
+    exportColChange: 'Change',
+    exportRedlineHeading: 'Redline (before → after)',
+    exportLegendLabel: 'Legend',
+    exportLegendIns: 'added',
+    exportLegendDel: 'removed',
+    exportNoChanges: 'No differences found: both versions have identical content.',
+    exportFooterNote: 'Generated with Doc Diff. All content was processed locally in the browser; no data was uploaded.',
+    a11yRemovedStart: '[removed:',
+    a11yRemovedEnd: ']',
+    a11yAddedStart: '[added:',
+    a11yAddedEnd: ']',
+    docxSubject: 'Redline with tracked changes',
+    docxNote: 'All differences are recorded as tracked changes (author “Doc Diff”). In Word, use Review › Accept / Reject to process them one by one or all at once.',
+    exportFileFinal: 'Final',
+    exportFileRedline: 'Redline',
+    exportFileReport: 'Report',
     editBtn: 'Edit',
     editInsertBtn: 'Insert',
     editTitle: 'Edit this paragraph directly in the new version (or double-click)',
@@ -6321,112 +6574,1079 @@ window.addEventListener('resize', () => {
   }, 60);
 });
 
-/* ── Client-Side Multi-Format Export Engine (PDF, Word .doc, HTML, Markdown) */
+/* ── Word redline export: a real .docx (OOXML) with tracked changes, built in the browser ──
+ * Everything here is dependency-free: a minimal ZIP writer (STORE, CRC-32) plus hand-written
+ * WordprocessingML. Changes are emitted as genuine revisions (<w:ins>/<w:del>), so Word,
+ * LibreOffice and Google Docs offer "Accept / Reject change" on every edit.
+ */
+
+const DOCX_AUTHOR = 'Doc Diff';
+const DOCX_TAB = '\u0000TAB\u0000';
+
+let crc32Table = null;
+function crc32(bytes) {
+  if (!crc32Table) {
+    crc32Table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      crc32Table[n] = c >>> 0;
+    }
+  }
+  let crc = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) crc = crc32Table[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/**
+ * Minimal ZIP writer (method 0 = STORE). `files` is [{ name, data: Uint8Array | string }].
+ * Returns a Uint8Array containing a valid archive with central directory.
+ */
+function buildZipArchive(files, date = new Date()) {
+  const enc = new TextEncoder();
+  const dosTime = ((date.getHours() & 31) << 11) | ((date.getMinutes() & 63) << 5) | ((date.getSeconds() / 2) & 31);
+  const dosDate = (((date.getFullYear() - 1980) & 127) << 9) | (((date.getMonth() + 1) & 15) << 5) | (date.getDate() & 31);
+
+  const entries = files.map(f => {
+    const nameBytes = enc.encode(f.name);
+    const data = typeof f.data === 'string' ? enc.encode(f.data) : f.data;
+    return { nameBytes, data, crc: crc32(data) };
+  });
+
+  let localSize = 0;
+  let centralSize = 0;
+  for (const e of entries) {
+    localSize += 30 + e.nameBytes.length + e.data.length;
+    centralSize += 46 + e.nameBytes.length;
+  }
+  const out = new Uint8Array(localSize + centralSize + 22);
+  const view = new DataView(out.buffer);
+  let pos = 0;
+
+  const writeHeaderCommon = e => {
+    view.setUint16(pos, 0x0800, true); // flags: bit 11 = UTF-8 file names
+    view.setUint16(pos + 2, 0, true); // method: STORE
+    view.setUint16(pos + 4, dosTime, true);
+    view.setUint16(pos + 6, dosDate, true);
+    view.setUint32(pos + 8, e.crc, true);
+    view.setUint32(pos + 12, e.data.length, true); // compressed size
+    view.setUint32(pos + 16, e.data.length, true); // uncompressed size
+    view.setUint16(pos + 20, e.nameBytes.length, true);
+    view.setUint16(pos + 22, 0, true); // extra field length
+    pos += 24;
+  };
+
+  for (const e of entries) {
+    e.offset = pos;
+    view.setUint32(pos, 0x04034b50, true);
+    view.setUint16(pos + 4, 20, true); // version needed
+    pos += 6;
+    writeHeaderCommon(e);
+    out.set(e.nameBytes, pos);
+    pos += e.nameBytes.length;
+    out.set(e.data, pos);
+    pos += e.data.length;
+  }
+
+  const centralStart = pos;
+  for (const e of entries) {
+    view.setUint32(pos, 0x02014b50, true);
+    view.setUint16(pos + 4, 20, true); // version made by
+    view.setUint16(pos + 6, 20, true); // version needed
+    pos += 8;
+    writeHeaderCommon(e);
+    view.setUint16(pos, 0, true); // comment length
+    view.setUint16(pos + 2, 0, true); // disk number start
+    view.setUint16(pos + 4, 0, true); // internal attributes
+    view.setUint32(pos + 6, 0, true); // external attributes
+    view.setUint32(pos + 10, e.offset, true);
+    pos += 14;
+    out.set(e.nameBytes, pos);
+    pos += e.nameBytes.length;
+  }
+
+  view.setUint32(pos, 0x06054b50, true);
+  view.setUint16(pos + 4, 0, true);
+  view.setUint16(pos + 6, 0, true);
+  view.setUint16(pos + 8, entries.length, true);
+  view.setUint16(pos + 10, entries.length, true);
+  view.setUint32(pos + 12, pos - centralStart, true);
+  view.setUint32(pos + 16, centralStart, true);
+  view.setUint16(pos + 20, 0, true);
+  return out;
+}
+
+/** Escapes text for XML and drops characters that are illegal in XML 1.0. */
+function escapeXml(str) {
+  return String(str)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Word dates must be ISO 8601 without milliseconds. */
+function toWordDate(date) {
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+/** Run content (w:t / w:delText with tabs and line breaks) for one text segment. */
+function docxRunContent(text, deleted) {
+  const tag = deleted ? 'w:delText' : 'w:t';
+  const parts = [];
+  const pieces = String(text).split(/(\u0000TAB\u0000|\t|\n)/);
+  for (const piece of pieces) {
+    if (!piece) continue;
+    if (piece === DOCX_TAB || piece === '\t') parts.push('<w:tab/>');
+    else if (piece === '\n') parts.push('<w:br/>');
+    else parts.push(`<${tag} xml:space="preserve">${escapeXml(piece)}</${tag}>`);
+  }
+  return parts.join('');
+}
+
+function docxRun(text, deleted = false, rPr = '') {
+  const content = docxRunContent(text, deleted);
+  if (!content) return '';
+  return `<w:r>${rPr ? `<w:rPr>${rPr}</w:rPr>` : ''}${content}</w:r>`;
+}
+
+/** Maps a parsed block to its paragraph style. */
+function docxStyleForBlock(block) {
+  if (!block) return 'Normal';
+  if (block.isHeaderFooter || block.kind === 'hf') return 'DocDiffHeaderFooter';
+  if (block.kind === 'h1') return 'Heading1';
+  if (block.kind === 'h2') return 'Heading2';
+  if (block.kind === 'h3') return 'Heading3';
+  if (block.kind === 'bullet') return 'DocDiffBullet';
+  if (block.kind === 'clause') return 'DocDiffClause';
+  return 'Normal';
+}
+
+/**
+ * For list-like paragraphs (bullets, numbered clauses) replace the space after the leading marker
+ * with a tab so that the hanging indent of the paragraph style lines up the body text.
+ */
+function docxApplyMarkerTab(tokens, block) {
+  if (!tokens.length || !block || (block.kind !== 'bullet' && block.kind !== 'clause')) return tokens;
+  const first = tokens[0];
+  const m = first.value.match(/^([•‣▪◦–*-]|\(\d+\)|\([a-z]\)|\([ivx]+\)|\d+\)|[a-z]\))[ \t]+/i);
+  if (!m) return tokens;
+  const rest = first.value.slice(m[0].length);
+  const replaced = [{ ...first, value: m[1] + DOCX_TAB }];
+  if (rest) replaced.push({ ...first, value: rest });
+  return replaced.concat(tokens.slice(1));
+}
+
+/**
+ * Builds the WordprocessingML body for the comparison. Pure function of `rows` and `meta`
+ * so it can be unit-tested without a browser.
+ */
+function buildDocxDocumentXml(rows, meta) {
+  const date = toWordDate(meta.date);
+  let revId = 1;
+  const revAttrs = () => `w:id="${revId++}" w:author="${escapeXml(DOCX_AUTHOR)}" w:date="${date}"`;
+  const paragraphs = [];
+
+  const metaPara = (label, value) =>
+    `<w:p><w:pPr><w:pStyle w:val="DocDiffMeta"/></w:pPr>${docxRun(`${label}: `, false, '<w:b/>')}${docxRun(value)}</w:p>`;
+
+  paragraphs.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(meta.title)}</w:p>`);
+  for (const [label, value] of meta.lines) paragraphs.push(metaPara(label, value));
+  paragraphs.push(
+    `<w:p><w:pPr><w:pStyle w:val="DocDiffMeta"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="6" w:color="A6A6A6"/></w:pBdr><w:spacing w:after="360"/></w:pPr>${docxRun(meta.note, false, '<w:i/>')}</w:p>`
+  );
+
+  for (const row of rows) {
+    const block = row.rightBlock || row.leftBlock;
+    const style = docxStyleForBlock(block);
+    const tokens = docxApplyMarkerTab(getExportDiffTokens(row), block);
+    let markRev = '';
+    if (row.type === 'inserted') markRev = `<w:rPr><w:ins ${revAttrs()}/></w:rPr>`;
+    if (row.type === 'deleted') markRev = `<w:rPr><w:del ${revAttrs()}/></w:rPr>`;
+    const pPr = `<w:pPr><w:pStyle w:val="${style}"/>${markRev}</w:pPr>`;
+
+    const runs = tokens
+      .map(tok => {
+        if (tok.removed) {
+          const run = docxRun(tok.value, true);
+          return run ? `<w:del ${revAttrs()}>${run}</w:del>` : '';
+        }
+        if (tok.added) {
+          const run = docxRun(tok.value, false);
+          return run ? `<w:ins ${revAttrs()}>${run}</w:ins>` : '';
+        }
+        return docxRun(tok.value, false);
+      })
+      .join('');
+    paragraphs.push(`<w:p>${pPr}${runs}</w:p>`);
+  }
+
+  const sectPr =
+    '<w:sectPr><w:footerReference w:type="default" r:id="rIdFooter1"/>' +
+    '<w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="1417" w:right="1417" w:bottom="1134" w:left="1417" w:header="708" w:footer="567" w:gutter="0"/>' +
+    '</w:sectPr>';
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    `<w:body>${paragraphs.join('')}${sectPr}</w:body></w:document>`
+  );
+}
+
+function buildDocxFooterXml(meta) {
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<w:p><w:pPr><w:pStyle w:val="Footer"/><w:tabs><w:tab w:val="right" w:pos="9072"/></w:tabs></w:pPr>' +
+    docxRun(meta.footer) +
+    '<w:r><w:tab/></w:r>' +
+    docxRun(`${meta.pageLabel} `) +
+    '<w:fldSimple w:instr=" PAGE "><w:r><w:t>1</w:t></w:r></w:fldSimple>' +
+    docxRun(` ${meta.pageOfLabel} `) +
+    '<w:fldSimple w:instr=" NUMPAGES "><w:r><w:t>1</w:t></w:r></w:fldSimple>' +
+    '</w:p></w:ftr>'
+  );
+}
+
+function buildDocxStylesXml(langTag) {
+  const font = '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/>';
+  const heading = (id, name, level, size, before, after) =>
+    `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/>` +
+    `<w:pPr><w:keepNext/><w:keepLines/><w:spacing w:before="${before}" w:after="${after}"/><w:outlineLvl w:val="${level}"/></w:pPr>` +
+    `<w:rPr><w:b/><w:bCs/><w:color w:val="1F2937"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr></w:style>`;
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    `<w:docDefaults><w:rPrDefault><w:rPr>${font}<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="${langTag}"/></w:rPr></w:rPrDefault>` +
+    '<w:pPrDefault><w:pPr><w:spacing w:after="140" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="10"/><w:qFormat/>' +
+    '<w:pPr><w:spacing w:after="160"/></w:pPr><w:rPr><w:b/><w:color w:val="111827"/><w:sz w:val="34"/><w:szCs w:val="34"/></w:rPr></w:style>' +
+    heading('Heading1', 'heading 1', 0, 30, 360, 160) +
+    heading('Heading2', 'heading 2', 1, 25, 300, 120) +
+    heading('Heading3', 'heading 3', 2, 23, 240, 100) +
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="DocDiffClause"><w:name w:val="Doc Diff Clause"/><w:basedOn w:val="Normal"/><w:qFormat/>' +
+    '<w:pPr><w:tabs><w:tab w:val="left" w:pos="567"/></w:tabs><w:ind w:left="567" w:hanging="567"/></w:pPr></w:style>' +
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="DocDiffBullet"><w:name w:val="Doc Diff Bullet"/><w:basedOn w:val="Normal"/><w:qFormat/>' +
+    '<w:pPr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs><w:spacing w:after="80"/><w:ind w:left="720" w:hanging="360"/></w:pPr></w:style>' +
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="DocDiffMeta"><w:name w:val="Doc Diff Metadata"/><w:basedOn w:val="Normal"/>' +
+    '<w:pPr><w:spacing w:after="40"/></w:pPr><w:rPr><w:color w:val="4B5563"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>' +
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="DocDiffHeaderFooter"><w:name w:val="Doc Diff Header/Footer Line"/><w:basedOn w:val="Normal"/>' +
+    '<w:rPr><w:i/><w:color w:val="6B7280"/><w:sz w:val="17"/><w:szCs w:val="17"/></w:rPr></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Footer"><w:name w:val="footer"/><w:basedOn w:val="Normal"/>' +
+    '<w:pPr><w:spacing w:after="0"/></w:pPr><w:rPr><w:color w:val="6B7280"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:style>' +
+    '</w:styles>'
+  );
+}
+
+/** Returns the list of files that make up the .docx package. */
+function buildDocxPackageFiles(rows, meta) {
+  const langTag = meta.lang === 'de' ? 'de-DE' : 'en-US';
+  const created = toWordDate(meta.date);
+  return [
+    {
+      name: '[Content_Types].xml',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+        '<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
+        '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' +
+        '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+        '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>' +
+        '</Types>',
+    },
+    {
+      name: '_rels/.rels',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' +
+        '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>' +
+        '</Relationships>',
+    },
+    {
+      name: 'docProps/core.xml',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" ' +
+        'xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" ' +
+        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
+        `<dc:title>${escapeXml(meta.title)}</dc:title>` +
+        `<dc:subject>${escapeXml(meta.subject)}</dc:subject>` +
+        `<dc:creator>${DOCX_AUTHOR}</dc:creator>` +
+        `<cp:lastModifiedBy>${DOCX_AUTHOR}</cp:lastModifiedBy>` +
+        `<dc:language>${langTag}</dc:language>` +
+        `<dcterms:created xsi:type="dcterms:W3CDTF">${created}</dcterms:created>` +
+        `<dcterms:modified xsi:type="dcterms:W3CDTF">${created}</dcterms:modified>` +
+        '</cp:coreProperties>',
+    },
+    {
+      name: 'docProps/app.xml',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">' +
+        '<Application>Doc Diff</Application></Properties>',
+    },
+    {
+      name: 'word/_rels/document.xml.rels',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+        '<Relationship Id="rIdSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>' +
+        '<Relationship Id="rIdFooter1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>' +
+        '</Relationships>',
+    },
+    { name: 'word/document.xml', data: buildDocxDocumentXml(rows, meta) },
+    { name: 'word/styles.xml', data: buildDocxStylesXml(langTag) },
+    {
+      name: 'word/settings.xml',
+      data:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+        '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:defaultTabStop w:val="708"/><w:characterSpacingControl w:val="doNotCompress"/>' +
+        '<w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat>' +
+        '</w:settings>',
+    },
+    { name: 'word/footer1.xml', data: buildDocxFooterXml(meta) },
+  ];
+}
+
+/** Builds the complete .docx file (Uint8Array) for the current comparison state. */
+function buildDocxRedline(date = new Date()) {
+  const counts = getExportCounts();
+  const meta = {
+    lang: state.lang,
+    date,
+    title: getExportTitle(),
+    subject: t('docxSubject'),
+    lines: [
+      [t('exportLabelOriginal'), getDisplayDocName('left')],
+      [t('exportLabelRevised'), getDisplayDocName('right')],
+      [t('exportLabelCreated'), formatExportDate(date)],
+      [t('exportLabelChanges'), formatExportCountsLine(counts)],
+      [t('exportLabelHf'), state.ignoreHeadersFooters ? t('exportHfIgnored') : t('exportHfIncluded')],
+    ],
+    note: t('docxNote'),
+    footer: `${getDisplayDocName('right')} ${t('exportVs')} ${getDisplayDocName('left')}`,
+    pageLabel: t('pageLabel'),
+    pageOfLabel: t('pageOf'),
+  };
+  // The redline always contains the full document so that "Accept all" yields the new version.
+  return buildZipArchive(buildDocxPackageFiles(state.alignedRows, meta), date);
+}
+
+/* ── Client-Side Multi-Format Export Engine (copy, .txt, .docx, print/PDF, HTML, Markdown) ── */
+
 function downloadBlob(content, mimeType, filename) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-function buildExportHtmlDocument(forWord = false) {
-  const rows = state.onlyChanges ? state.changeRows : state.alignedRows;
-  const title = `Doc Diff — ${state.leftName || 'Original'} vs. ${state.rightName || 'Revised'}`;
-  const bodyRows = rows
-    .map(row => {
-      const primaryBlock = row.rightBlock || row.leftBlock;
-      const isHeading = primaryBlock && primaryBlock.isHeading;
-      const tag = isHeading ? 'h3' : 'p';
-      const borderColor =
-        row.type === 'modified'
-          ? '#0058b8'
-          : row.type === 'inserted'
-          ? '#2a9d4e'
-          : row.type === 'deleted'
-          ? '#b30027'
-          : 'transparent';
-      const bgColor =
-        row.type === 'inserted'
-          ? '#f2fbf5'
-          : row.type === 'deleted'
-          ? '#fff5f7'
-          : 'transparent';
-      return `<${tag} style="margin:0 0 8px 0;padding:4px 10px;border-left:3px solid ${borderColor};background:${bgColor};font-size:${
-        isHeading ? '13px' : '11.5px'
-      };line-height:1.5;">${renderUnifiedBlockHtml(row, '')}</${tag}>`;
+/** Simple `{name}` placeholder formatting for translated strings. */
+function tf(key, vars) {
+  return t(key).replace(/\{(\w+)\}/g, (m, name) => (vars && name in vars ? String(vars[name]) : m));
+}
+
+/* ── File names ───────────────────────────────────────────────────────────── */
+
+const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+
+/**
+ * Turns an arbitrary document name into a safe file-name fragment: strips the extension,
+ * path separators, characters invalid on Windows/macOS/Linux and control characters,
+ * avoids reserved device names, and caps the length. Returns `fallback` if nothing remains.
+ */
+function sanitizeFileNamePart(name, fallback = '', maxLen = 60) {
+  let s = String(name || '').normalize('NFC');
+  s = s.split(/[\\/]/).pop();
+  s = s.replace(/\.[A-Za-z0-9]{1,5}$/, '');
+  s = s
+    .replace(/[\u0000-\u001f\u007f-\u009f<>:"|?*\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]+/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^[._\-]+|[._\-]+$/g, '');
+  const chars = Array.from(s);
+  if (chars.length > maxLen) s = chars.slice(0, maxLen).join('').replace(/[._\-]+$/, '');
+  if (WINDOWS_RESERVED_NAME.test(s.split('.')[0])) s = `_${s}`;
+  return s || fallback;
+}
+
+/**
+ * Short, readable base name that contains both documents, newest first, e.g.
+ * "Vertrag_v1.pdf" + "Vertrag_v2.pdf" -> "Vertrag_v2_vs_v1".
+ */
+function buildExportBaseName(leftName, rightName) {
+  const left = sanitizeFileNamePart(leftName);
+  const right = sanitizeFileNamePart(rightName);
+  if (!left && !right) return 'DocDiff';
+  if (!left || !right || left.toLowerCase() === right.toLowerCase()) return right || left;
+
+  let common = 0;
+  while (common < left.length && common < right.length && left[common] === right[common]) common++;
+  const boundary = Math.max(left.lastIndexOf('_', common - 1), left.lastIndexOf('-', common - 1));
+  const leftShort = boundary >= 2 ? left.slice(boundary + 1) : left;
+  return `${right}_vs_${leftShort || left}`;
+}
+
+function buildExportFileName(suffixKey, ext) {
+  const base = buildExportBaseName(state.leftName, state.rightName);
+  const suffix = sanitizeFileNamePart(t(suffixKey), 'Export');
+  const name = `${base}_${suffix}`;
+  const chars = Array.from(name);
+  const capped = chars.length > 140 ? chars.slice(0, 140).join('').replace(/[._\-]+$/, '') : name;
+  return `${capped}.${ext}`;
+}
+
+/* ── Shared export model ──────────────────────────────────────────────────── */
+
+function getDisplayDocName(side) {
+  const name = side === 'left' ? state.leftName : state.rightName;
+  return name || t(side === 'left' ? 'exportFallbackLeft' : 'exportFallbackRight');
+}
+
+function getExportTitle() {
+  return tf('exportTitleFmt', { left: getDisplayDocName('left'), right: getDisplayDocName('right') });
+}
+
+function getExportCounts(rows = state.changeRows) {
+  const counts = { modified: 0, inserted: 0, deleted: 0, total: 0 };
+  for (const row of rows) {
+    if (row.type in counts) {
+      counts[row.type]++;
+      counts.total++;
+    }
+  }
+  return counts;
+}
+
+function formatExportCountsLine(c) {
+  return tf('exportCountsFmt', { total: c.total, mod: c.modified, ins: c.inserted, del: c.deleted });
+}
+
+function formatExportDate(date) {
+  try {
+    return date.toLocaleString(state.lang === 'de' ? 'de-DE' : 'en-GB', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    });
+  } catch (e) {
+    return date.toISOString().slice(0, 16).replace('T', ' ');
+  }
+}
+
+function getRowRefCode(row) {
+  const b = row.rightBlock || row.leftBlock;
+  return (b && b.refCode) || '';
+}
+
+function getRowTypeLabel(row) {
+  return row.type === 'modified'
+    ? t('typeMod')
+    : row.type === 'inserted'
+    ? t('typeIns')
+    : row.type === 'deleted'
+    ? t('typeDel')
+    : '';
+}
+
+/** Rows that go into a report body: honours the "changes only" filter. */
+function getExportBodyRows() {
+  return state.onlyChanges ? state.changeRows : state.alignedRows;
+}
+
+function getExportScopeText() {
+  return state.onlyChanges ? t('exportScopeChanges') : t('exportScopeFull');
+}
+
+function getExportHfText() {
+  if (!state.ignoreHeadersFooters) return t('exportHfIncluded');
+  return state.filteredHfCount > 0
+    ? tf('exportHfIgnoredCount', { n: state.filteredHfCount })
+    : t('exportHfIgnored');
+}
+
+/**
+ * Internal intake markers (page separators and the header/footer tag) must never leak into an
+ * export, even if a future intake path forgets to strip them.
+ */
+const INTERNAL_PAGE_MARKER = /^\s*===\s*\[(?:SEITE|PAGE)\s*\d+\]\s*===\s*$/i;
+function isInternalMarkerLine(text) {
+  return INTERNAL_PAGE_MARKER.test(text || '');
+}
+function cleanExportText(text) {
+  return String(text || '')
+    .replace(/===\s*\[(?:SEITE|PAGE)\s*\d+\]\s*===/gi, '')
+    .replace(/\[\[HF\]\]\s*/g, '');
+}
+
+/**
+ * Normalised diff tokens for one row: `{ value, removed?, added? }`. Change runs (including the
+ * single spaces that bridge them) are grouped into one deletion followed by one insertion. The
+ * tokens are guaranteed to reproduce the old text (all non-added) and the new text (all
+ * non-removed) exactly; if the word diff ever disagrees, the row falls back to a whole-paragraph
+ * replacement so that "Accept all" / "Reject all" in Word are always correct.
+ */
+function getExportDiffTokens(row) {
+  const leftText = cleanExportText(row.leftBlock ? row.leftBlock.text : '');
+  const rightText = cleanExportText(row.rightBlock ? row.rightBlock.text : '');
+  if (row.type === 'equal') return [{ value: rightText }];
+  if (row.type === 'inserted') return [{ value: rightText, added: true }];
+  if (row.type === 'deleted') return [{ value: leftText, removed: true }];
+
+  const diffs = row.wordDiffs || [];
+  const isChange = tok => Boolean(tok && (tok.removed || tok.added));
+  const isBridge = idx =>
+    idx > 0 &&
+    idx + 1 < diffs.length &&
+    !isChange(diffs[idx]) &&
+    /^\s+$/.test(diffs[idx].value) &&
+    isChange(diffs[idx - 1]) &&
+    isChange(diffs[idx + 1]);
+
+  const out = [];
+  let i = 0;
+  while (i < diffs.length) {
+    if (!isChange(diffs[i])) {
+      const last = out[out.length - 1];
+      const value = cleanExportText(diffs[i].value);
+      if (last && !last.removed && !last.added) last.value += value;
+      else out.push({ value });
+      i++;
+      continue;
+    }
+    let del = '';
+    let ins = '';
+    while (i < diffs.length && (isChange(diffs[i]) || isBridge(i))) {
+      const value = cleanExportText(diffs[i].value);
+      if (!diffs[i].added) del += value;
+      if (!diffs[i].removed) ins += value;
+      i++;
+    }
+    if (del) out.push({ value: del, removed: true });
+    if (ins) out.push({ value: ins, added: true });
+  }
+
+  const oldJoined = out.filter(tok => !tok.added).map(tok => tok.value).join('');
+  const newJoined = out.filter(tok => !tok.removed).map(tok => tok.value).join('');
+  if (oldJoined !== leftText || newJoined !== rightText) {
+    return [
+      { value: leftText, removed: true },
+      { value: rightText, added: true },
+    ];
+  }
+  return out;
+}
+
+/** Short "old → new" summary of a change, used by the change lists. */
+function getRowChangeSummary(row, maxLen = 70) {
+  if (row.type === 'inserted') return { pairs: [{ del: '', ins: truncateClean(row.rightBlock.text, maxLen * 2) }], more: 0 };
+  if (row.type === 'deleted') return { pairs: [{ del: truncateClean(row.leftBlock.text, maxLen * 2), ins: '' }], more: 0 };
+  const pairs = extractDeltaPairs(row.wordDiffs || []);
+  const visible = pairs.slice(0, 3).map(p => ({ del: truncateClean(p.del, maxLen), ins: truncateClean(p.ins, maxLen) }));
+  return { pairs: visible, more: Math.max(0, pairs.length - visible.length) };
+}
+
+/* ── Final text (copy / .txt) ─────────────────────────────────────────────── */
+
+/**
+ * The new version as plain text, including all inline edits. Header/footer lines are page
+ * furniture and are always left out, whether or not the header/footer filter is active.
+ */
+function buildFinalText() {
+  const blocks = state.alignedRows.length
+    ? state.alignedRows.filter(r => r.rightBlock).map(r => r.rightBlock)
+    : parseIntoBlocks(state.rightText || '');
+  return blocks
+    .filter(b => !b.isHeaderFooter && !isInternalMarkerLine(b.text))
+    .map(b => cleanExportText(b.text).trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+/* ── HTML report ──────────────────────────────────────────────────────────── */
+
+function renderReportTokensHtml(tokens) {
+  return tokens
+    .map(tok => {
+      const content = escapeHtml(tok.value);
+      if (tok.removed) {
+        return `<del><span class="sr">${escapeHtml(t('a11yRemovedStart'))} </span>${content}<span class="sr"> ${escapeHtml(t('a11yRemovedEnd'))}</span></del>`;
+      }
+      if (tok.added) {
+        return `<ins><span class="sr">${escapeHtml(t('a11yAddedStart'))} </span>${content}<span class="sr"> ${escapeHtml(t('a11yAddedEnd'))}</span></ins>`;
+      }
+      return content;
     })
-    .join('\n');
+    .join('');
+}
+
+function renderReportSummaryPairsHtml(row) {
+  const { pairs, more } = getRowChangeSummary(row);
+  const items = pairs.map(p => {
+    if (p.del && p.ins) {
+      return `${renderReportTokensHtml([{ value: p.del, removed: true }])} <span aria-hidden="true">→</span> ${renderReportTokensHtml([{ value: p.ins, added: true }])}`;
+    }
+    if (p.ins) return renderReportTokensHtml([{ value: p.ins, added: true }]);
+    return renderReportTokensHtml([{ value: p.del, removed: true }]);
+  });
+  if (more) items.push(`<span class="more">+${more} ${escapeHtml(t('moreDeltas'))}</span>`);
+  return items.map(html => `<div>${html}</div>`).join('');
+}
+
+const REPORT_CSS = `
+:root { color-scheme: light dark; --bg:#fff; --fg:#1f2937; --muted:#6b7280; --line:#e5e7eb; --card:#f9fafb;
+  --del-fg:#9f1239; --del-bg:#ffe4e6; --ins-fg:#14532d; --ins-bg:#dcfce7; --mod:#1d4ed8; --link:#1d4ed8; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#111418; --fg:#e5e7eb; --muted:#9ca3af; --line:#2d333b; --card:#181c21;
+    --del-fg:#fda4af; --del-bg:#4c0519; --ins-fg:#86efac; --ins-bg:#052e16; --mod:#93c5fd; --link:#93c5fd; }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color: var(--fg); }
+body { margin: 0 auto; max-width: 860px; padding: 32px 24px 64px; font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow-wrap: anywhere; }
+a { color: var(--link); }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 12px; }
+h2 { font-size: 1.15rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.meta { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: .9rem; }
+.meta dt { color: var(--muted); }
+.meta dd { margin: 0; }
+.counts { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 16px 0 0; }
+.counts li { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 8px 14px; min-width: 120px; }
+.counts strong { display: block; font-size: 1.35rem; line-height: 1.2; }
+.counts span { color: var(--muted); font-size: .85rem; }
+.legend { font-size: .85rem; color: var(--muted); margin: 8px 0 16px; }
+del { color: var(--del-fg); background: var(--del-bg); text-decoration: line-through; text-decoration-thickness: 1.5px; border-radius: 2px; padding: 0 2px; }
+ins { color: var(--ins-fg); background: var(--ins-bg); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 2px; border-radius: 2px; padding: 0 2px; }
+del + ins { margin-left: .25em; }
+.sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+caption { text-align: left; color: var(--muted); font-size: .85rem; padding-bottom: 6px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+td.num { white-space: nowrap; color: var(--muted); }
+td.ref { white-space: nowrap; }
+.badge { display: inline-block; font-size: .75rem; font-weight: 600; border: 1px solid currentColor; border-radius: 999px; padding: 0 8px; white-space: nowrap; }
+.badge.modified { color: var(--mod); } .badge.inserted { color: var(--ins-fg); } .badge.deleted { color: var(--del-fg); }
+.more { color: var(--muted); font-size: .8rem; }
+.empty { padding: 16px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
+.doc { margin-top: 8px; }
+.row { margin: 0 0 10px; padding: 2px 0 2px 14px; border-left: 3px solid transparent; }
+.row.modified { border-left-color: var(--mod); } .row.inserted { border-left-color: var(--ins-fg); } .row.deleted { border-left-color: var(--del-fg); }
+.row.kind-bullet, .row.kind-clause { padding-left: calc(14px + 2.2em); text-indent: -2.2em; }
+.row.kind-hf { font-size: .8rem; color: var(--muted); font-style: italic; }
+.row h3, .row h4, .row h5 { margin: 18px 0 4px; line-height: 1.35; }
+.row h3 { font-size: 1.15rem; } .row h4 { font-size: 1.05rem; } .row h5 { font-size: 1rem; }
+.row p { margin: 0; }
+.row-tag { display: block; text-indent: 0; font-size: .75rem; color: var(--muted); margin-bottom: 2px; }
+.row-tag a { color: inherit; }
+.row:target { outline: 2px solid var(--link); outline-offset: 4px; border-radius: 2px; }
+footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
+@media print {
+  :root { --bg:#fff; --fg:#000; --muted:#444; --line:#bbb; --card:#fff; --del-fg:#7f1d1d; --del-bg:transparent; --ins-fg:#14532d; --ins-bg:transparent; --mod:#1e3a8a; --link:#000; }
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  body { max-width: none; padding: 0; font-size: 10.5pt; }
+  a { text-decoration: none; }
+  h2 { break-after: avoid; }
+  tr, .row, .counts li { break-inside: avoid; }
+  thead { display: table-header-group; }
+  .row-tag a::after { content: none; }
+}
+`;
+
+function buildExportHtmlReport(date = new Date()) {
+  const counts = getExportCounts();
+  const title = getExportTitle();
+  const changeIndex = new Map(state.changeRows.map((row, i) => [row.id, i + 1]));
+  const anchorFor = row => `c${changeIndex.get(row.id)}`;
+
+  const changeListHtml = state.changeRows.length
+    ? `<table>
+<caption>${escapeHtml(t('exportChangeListCaption'))}</caption>
+<thead><tr><th scope="col">#</th><th scope="col">${escapeHtml(t('exportColRef'))}</th><th scope="col">${escapeHtml(t('exportColType'))}</th><th scope="col">${escapeHtml(t('exportColChange'))}</th></tr></thead>
+<tbody>
+${state.changeRows
+  .map(row => {
+    const n = changeIndex.get(row.id);
+    const ref = getRowRefCode(row) || `#${n}`;
+    return `<tr><td class="num">${n}</td><td class="ref"><a href="#${anchorFor(row)}">${escapeHtml(ref)}</a><div class="more">${escapeHtml(t('pageShort'))} ${row.pageNum || 1}</div></td><td><span class="badge ${row.type}">${escapeHtml(getRowTypeLabel(row))}</span></td><td>${renderReportSummaryPairsHtml(row)}</td></tr>`;
+  })
+  .join('\n')}
+</tbody>
+</table>`
+    : `<p class="empty">${escapeHtml(t('exportNoChanges'))}</p>`;
+
+  const bodyRows = getExportBodyRows();
+  const redlineHtml = bodyRows.length
+    ? bodyRows
+        .map(row => {
+          const block = row.rightBlock || row.leftBlock;
+          const kind = (block && block.kind) || 'p';
+          const inner = renderReportTokensHtml(getExportDiffTokens(row));
+          const tag = kind === 'h1' ? 'h3' : kind === 'h2' ? 'h4' : kind === 'h3' ? 'h5' : 'p';
+          const isChange = row.type !== 'equal';
+          const idAttr = isChange ? ` id="${anchorFor(row)}"` : '';
+          const tagHtml = isChange
+            ? `<span class="row-tag"><a href="#changes">${escapeHtml(getRowTypeLabel(row))} · ${escapeHtml(getRowRefCode(row))}</a></span>`
+            : '';
+          return `<div class="row ${row.type} kind-${kind}"${idAttr}>${tagHtml}<${tag}>${inner}</${tag}></div>`;
+        })
+        .join('\n')
+    : `<p class="empty">${escapeHtml(t('exportNoChanges'))}</p>`;
+
+  const csp =
+    "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
   return `<!DOCTYPE html>
-<html lang="${state.lang}">
+<html lang="${state.lang === 'de' ? 'de' : 'en'}">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="${csp}">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="generator" content="Doc Diff">
 <title>${escapeHtml(title)}</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; max-width: 820px; margin: 32px auto; padding: 0 20px; font-size: 12px; line-height: 1.5; }
-  header { border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px; }
-  h1 { font-size: 16px; margin: 0 0 4px 0; }
-  .meta { font-size: 11px; color: #64748b; }
-  del.tok-del { background: #ffe4e8; color: #b30027; text-decoration: line-through; padding: 1px 3px; border-radius: 2px; }
-  ins.tok-ins { background: #dcfce7; color: #166534; text-decoration: none; font-weight: 600; padding: 1px 3px; border-radius: 2px; }
-</style>
+<style>${REPORT_CSS}</style>
 </head>
 <body>
-  <header>
+<header>
 <h1>${escapeHtml(title)}</h1>
-<div class="meta">${escapeHtml(t('colLeft'))}: ${escapeHtml(state.leftName || '-')} · ${escapeHtml(t('colRight'))}: ${escapeHtml(state.rightName || '-')} · ${state.changeRows.length} ${escapeHtml(t('changesLabel'))}</div>
-  </header>
-  <main>
-${bodyRows}
-  </main>
+<dl class="meta">
+<dt>${escapeHtml(t('exportLabelOriginal'))}</dt><dd>${escapeHtml(getDisplayDocName('left'))}</dd>
+<dt>${escapeHtml(t('exportLabelRevised'))}</dt><dd>${escapeHtml(getDisplayDocName('right'))}</dd>
+<dt>${escapeHtml(t('exportLabelCreated'))}</dt><dd><time datetime="${date.toISOString()}">${escapeHtml(formatExportDate(date))}</time></dd>
+<dt>${escapeHtml(t('exportLabelScope'))}</dt><dd>${escapeHtml(getExportScopeText())}</dd>
+<dt>${escapeHtml(t('exportLabelHf'))}</dt><dd>${escapeHtml(getExportHfText())}</dd>
+</dl>
+</header>
+<main>
+<section aria-labelledby="summary">
+<h2 id="summary">${escapeHtml(t('exportSummaryHeading'))}</h2>
+<ul class="counts">
+<li><strong>${counts.total}</strong><span>${escapeHtml(t('exportCountTotal'))}</span></li>
+<li><strong>${counts.modified}</strong><span>${escapeHtml(t('typeMod'))}</span></li>
+<li><strong>${counts.inserted}</strong><span>${escapeHtml(t('typeIns'))}</span></li>
+<li><strong>${counts.deleted}</strong><span>${escapeHtml(t('typeDel'))}</span></li>
+</ul>
+</section>
+<section aria-labelledby="changes">
+<h2 id="changes">${escapeHtml(t('exportChangesHeading'))}</h2>
+${changeListHtml}
+</section>
+<section aria-labelledby="redline">
+<h2 id="redline">${escapeHtml(t('exportRedlineHeading'))}</h2>
+<p class="legend">${escapeHtml(t('exportLegendLabel'))}: <ins>${escapeHtml(t('exportLegendIns'))}</ins> · <del>${escapeHtml(t('exportLegendDel'))}</del>${state.onlyChanges ? ` · ${escapeHtml(t('exportScopeChanges'))}` : ''}</p>
+<div class="doc">
+${redlineHtml}
+</div>
+</section>
+</main>
+<footer>${escapeHtml(t('exportFooterNote'))}</footer>
 </body>
-</html>`;
+</html>
+`;
 }
 
-function buildExportMarkdown() {
-  const rows = state.onlyChanges ? state.changeRows : state.alignedRows;
+/* ── Markdown report ──────────────────────────────────────────────────────── */
+
+/** Escapes inline Markdown syntax so document text can never be parsed as markup. */
+function escapeMarkdownInline(text) {
+  return String(text)
+    .replace(/[\\`*_~[\]<>|]/g, '\\$&')
+    .replace(/&(?=#?[A-Za-z0-9]+;)/g, '\\&');
+}
+
+/** Escapes characters that would start a block construct when they begin a line. */
+function escapeMarkdownLineStart(line) {
+  return line
+    .replace(/^(\s*)([-+=>])/, '$1\\$2')
+    .replace(/^(\s*\d+)([.)])(?=\s|$)/, '$1\\$2');
+}
+
+const MD_PUNCT = /[!-/:-@[-`{-~\p{P}\p{S}]/u;
+function mdCharClass(ch) {
+  if (!ch || /\s/.test(ch)) return 'space';
+  return MD_PUNCT.test(ch) ? 'punct' : 'word';
+}
+
+/**
+ * Renders diff tokens as Markdown: deletions as ~~strike~~ and insertions as **bold**.
+ * Leading/trailing whitespace is moved outside the delimiters, and where CommonMark's
+ * flanking rules would make `~~`/`**` fail (e.g. punctuation glued to a word), the
+ * equivalent inline HTML <del>/<ins> is used instead.
+ */
+function renderMarkdownTokens(tokens) {
+  const pieces = tokens.map(tok => ({ ...tok, text: escapeMarkdownInline(tok.value) }));
+  let out = '';
+  for (let i = 0; i < pieces.length; i++) {
+    const p = pieces[i];
+    if (!p.removed && !p.added) {
+      out += p.text;
+      continue;
+    }
+    const m = p.text.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    const lead = m[1];
+    const core = m[2];
+    const trail = m[3];
+    if (!core) {
+      if (p.added) out += p.text;
+      continue;
+    }
+    const prevChar = (out + lead).slice(-1);
+    let nextChar = '';
+    if (trail) nextChar = ' ';
+    else if (i + 1 < pieces.length) {
+      const next = pieces[i + 1];
+      nextChar = next.removed || next.added ? (/^\s/.test(next.text) ? ' ' : '*') : next.text.charAt(0);
+    }
+    const first = mdCharClass(core.charAt(0));
+    const last = mdCharClass(core.charAt(core.length - 1));
+    const opens = first !== 'punct' || mdCharClass(prevChar) !== 'word';
+    const closes = last !== 'punct' || mdCharClass(nextChar) !== 'word';
+    const wrapped =
+      opens && closes
+        ? p.removed
+          ? `~~${core}~~`
+          : `**${core}**`
+        : p.removed
+        ? `<del>${core}</del>`
+        : `<ins>${core}</ins>`;
+    // Keep a replaced passage readable: "~~old~~ **new**" rather than "~~old~~**new**".
+    const gap = p.added && i > 0 && pieces[i - 1].removed && !lead && !/\s$/.test(out) ? ' ' : '';
+    out += gap + lead + wrapped + trail;
+  }
+  return out;
+}
+
+function escapeMarkdownTableCell(text) {
+  return String(text).replace(/\s*\n\s*/g, ' ');
+}
+
+function buildExportMarkdown(date = new Date()) {
+  const counts = getExportCounts();
+  const changeIndex = new Map(state.changeRows.map((row, i) => [row.id, i + 1]));
   const lines = [
-    `# Doc Diff: ${state.leftName || 'Original'} vs. ${state.rightName || 'Revised'}`,
+    `# ${escapeMarkdownInline(getExportTitle())}`,
     '',
-    `- **${t('colLeft')}:** ${state.leftName || '-'}`,
-    `- **${t('colRight')}:** ${state.rightName || '-'}`,
-    `- **${t('sidebarTitle')}:** ${state.changeRows.length}`,
+    `| ${escapeMarkdownInline(t('exportLabelDetail'))} | |`,
+    '| --- | --- |',
+    `| ${escapeMarkdownInline(t('exportLabelOriginal'))} | ${escapeMarkdownInline(getDisplayDocName('left'))} |`,
+    `| ${escapeMarkdownInline(t('exportLabelRevised'))} | ${escapeMarkdownInline(getDisplayDocName('right'))} |`,
+    `| ${escapeMarkdownInline(t('exportLabelCreated'))} | ${escapeMarkdownInline(formatExportDate(date))} |`,
+    `| ${escapeMarkdownInline(t('exportLabelChanges'))} | ${escapeMarkdownInline(formatExportCountsLine(counts))} |`,
+    `| ${escapeMarkdownInline(t('exportLabelScope'))} | ${escapeMarkdownInline(getExportScopeText())} |`,
+    `| ${escapeMarkdownInline(t('exportLabelHf'))} | ${escapeMarkdownInline(getExportHfText())} |`,
     '',
-    '---',
+    `## ${escapeMarkdownInline(t('exportChangesHeading'))}`,
     '',
   ];
 
-  for (const row of rows) {
-    const primaryBlock = row.rightBlock || row.leftBlock;
-    const prefix = primaryBlock && primaryBlock.isHeading ? '### ' : '';
-    if (row.type === 'equal') {
-      lines.push(`${prefix}${row.rightBlock.text}`);
-    } else if (row.type === 'deleted') {
-      lines.push(`${prefix}~~${row.leftBlock.text}~~`);
-    } else if (row.type === 'inserted') {
-      lines.push(`${prefix}**${row.rightBlock.text}**`);
-    } else if (row.type === 'modified') {
-      const mdDiff = coalesceUnifiedTokens(row.wordDiffs)
-        .map(p => (p.removed ? `~~${p.value}~~` : p.added ? `**${p.value}**` : p.value))
-        .join('');
-      lines.push(`${prefix}${mdDiff}`);
+  if (state.changeRows.length) {
+    lines.push(
+      `| # | ${escapeMarkdownInline(t('exportColRef'))} | ${escapeMarkdownInline(t('pageShort'))} | ${escapeMarkdownInline(t('exportColType'))} | ${escapeMarkdownInline(t('exportColChange'))} |`,
+      '| ---: | --- | ---: | --- | --- |'
+    );
+    for (const row of state.changeRows) {
+      const n = changeIndex.get(row.id);
+      const { pairs, more } = getRowChangeSummary(row, 60);
+      const summary = pairs
+        .map(p => {
+          if (p.del && p.ins) return `${renderMarkdownTokens([{ value: p.del, removed: true }])} → ${renderMarkdownTokens([{ value: p.ins, added: true }])}`;
+          if (p.ins) return renderMarkdownTokens([{ value: p.ins, added: true }]);
+          return renderMarkdownTokens([{ value: p.del, removed: true }]);
+        })
+        .concat(more ? [`+${more} ${escapeMarkdownInline(t('moreDeltas'))}`] : [])
+        .join('<br>');
+      lines.push(
+        `| ${n} | ${escapeMarkdownInline(getRowRefCode(row) || `#${n}`)} | ${row.pageNum || 1} | ${escapeMarkdownInline(getRowTypeLabel(row))} | ${escapeMarkdownTableCell(summary)} |`
+      );
     }
-    lines.push('');
+  } else {
+    lines.push(escapeMarkdownInline(t('exportNoChanges')));
   }
+
+  lines.push(
+    '',
+    `## ${escapeMarkdownInline(t('exportRedlineHeading'))}`,
+    '',
+    `> ${escapeMarkdownInline(t('exportLegendLabel'))}: **${escapeMarkdownInline(t('exportLegendIns'))}** · ~~${escapeMarkdownInline(t('exportLegendDel'))}~~${state.onlyChanges ? ` · ${escapeMarkdownInline(t('exportScopeChanges'))}` : ''}`,
+    ''
+  );
+
+  for (const row of getExportBodyRows()) {
+    const block = row.rightBlock || row.leftBlock;
+    const kind = (block && block.kind) || 'p';
+    const body = renderMarkdownTokens(getExportDiffTokens(row));
+    if (!body.trim()) continue;
+    const prefix = kind === 'h1' ? '### ' : kind === 'h2' ? '#### ' : kind === 'h3' ? '##### ' : '';
+    const line = prefix ? prefix + body : escapeMarkdownLineStart(body);
+    if (row.type !== 'equal') {
+      const n = changeIndex.get(row.id);
+      lines.push(`<sub>[${n}] ${escapeMarkdownInline(getRowTypeLabel(row))} · ${escapeMarkdownInline(getRowRefCode(row))}</sub>`, '');
+    }
+    lines.push(kind === 'hf' ? `<small>${line}</small>` : line, '');
+  }
+
+  lines.push('---', '', `*${escapeMarkdownInline(t('exportFooterNote'))}*`, '');
   return lines.join('\n');
 }
 
+/* ── Print / PDF ──────────────────────────────────────────────────────────── */
+
+function cssString(str) {
+  return `"${String(str).replace(/[\\"]/g, '\\$&').replace(/[\n\r\f]/g, ' ')}"`;
+}
+
+function renderPrintCellHtml(html, block) {
+  if (!block) return '<td class="pv-cell pv-empty"></td>';
+  const kind = block.kind || 'p';
+  return `<td class="pv-cell kind-${kind}">${html}</td>`;
+}
+
+/** Builds a print-only, paginated rendering of the comparison for the current view mode. */
+function buildPrintViewHtml(date = new Date()) {
+  const rows = getExportBodyRows();
+  const counts = getExportCounts();
+  const mode = state.viewMode;
+  const head = `
+    <header class="pv-head">
+      <div class="pv-title">${escapeHtml(getExportTitle())}</div>
+      <div class="pv-meta">
+        <span><strong>${escapeHtml(t('exportLabelOriginal'))}:</strong> ${escapeHtml(getDisplayDocName('left'))}</span>
+        <span><strong>${escapeHtml(t('exportLabelRevised'))}:</strong> ${escapeHtml(getDisplayDocName('right'))}</span>
+        <span><strong>${escapeHtml(t('exportLabelCreated'))}:</strong> ${escapeHtml(formatExportDate(date))}</span>
+      </div>
+      <div class="pv-meta">
+        <span>${escapeHtml(formatExportCountsLine(counts))}</span>
+        <span>${escapeHtml(getExportScopeText())}</span>
+        <span>${escapeHtml(t('exportLabelHf'))}: ${escapeHtml(getExportHfText())}</span>
+      </div>
+      <div class="pv-legend">${escapeHtml(t('exportLegendLabel'))}: <ins class="tok-ins">${escapeHtml(t('exportLegendIns'))}</ins> <del class="tok-del">${escapeHtml(t('exportLegendDel'))}</del></div>
+    </header>`;
+
+  const rowClass = row => `pv-row pv-${row.type}`;
+  const tagHtml = row =>
+    row.type === 'equal'
+      ? ''
+      : `<span class="pv-tag">${escapeHtml(getRowTypeLabel(row))} · ${escapeHtml(getRowRefCode(row))}</span>`;
+
+  const groups = [];
+  if (mode === 'pages') {
+    const byPage = new Map();
+    for (const row of rows) {
+      const p = row.pageNum || 1;
+      if (!byPage.has(p)) byPage.set(p, []);
+      byPage.get(p).push(row);
+    }
+    const totalPages = new Set(state.alignedRows.map(r => r.pageNum || 1)).size || 1;
+    for (const [p, list] of byPage) {
+      groups.push({ label: `${t('pageLabel')} ${p} ${t('pageOf')} ${totalPages}`, rows: list });
+    }
+  } else {
+    groups.push({ label: '', rows });
+  }
+
+  let body;
+  if (mode === 'inline') {
+    body = groups
+      .map(
+        g => `<div class="pv-inline">${g.rows
+          .map(row => {
+            const block = row.rightBlock || row.leftBlock;
+            return `<div class="${rowClass(row)} kind-${(block && block.kind) || 'p'}">${tagHtml(row)}${renderUnifiedBlockHtml(row, '', true)}</div>`;
+          })
+          .join('')}</div>`
+      )
+      .join('');
+  } else {
+    const thead = `<thead><tr><th scope="col">${escapeHtml(t('colLeft'))} · ${escapeHtml(getDisplayDocName('left'))}</th><th scope="col">${escapeHtml(t('colRight'))} · ${escapeHtml(getDisplayDocName('right'))}</th></tr></thead>`;
+    // One table (the column header repeats on every printed page); in "pages" mode each original
+    // page becomes its own <tbody> introduced by a page label that is kept with its first row.
+    body = `<table class="pv-table">${thead}${groups
+      .map(
+        g => `<tbody>${
+          g.label ? `<tr class="pv-page-head"><th colspan="2" scope="colgroup">${escapeHtml(g.label)}</th></tr>` : ''
+        }${g.rows
+          .map(
+            row =>
+              `<tr class="${rowClass(row)}">${renderPrintCellHtml(
+                (row.type === 'deleted' || row.type === 'modified' ? tagHtml(row) : '') + renderLeftBlockHtml(row, ''),
+                row.leftBlock
+              )}${renderPrintCellHtml(
+                (row.type === 'inserted' || row.type === 'modified' ? tagHtml(row) : '') + renderRightBlockHtml(row, ''),
+                row.rightBlock
+              )}</tr>`
+          )
+          .join('')}</tbody>`
+      )
+      .join('')}</table>`;
+  }
+
+  const emptyHtml = rows.length ? '' : `<p class="pv-empty-note">${escapeHtml(t('exportNoChanges'))}</p>`;
+  return `${head}<main class="pv-body pv-mode-${mode}">${body}${emptyHtml}</main>`;
+}
+
+function preparePrintView() {
+  if (!state.alignedRows.length) return;
+  const date = new Date();
+  let view = document.getElementById('print-view');
+  if (!view) {
+    view = document.createElement('div');
+    view.id = 'print-view';
+    view.className = 'print-view';
+    view.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(view);
+  }
+  setSafeContainerHtml(view, buildPrintViewHtml(date));
+
+  let pageStyle = document.getElementById('print-page-style');
+  if (!pageStyle) {
+    pageStyle = document.createElement('style');
+    pageStyle.id = 'print-page-style';
+    document.head.appendChild(pageStyle);
+  }
+  const footerLeft = `${getDisplayDocName('right')} ${t('exportVs')} ${getDisplayDocName('left')}`;
+  const orientation = state.viewMode === 'inline' ? 'portrait' : 'landscape';
+  pageStyle.textContent = `@media print { @page { size: A4 ${orientation}; margin: 14mm 12mm 16mm;
+    @bottom-left { content: ${cssString(footerLeft)}; font: 7.5pt sans-serif; color: #444; }
+    @bottom-right { content: ${cssString(`${t('pageLabel')} `)} counter(page) ${cssString(` ${t('pageOf')} `)} counter(pages); font: 7.5pt sans-serif; color: #444; } } }`;
+  document.body.classList.add('has-print-view');
+}
+
+function cleanupPrintView() {
+  document.body.classList.remove('has-print-view');
+  const view = document.getElementById('print-view');
+  if (view) view.remove();
+}
+
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('beforeprint', preparePrintView);
+  window.addEventListener('afterprint', cleanupPrintView);
+}
+
+/* ── Copy to clipboard ────────────────────────────────────────────────────── */
+
 let copyLabelTimer = null;
 function copyFinalTextToClipboard() {
-  const finalText = state.alignedRows
-    .filter(r => r.rightBlock && !r.rightBlock.isHeaderFooter)
-    .map(r => r.rightBlock.text)
-    .join('\n\n');
+  const finalText = buildFinalText();
 
   const flashCopied = () => {
     const labelEl = document.getElementById('i18n-btn-export');
@@ -6440,67 +7660,162 @@ function copyFinalTextToClipboard() {
     }, 1800);
   };
 
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(finalText).then(flashCopied).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = finalText;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      flashCopied();
-    });
-  } else {
+  const legacyCopy = () => {
     const ta = document.createElement('textarea');
     ta.value = finalText;
+    ta.setAttribute('readonly', '');
     ta.style.position = 'fixed';
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
+    try {
+      document.execCommand('copy');
+    } finally {
+      document.body.removeChild(ta);
+    }
     flashCopied();
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(finalText).then(flashCopied).catch(legacyCopy);
+  } else {
+    legacyCopy();
   }
 }
 
+/* ── Dispatcher ───────────────────────────────────────────────────────────── */
+
 function handleExportAction(type) {
+  // Commit an inline edit that is still open so the export reflects it.
+  const openEditor = document.querySelector('.clause-inline-editor');
+  if (openEditor) openEditor.blur();
+
   if (type === 'print') {
+    if (!state.alignedRows.length) return;
+    preparePrintView();
     window.print();
     return;
   }
-  if (!state.alignedRows.length) {
-    const sample = SAMPLES[state.lang] || SAMPLES.de;
-    state.leftName = t('sampleLeftName');
-    state.leftFormat = 'DEMO';
-    state.leftText = sample.v1;
-    state.rightName = t('sampleRightName');
-    state.rightFormat = 'DEMO';
-    state.rightText = sample.v2;
-    runComparison();
-  }
+
+  // Exports need a finished comparison. The menu is disabled until then; never substitute
+  // sample content for (or overwrite) a document the user has loaded.
+  if (!state.alignedRows.length) return;
+
   if (type === 'copy') {
     copyFinalTextToClipboard();
-    return;
-  }
-  const baseName = `DocDiff_${(state.rightName || 'Comparison').replace(/\.[^.]+$/, '')}`;
-  if (type === 'txt') {
-    const finalText = state.alignedRows
-      .filter(r => r.rightBlock && !r.rightBlock.isHeaderFooter)
-      .map(r => r.rightBlock.text)
-      .join('\n\n');
-    downloadBlob(finalText, 'text/plain;charset=utf-8', `${baseName}_Neu.txt`);
+  } else if (type === 'txt') {
+    downloadBlob(`${buildFinalText()}\n`, 'text/plain;charset=utf-8', buildExportFileName('exportFileFinal', 'txt'));
   } else if (type === 'word') {
-    const html = buildExportHtmlDocument(true);
-    downloadBlob('\ufeff' + html, 'application/msword;charset=utf-8', `${baseName}_Redline.doc`);
+    downloadBlob(
+      buildDocxRedline(),
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      buildExportFileName('exportFileRedline', 'docx')
+    );
   } else if (type === 'html') {
-    const html = buildExportHtmlDocument(false);
-    downloadBlob(html, 'text/html;charset=utf-8', `${baseName}_Report.html`);
+    downloadBlob(buildExportHtmlReport(), 'text/html;charset=utf-8', buildExportFileName('exportFileReport', 'html'));
   } else if (type === 'md') {
-    const md = buildExportMarkdown();
-    downloadBlob(md, 'text/markdown;charset=utf-8', `${baseName}_Report.md`);
+    downloadBlob(buildExportMarkdown(), 'text/markdown;charset=utf-8', buildExportFileName('exportFileReport', 'md'));
   }
+}
+
+/* ── Export menu: availability and keyboard support ──────────────────────── */
+
+/** Really disables the export triggers (not just visually) while no comparison is available. */
+function syncExportAvailability() {
+  const available = document.body.classList.contains('is-comparing') && state.alignedRows.length > 0;
+  for (const id of ['btn-export-menu', 'mob-btn-export']) {
+    const btn = document.getElementById(id);
+    if (!btn) continue;
+    btn.disabled = !available;
+    btn.setAttribute('aria-disabled', String(!available));
+  }
+  if (!available) closeExportMenu(false);
+}
+
+function getExportMenuTrigger() {
+  const mob = document.getElementById('mob-btn-export');
+  if (mob && mob.getAttribute('aria-expanded') === 'true') return mob;
+  return document.getElementById('btn-export-menu');
+}
+
+function closeExportMenu(returnFocus) {
+  const menu = document.getElementById('export-menu');
+  if (!menu || !menu.classList.contains('is-open')) return;
+  const trigger = getExportMenuTrigger();
+  menu.classList.remove('is-open');
+  for (const id of ['btn-export-menu', 'mob-btn-export']) {
+    const btn = document.getElementById(id);
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+  document.body.classList.remove('mobile-sheet-open');
+  if (returnFocus && trigger) trigger.focus();
+}
+
+function initExportMenuKeyboard() {
+  const menu = document.getElementById('export-menu');
+  if (!menu) return;
+  const items = () => Array.from(menu.querySelectorAll('[role="menuitem"]:not([disabled])'));
+  items().forEach(item => item.setAttribute('tabindex', '-1'));
+
+  // Menu-button pattern: opening the menu moves focus to the first item.
+  for (const id of ['btn-export-menu', 'mob-btn-export']) {
+    const trigger = document.getElementById(id);
+    if (!trigger) continue;
+    trigger.setAttribute('aria-haspopup', 'menu');
+    trigger.setAttribute('aria-controls', 'export-menu');
+    trigger.addEventListener('click', () => {
+      setTimeout(() => {
+        if (menu.classList.contains('is-open')) {
+          const first = items()[0];
+          if (first) first.focus();
+        }
+      }, 0);
+    });
+    trigger.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      if (!menu.classList.contains('is-open')) trigger.click();
+      setTimeout(() => {
+        const list = items();
+        const target = e.key === 'ArrowUp' ? list[list.length - 1] : list[0];
+        if (target) target.focus();
+      }, 0);
+    });
+  }
+
+  menu.addEventListener('keydown', e => {
+    const list = items();
+    if (!list.length) return;
+    const idx = list.indexOf(document.activeElement);
+    let next = null;
+    if (e.key === 'ArrowDown') next = list[(idx + 1) % list.length];
+    else if (e.key === 'ArrowUp') next = list[(idx - 1 + list.length) % list.length];
+    else if (e.key === 'Home') next = list[0];
+    else if (e.key === 'End') next = list[list.length - 1];
+    else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeExportMenu(true);
+      return;
+    } else if (e.key === 'Tab') {
+      closeExportMenu(false);
+      return;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    next.focus();
+  });
+}
+
+if (typeof document !== 'undefined' && document.body && typeof MutationObserver !== 'undefined') {
+  initExportMenuKeyboard();
+  syncExportAvailability();
+  new MutationObserver(syncExportAvailability).observe(document.body, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
 }
 
 async function extractPdfText(arrayBuffer) {

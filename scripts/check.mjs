@@ -121,3 +121,6 @@ for (const siteFile of ['CNAME', 'og-image.png', 'impressum.html', 'datenschutz.
 assert.equal(fs.readFileSync(path.join(root, 'site', 'CNAME'), 'utf8').trim(), 'docdiff.app', 'CNAME must be docdiff.app');
 
 console.log(`✓ All security, privacy, legal, standalone, and i18n checks passed (${deKeys.length} i18n keys verified).`);
+
+// 6. Unit tests for the pure export builders (docx, HTML, Markdown, file names); fast and dependency-free.
+await import('./test-export.mjs');
