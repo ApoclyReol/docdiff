@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bgDark" x1="256" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14161f"/>
+      <stop offset="100%" stop-color="#08090d"/>
+    </linearGradient>
+    <linearGradient id="bgLight" x1="256" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#edf2f7"/>
+    </linearGradient>
+    <linearGradient id="gp" x1="135" y1="115" x2="395" y2="395" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff3b30"/>
+      <stop offset="24%" stop-color="#ef4444"/>
+      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="68%" stop-color="#0284c7"/>
+      <stop offset="88%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34c759"/>
+    </linearGradient>
+    <radialGradient id="gr" cx="22%" cy="18%" r="50%">
+      <stop offset="0%" stop-color="#ff3b30"/>
+      <stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gb" cx="24%" cy="80%" r="55%">
+      <stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#2563eb" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gg" cx="84%" cy="68%" r="58%">
+      <stop offset="0%" stop-color="#30d158"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="dChip">
+      <path d="M 122 170 L 194 98 H 262 C 358 98 420 162 420 256 C 420 350 358 414 262 414 H 170 C 143.5 414 122 392.5 122 366 Z"/>
+    </clipPath>
+    <filter id="fShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: url(#bgDark); }
+    .border { stroke: #ffffff; stroke-opacity: 0.1; }
+    @media (prefers-color-scheme: light) {
+      .bg { fill: url(#bgLight); }
+      .border { stroke: #0f172a; stroke-opacity: 0.1; }
+    }
+  </style>
+  <rect class="bg" width="512" height="512" rx="112"/>
+  <rect class="border" x="1.5" y="1.5" width="509" height="509" rx="110.5" stroke-width="3"/>
+  <g filter="url(#fShadow)" clip-path="url(#dChip)">
+    <rect x="100" y="80" width="340" height="360" fill="url(#gp)"/>
+    <rect x="100" y="80" width="340" height="360" fill="url(#gb)"/>
+    <rect x="100" y="80" width="340" height="360" fill="url(#gr)"/>
+    <rect x="100" y="80" width="340" height="360" fill="url(#gg)"/>
+  </g>
+</svg>

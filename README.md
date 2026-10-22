@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark-square.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/logo-light-square.png">
+    <img alt="Doc Diff Logo" src="docs/logo-light-square.png" width="96" height="96">
+  </picture>
+</p>
+
 <h1 align="center">Doc Diff</h1>
 
 <p align="center">
