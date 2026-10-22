@@ -76,9 +76,11 @@ for (const requiredFn of [
   assert.ok(appJsCode.includes(requiredFn), `Missing required function: ${requiredFn}`);
 }
 
-for (const forbiddenStorage of ['localStorage.', 'sessionStorage.', 'indexedDB.', 'document.cookie']) {
+// Match any mention (dot, bracket or bare access), not just `localStorage.`
+for (const forbiddenStorage of ['localStorage', 'sessionStorage', 'indexedDB', 'document.cookie', 'caches.open', 'openDatabase']) {
+  const pattern = new RegExp(`\\b${forbiddenStorage.replace('.', '\\.')}\\b`);
   assert.ok(
-    !appScript.includes(forbiddenStorage),
+    !pattern.test(appScript),
     `App script must never use ${forbiddenStorage} (strict zero-persistence requirement)`
   );
 }
