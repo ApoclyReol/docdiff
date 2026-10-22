@@ -242,11 +242,20 @@ function isHiddenHeaderFooter(block) {
 
 /* ── Block classification ──────────────────────────────────────────────── */
 
+// An ordinary sentence is never a heading, whatever it starts with ("§ 2 Der Auftragnehmer
+// erbringt die Leistung fristgerecht."): it ends with sentence punctuation and has several
+// words, or it is simply too long for a heading.
+function looksLikeSentence(line) {
+  const words = line.split(/\s+/).length;
+  return (/[.;:,!?]["“”)]?$/.test(line) && words >= 6) || words >= 14;
+}
+
 function classifyBlockKind(line, isFirstContentBlock, isHeaderFooter) {
   if (isHeaderFooter) return 'hf';
   if (/^#\s+/.test(line)) return 'h1';
   if (/^##\s+/.test(line)) return 'h2';
   if (/^###\s+/.test(line)) return 'h3';
+  if (looksLikeSentence(line)) return classifyBodyKind(line);
 
   if (
     isFirstContentBlock &&
@@ -281,6 +290,10 @@ function classifyBlockKind(line, isFirstContentBlock, isHeaderFooter) {
     return isFirstContentBlock ? 'h1' : 'h2';
   }
 
+  return classifyBodyKind(line);
+}
+
+function classifyBodyKind(line) {
   if (/^[•‣▪◦–*-]\s+\S/.test(line)) {
     return 'bullet';
   }
@@ -347,8 +360,14 @@ function extractClauseRef(line, fallbackIndex, currentSectionRef = '', kind = 'p
   return currentSectionRef ? `${currentSectionRef} #${fallbackIndex}` : `#${fallbackIndex}`;
 }
 
+// Words for the similarity measure: lower case, with leading/trailing punctuation removed, so
+// "Services" and "Services." (or "(Zuschlag)" and "Zuschlag") count as the same word.
 function tokenizeWords(str) {
-  const words = str.toLowerCase().split(/\s+/).filter(Boolean);
+  const words = str
+    .toLowerCase()
+    .split(/\s+/)
+    .map(w => w.replace(/^[^\p{L}\p{N}§€$%]+|[^\p{L}\p{N}§€$%]+$/gu, '') || w)
+    .filter(Boolean);
   const counts = new Map();
   for (const w of words) counts.set(w, (counts.get(w) || 0) + 1);
   return { words, set: new Set(words), counts };
@@ -647,7 +666,10 @@ function parseIntoBlocks(rawText) {
 
     const isHeading = kind === 'h1' || kind === 'h2' || kind === 'h3';
 
-    if (kind === 'h2') {
+    // The section reference ("1." / "§ 5") follows the numbering in the text, not the derived
+    // block kind: an edit that turns "1. Scope of Services" into a paragraph must not change
+    // the references (and thus the alignment) of every clause below it.
+    if (kind === 'h2' || kind === 'p' || kind === 'h1') {
       const secMatch = line.match(/^(§\s*\d+[a-z]?|Artikel\s+\d+|Anlage\s+\d+|Section\s+\d+|Exhibit\s+[A-Z0-9]+)/i);
       const numMatch = line.match(/^(\d+\.)\s+[A-ZÄÖÜ]/);
       if (secMatch) {
@@ -738,7 +760,9 @@ function blockWordCounts(block) {
 function computeBlockSimilarity(blockA, blockB) {
   if (blockA.isHeaderFooter !== blockB.isHeaderFooter) return 0;
   if (blockA.text === blockB.text || blockAlignKey(blockA) === blockAlignKey(blockB)) return 1.0;
-  if (blockA.isHeading !== blockB.isHeading) return 0;
+  // The block kind is re-derived from the text, so it may change with an edit ("1. Scope of
+  // Services" + a sentence is no longer a heading). Kind alone never prevents pairing; a short
+  // heading and a long paragraph are kept apart by the length bound below.
   const lenA = blockA.words.length;
   const lenB = blockB.words.length;
   if (!lenA || !lenB) return 0;
