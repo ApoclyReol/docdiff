@@ -275,55 +275,78 @@ function ensureComparisonCurrent() {
   if (!isShownComparisonCurrent()) runComparison({ sync: true });
 }
 
+// Rebuilds the revised document with the paragraph of one row replaced. Every other block
+// of the revised document — including hidden header/footer lines and page breaks — is
+// written back in its original order (state.rightAllBlocks), so an edit of one paragraph
+// changes exactly that paragraph and nothing else in the comparison.
 function rebuildRightTextFromRows(targetRowId, replacementText) {
-  const hasExplicit = state.rightAllBlocks && state.rightAllBlocks.some(b => b.hasExplicitPage);
-  const hfByPage = new Map();
-  if (state.ignoreHeadersFooters && state.rightAllBlocks) {
-    for (const b of state.rightAllBlocks) {
-      if (isHiddenHeaderFooter(b)) {
-        const p = b.pageNum || 1;
-        if (!hfByPage.has(p)) hfByPage.set(p, []);
-        hfByPage.get(p).push(serializeBlockLine(b));
+  const allBlocks = state.rightAllBlocks || [];
+  const rows = state.alignedRows;
+  const targetIdx = rows.findIndex(r => r.id === targetRowId);
+  const target = targetIdx >= 0 ? rows[targetIdx] : null;
+  const hasExplicit = allBlocks.some(b => b.hasExplicitPage);
+
+  // Typed text is sanitized so it can never carry page/header-footer metadata; the edited
+  // block keeps its own structural metadata (indent, header/footer).
+  const template = target ? target.rightBlock || target.leftBlock : null;
+  const replacementLines = [];
+  for (const line of sanitizeExternalText(replacementText || '').split(/\n+/)) {
+    if (!line.trim()) continue;
+    replacementLines.push(
+      serializeBlockLine({
+        text: line.trim(),
+        kind: template ? template.kind : 'p',
+        indent: template ? template.indent : 0,
+        isHeaderFooter: Boolean(target && target.rightBlock && target.rightBlock.isHeaderFooter),
+      })
+    );
+  }
+
+  // A row without a right block (a deletion) gets its text after the right block of the
+  // nearest row above it that has one (or at the very start).
+  let anchorBlock = null;
+  let insertPage = target ? target.pageNum || 1 : 1;
+  if (target && !target.rightBlock) {
+    for (let i = targetIdx - 1; i >= 0; i--) {
+      if (rows[i].rightBlock) {
+        anchorBlock = rows[i].rightBlock;
+        break;
       }
     }
   }
 
-  const pagesMap = new Map();
-  for (const r of state.alignedRows) {
-    const p = r.pageNum || 1;
-    if (!pagesMap.has(p)) pagesMap.set(p, []);
-    if (r.id === targetRowId) {
-      // Typed text is sanitized so it can never carry page/header-footer metadata;
-      // the edited block keeps its own structural metadata (indent, header/footer).
-      const template = r.rightBlock || r.leftBlock;
-      for (const line of sanitizeExternalText(replacementText || '').split(/\n+/)) {
-        if (!line.trim()) continue;
-        pagesMap.get(p).push(
-          serializeBlockLine({
-            text: line.trim(),
-            kind: template ? template.kind : 'p',
-            indent: template ? template.indent : 0,
-          })
-        );
-      }
-    } else if (r.rightBlock) {
-      pagesMap.get(p).push(serializeBlockLine(r.rightBlock));
+  const out = [];
+  let lastPage = null;
+  const pageBreak = pageNum => {
+    if (hasExplicit && pageNum !== lastPage) out.push(pageMarkerLine(pageNum));
+    lastPage = pageNum;
+  };
+  let inserted = !target || Boolean(target.rightBlock);
+  if (!inserted && !anchorBlock) {
+    const firstPage = allBlocks.length ? allBlocks[0].pageNum || 1 : insertPage;
+    pageBreak(Math.min(firstPage, insertPage));
+    out.push(...replacementLines);
+    inserted = true;
+  }
+  for (const b of allBlocks) {
+    pageBreak(b.pageNum || 1);
+    const isTarget = target && target.rightBlock && sameBlock(b, target.rightBlock);
+    out.push(...(isTarget ? replacementLines : [serializeBlockLine(b)]));
+    if (!inserted && sameBlock(b, anchorBlock)) {
+      out.push(...replacementLines);
+      inserted = true;
     }
   }
+  if (!inserted) out.push(...replacementLines);
+  return out.join('\n\n');
+}
 
-  const outLines = [];
-  for (const [pageNum, contentLines] of pagesMap.entries()) {
-    if (hasExplicit) {
-      outLines.push(pageMarkerLine(pageNum));
-    }
-    const hfs = hfByPage.get(pageNum) || [];
-    if (hfs.length > 0) outLines.push(hfs[0]);
-    for (const line of contentLines) outLines.push(line);
-    if (hfs.length > 1) {
-      for (let k = 1; k < hfs.length; k++) outLines.push(hfs[k]);
-    }
-  }
-  return outLines.join('\n\n');
+// Row blocks are the very objects in state.rightAllBlocks (also after the worker's structured
+// clone); the position check is a fallback.
+function sameBlock(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return a.text === b.text && a.pageNum === b.pageNum && a.index === b.index && a.isHeaderFooter === b.isHeaderFooter;
 }
 
 function revertRowToOriginal(targetRowId) {

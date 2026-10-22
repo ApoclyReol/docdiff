@@ -101,6 +101,14 @@ function isTextEntryElement(el) {
   return !nonText.includes((el.type || '').toLowerCase());
 }
 
+function isShortcutFocusContext(el) {
+  if (!el || el === document.body || el === document.documentElement) return true;
+  if (isTextEntryElement(el) || (el.closest && el.closest('[contenteditable], .clause-inline-editor, dialog'))) {
+    return false;
+  }
+  return Boolean(el.closest && el.closest('#pane-left, #pane-right, #pane-unified, #sidebar-list, #minimap-track'));
+}
+
 window.addEventListener('keydown', e => {
   if (e.defaultPrevented || e.isComposing) return;
   const activeEl = document.activeElement;
@@ -135,6 +143,10 @@ window.addEventListener('keydown', e => {
   // Single-character shortcuts (WCAG 2.1.4): can be switched off in the help dialog and
   // only apply while a comparison is shown.
   if (!state.singleKeyShortcuts || !document.body.classList.contains('is-comparing')) return;
+  // Only while reading: focus on the page itself, in a document pane or in the change list.
+  // Letters typed with focus on a toolbar control, a dialog or anything editable never toggle
+  // filters (typing "durch" must not switch the header/footer filter).
+  if (!isShortcutFocusContext(activeEl)) return;
   if (e.key === 'j' || e.key === 'J') {
     e.preventDefault();
     stepChange(1);
