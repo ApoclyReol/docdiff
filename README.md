@@ -73,12 +73,13 @@ Doc Diff is built so that any data protection officer or security auditor can ve
 - **Delta-Only Change Inspector & Click-to-Jump Rail:** The right side rail extracts only the exact modified tokens (`145.000,00 → 168.500,00`, `12.03.2026 → 18.04.2026`, `schriftlich → in Textform`) with section-aware clause references (`§ 1 (1)`, `§ 2 (1)`), category filter tabs (`Alle`, `Geändert`, `Neu`, `Entfernt`), 1-click jump-to-clause, and inline edit/revert actions.
 - **Direct Inline Clause Editing, 1-Click Revert & Undo/Redo:** Double-click or click **Bearbeiten** (`Edit`) on any clause in the revised or unified pane to edit its text directly in place (`Enter` to apply, `Esc` to cancel) and re-run the diff in `< 5 ms`. Click **Vorher übernehmen** (`Use old`) to revert any clause back to the baseline version, with full **Undo / Redo** history (`Cmd+Z` / `Shift+Cmd+Z` or toolbar buttons).
 - **Multi-Format Client-Side Export:** Export comparisons locally without any server roundtrip:
-  - **Copy Final Text:** 1-click copy of the clean, edited target text to the clipboard
+  - **Copy Final Text:** 1-click copy of the clean, edited target text to the clipboard (header/footer lines left out)
   - **Save Clean Text (`.txt`):** Download the final revised document text
-  - **PDF / Print (`Cmd+P` / `Ctrl+P`):** Clean two-column or unified redline print layout
-  - **Word Redline (`.doc`):** Formatted Word-compatible redline document with `<del>` strikethroughs and `<ins>` insertions
-  - **HTML Report (`.html`):** Standalone, read-only HTML diff report for archiving or sharing
-  - **Markdown (`.md`):** Clean Markdown diff summary (`~~deleted~~` / `**inserted**`)
+  - **PDF / Print (`Cmd+P` / `Ctrl+P`):** Dedicated print layout for all three view modes, with both file names, date, page numbers, and greyscale-safe marks (strike-through / underline)
+  - **Word Redline (`.docx`):** A genuine Word document generated in the browser, with every difference recorded as a tracked change (author "Doc Diff"), so you can **Accept / Reject** each change in Word or LibreOffice
+  - **HTML Report (`.html`):** Self-contained, accessible, read-only report with summary counts, a linked change list, and the full redline; strict CSP, print- and dark-mode-friendly
+  - **Markdown (`.md`):** Summary table with clause references plus the redline (`~~deleted~~` / `**inserted**`), with document text safely escaped
+  - File names combine both documents, e.g. `Vertrag_v2_vs_v1_Redline.docx`, and are sanitized for Windows, macOS, and Linux
 - **Keyboard-First Navigation & System-Aware Theme:**
   - `J` / `K` — Jump to next / previous change
   - `/` — Focus full-text search
