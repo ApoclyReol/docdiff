@@ -152,8 +152,8 @@ return i=this.parent.children.indexOf(this),removed=this.parent.children.splice(
   --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  --text-4xs: 0.6875rem;        /* 11px */
-  --text-3xs: 0.71875rem;       /* 11.5px */
+  --text-4xs: 0.75rem;          /* 12px – minimum UI text size */
+  --text-3xs: 0.75rem;          /* 12px */
   --text-2xs: 0.78125rem;       /* 12.5px */
   --text-xs: 0.84375rem;        /* 13.5px */
   --text-chat-label: 0.90625rem;/* 14.5px */
@@ -283,6 +283,63 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
+@media screen {
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Everything that only makes sense once two versions are compared */
+body:not(.is-comparing) .compare-only {
+  display: none !important;
+}
+
+/* Pointer-specific wording ("drag here", keyboard keys) */
+.touch-only {
+  display: none !important;
+}
+@media (hover: none), (pointer: coarse), (max-width: 720px) {
+  .fine-pointer-only {
+    display: none !important;
+  }
+  .touch-only {
+    display: inline !important;
+  }
+}
+
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px var(--kante-300), 0 1px 0 var(--kante-300);
+  color: hsl(var(--foreground));
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+
 svg.icon {
   width: 15px;
   height: 15px;
@@ -297,7 +354,7 @@ svg.icon {
 /* ── 1. Top Header Bar (44px, PRIME Geist) ────────────────────────────── */
 .header-bar {
   height: 44px;
-  padding: 0 14px;
+  padding: 0 max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
   background: hsl(var(--background));
   border-bottom: 1px solid hsl(var(--border));
   display: flex;
@@ -359,6 +416,28 @@ svg.icon {
   font-weight: 600;
   color: hsl(var(--foreground));
 }
+.stat-summary {
+  font-family: var(--font-sans);
+  font-size: var(--text-2xs);
+}
+.stat-summary strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.stat-total,
+.stat-breakdown,
+.stat-breakdown > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.stat-breakdown {
+  gap: 6px;
+}
+.stat-mod strong { color: hsl(var(--primary-ink)); }
+.stat-ins strong { color: hsl(var(--success-ink)); }
+.stat-del strong { color: hsl(var(--destructive-ink)); }
+.stat-breakdown .is-zero strong { color: hsl(var(--muted-foreground)); }
 .trenner {
   color: hsl(var(--trenner));
 }
@@ -541,13 +620,20 @@ svg.icon {
   font-family: var(--font-sans);
   font-size: var(--text-2xs);
   width: 100%;
+  height: 100%;
+  min-width: 0;
 }
 .search-box input::placeholder {
   color: hsl(var(--muted-foreground));
+  opacity: 1;
+}
+.search-box input::-webkit-search-cancel-button {
+  cursor: pointer;
 }
 .kbd-hint {
   font-family: var(--font-mono);
-  font-size: var(--text-4xs);
+  font-size: 12px;
+  line-height: 1.4;
   color: hsl(var(--muted-foreground));
   padding: 1px 4px;
   border-radius: 2px;
@@ -617,10 +703,10 @@ body.view-inline.sidebar-collapsed .col-bars {
   height: 22px;
   padding: 0 8px;
   border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-4xs);
+  font-family: var(--font-sans);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 .col-role-old {
@@ -695,6 +781,15 @@ body.view-inline.sidebar-collapsed .col-bars {
   height: 26px;
   padding: 0;
 }
+.col-swap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#btn-swap-docs {
+  width: 26px;
+  height: 26px;
+}
 
 .col-sidebar-head {
   display: flex;
@@ -726,7 +821,7 @@ body.view-inline.sidebar-collapsed .col-bars {
   background: hsl(var(--ton-2));
   box-shadow: inset 0 0 0 1px var(--kante-200);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   color: hsl(var(--muted-foreground));
   white-space: nowrap;
@@ -740,22 +835,16 @@ body.view-inline.sidebar-collapsed .col-bars {
 .sidebar-kbd-hint {
   display: inline-flex;
   align-items: center;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 3px;
-  background: hsl(var(--ton-1));
-  box-shadow: inset 0 0 0 1px var(--kante-200);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
+  gap: 3px;
+  font-size: 12px;
   color: hsl(var(--muted-foreground));
   flex-shrink: 0;
 }
 
 /* ── 3. Main Split / Inline Workspace (PRIME 1px Architectural Grid) ──── */
 .workspace {
-  height: calc(100vh - 82px);
-  height: calc(100dvh - 82px);
+  flex: 1 1 0;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 260px;
   position: relative;
@@ -806,6 +895,10 @@ body.view-inline .doc-pane-unified {
   --scrollbar-track: transparent;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.doc-pane:focus-visible,
+.doc-pane-unified:focus-visible {
+  outline-offset: -3px;
 }
 .doc-pane-left {
   padding: 18px 8px 96px 20px;
@@ -920,8 +1013,9 @@ body.is-dragging-file .drop-zone-overlay,
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
   color: hsl(var(--muted-foreground));
   user-select: none;
   flex-shrink: 0;
@@ -941,7 +1035,6 @@ body.is-dragging-file .drop-zone-overlay,
 
 .page-sec-range {
   color: hsl(var(--muted-foreground));
-  opacity: 0.85;
 }
 
 .page-change-pill {
@@ -950,7 +1043,7 @@ body.is-dragging-file .drop-zone-overlay,
   height: 18px;
   padding: 0 6px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   background: hsl(var(--ton-2));
   color: hsl(var(--muted-foreground));
@@ -991,20 +1084,11 @@ body.view-stream .doc-page-body {
   gap: 6px;
 }
 
-/* Centered Zero-Friction Launchpad Overlay (PRIME Geist Architecture) */
-body:not(.is-comparing) .col-bars {
-  grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) !important;
-}
-body:not(.is-comparing) .col-sidebar-head {
-  display: none !important;
-}
+/* ── Empty state = landing page (shown until both versions are loaded) ───── */
 body:not(.is-comparing) .workspace {
-  grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) !important;
+  display: block;
 }
-body:not(.is-comparing).view-inline .workspace {
-  grid-template-columns: minmax(0, 1fr) !important;
-}
-body:not(.is-comparing) .sidebar-panel {
+body:not(.is-comparing) .workspace > :not(.empty-launchpad) {
   display: none !important;
 }
 body:not(.is-comparing) #btn-export-menu {
@@ -1014,206 +1098,393 @@ body:not(.is-comparing) #btn-export-menu {
   pointer-events: none;
   opacity: 0.45;
 }
-body:not(.is-comparing) #btn-only-changes,
-body:not(.is-comparing) #btn-filter-hf,
-body:not(.is-comparing) #search-box-wrap,
-body:not(.is-comparing) #btn-prev,
-body:not(.is-comparing) #btn-next,
-body:not(.is-comparing) #btn-toggle-sidebar {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-/* Subtle schematic background page lines when empty */
-.ghost-sheet {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 12px 8px;
-  opacity: 0.35;
-  pointer-events: none;
-  user-select: none;
-}
-.ghost-block {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 8px 12px;
-  border-left: 2px solid hsl(var(--border));
-}
-.ghost-line {
-  height: 8px;
-  border-radius: 2px;
-  background: hsl(var(--ton-1));
-}
-.ghost-line.h {
-  height: 11px;
-  width: 38%;
-  background: hsl(var(--ton-2));
-  margin-bottom: 2px;
-}
 
 .empty-launchpad {
-  position: absolute;
-  inset: 0;
-  z-index: 25;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: hsl(var(--background) / 0.65);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  height: 100%;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  background: hsl(var(--background));
+  padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left));
 }
 body.is-comparing .empty-launchpad {
   display: none !important;
 }
 
-.launchpad-card {
-  width: 100%;
-  max-width: 640px;
-  margin: auto;
-  background: hsl(var(--card));
-  border-radius: var(--radius-xl);
-  box-shadow: 0 0 0 1px hsl(var(--border)), var(--elev-4);
+.landing-inner {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 44px 0 40px;
+}
+
+.landing-title {
+  max-width: 30ch;
+  font-size: clamp(1.625rem, 1.05rem + 1.7vw, 2.25rem);
+  font-weight: 650;
+  line-height: 1.18;
+  letter-spacing: -0.028em;
+  color: hsl(var(--foreground));
+  text-wrap: balance;
+}
+.landing-title:focus {
+  outline: none;
+}
+.landing-title:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
+}
+.landing-sub {
+  margin-top: 12px;
+  max-width: 60ch;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+  text-wrap: pretty;
+}
+
+.trust-list {
+  list-style: none;
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  user-select: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
 }
-
-.launchpad-head {
-  padding: 24px 28px 20px 28px;
-  border-bottom: 1px solid hsl(var(--border));
-  text-align: left;
-}
-
-.launchpad-title {
-  font-size: var(--text-base);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+.trust-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px var(--kante-200);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
   color: hsl(var(--foreground));
 }
-
-.launchpad-sub {
-  margin-top: 4px;
-  font-size: var(--text-2xs);
-  line-height: 1.5;
-  color: hsl(var(--muted-foreground));
+.trust-list .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.4;
+  color: hsl(var(--success-ink));
 }
 
-.launchpad-grid {
-  width: 100%;
+/* Two large drop slots: the whole slot is one button and a drop target */
+.drop-slots {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid hsl(var(--border));
+  gap: 16px;
+  margin-top: 28px;
 }
-
-.launchpad-slot {
-  padding: 20px 24px;
-  background: hsl(var(--card));
+.drop-slot {
+  position: relative;
+  min-width: 0;
+}
+.drop-slot-btn {
+  width: 100%;
+  height: 100%;
+  min-height: 156px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   text-align: left;
-  cursor: pointer;
-  transition: background-color 80ms ease-out;
-}
-.launchpad-slot:first-child {
-  border-right: 1px solid hsl(var(--border));
-}
-.launchpad-slot:hover,
-.launchpad-slot.drag-over {
-  background: hsl(var(--ton-1));
-}
-
-.lp-slot-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 6px;
-}
-
-.lp-slot-title {
-  font-size: var(--text-xs);
-  font-weight: 600;
+  font: inherit;
   color: hsl(var(--foreground));
-  word-break: break-word;
-}
-
-.lp-slot-hint {
-  font-size: var(--text-3xs);
-  line-height: 1.4;
-  color: hsl(var(--muted-foreground));
-}
-.launchpad-slot.is-loaded .lp-slot-hint {
-  color: hsl(var(--success-ink));
-  font-family: var(--font-mono);
-  font-weight: 500;
-}
-
-.launchpad-slot .btn {
-  margin-top: 6px;
-  width: 100%;
-  height: 32px;
-}
-
-.launchpad-secondary {
-  padding: 14px 24px;
-  background: hsl(var(--ton-1));
-  border-bottom: 1px solid hsl(var(--border));
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.launchpad-footer {
-  padding: 12px 24px;
-  width: 100%;
   background: hsl(var(--card));
+  border: 1.5px dashed hsl(var(--foreground) / 0.24);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: border-color 100ms ease-out, background-color 100ms ease-out;
+}
+.drop-slot-btn:hover,
+.drop-slot.drag-over .drop-slot-btn,
+body.is-dragging-file .drop-slot-btn {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary-ton-1));
+}
+.drop-slot.drag-over .drop-slot-btn {
+  border-style: solid;
+}
+.drop-slot-btn:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+.drop-slot-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  padding-right: 32px;
 }
-
-.launchpad-steps {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: var(--text-4xs);
-  color: hsl(var(--muted-foreground));
-}
-.lp-step {
+.drop-slot-num {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: hsl(var(--ton-2));
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
 }
-.lp-step-num {
+.drop-slot-title {
+  min-width: 0;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.drop-slot-hint {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: hsl(var(--muted-foreground));
+}
+.drop-slot-cta {
+  margin-top: auto;
+  padding-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 6px;
+}
+.drop-slot-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px var(--kante-300), var(--elev-1);
+  color: hsl(var(--foreground));
+  font-size: 14px;
+  font-weight: 600;
+}
+.drop-slot.is-next-step .drop-slot-cta-btn {
+  background: hsl(var(--primary));
+  box-shadow: none;
+  color: hsl(var(--primary-foreground));
+}
+.drop-slot-drag {
+  font-size: 13.5px;
+  color: hsl(var(--muted-foreground));
+}
+.drop-slot.is-loaded .drop-slot-btn {
+  border-style: solid;
+  border-color: hsl(var(--success) / 0.55);
+}
+.drop-slot.is-loaded .drop-slot-num {
+  background: hsl(var(--success-ton-2));
+  color: hsl(var(--success-ink));
+}
+.drop-slot.is-loaded .drop-slot-hint {
+  color: hsl(var(--success-ink));
+  font-weight: 500;
+}
+.drop-slot-clear {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+.drop-slot-clear[hidden] {
+  display: none;
+}
+.drop-slot-clear:hover {
+  background: hsl(var(--ton-2));
+  color: hsl(var(--foreground));
+}
+
+.drop-both-hint {
+  margin-top: 10px;
+  font-size: 13px;
+  color: hsl(var(--muted-foreground));
+}
+
+.landing-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.landing-secondary .btn {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+.landing-secondary .btn .icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Below the fold: how it works, honest limits, FAQ */
+.landing-section {
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: 1px solid hsl(var(--border));
+}
+.landing-section h2 {
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: hsl(var(--foreground));
+}
+.how-steps {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 18px;
+}
+.how-steps li {
+  display: flex;
+  gap: 12px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+.how-steps strong {
+  display: block;
+  margin-bottom: 2px;
   color: hsl(var(--foreground));
   font-weight: 600;
 }
-.lp-sep {
-  color: hsl(var(--trenner));
+.how-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: hsl(var(--primary-ton-2));
+  color: hsl(var(--primary-ink));
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+.scope-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+.scope-col {
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px var(--kante-200);
+}
+.scope-col h3 {
+  font-size: 15px;
+  font-weight: 650;
+  color: hsl(var(--foreground));
+}
+.scope-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 10px;
+}
+.scope-col li {
+  position: relative;
+  padding-left: 24px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+.scope-col li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 16px;
+  text-align: center;
+  font-weight: 700;
+}
+.scope-can li::before {
+  content: "✓";
+  color: hsl(var(--success-ink));
+}
+.scope-cannot li::before {
+  content: "–";
+  color: hsl(var(--destructive-ink));
 }
 
-.launchpad-trust {
+.faq-item {
+  border-bottom: 1px solid hsl(var(--border));
+}
+.faq-item:first-of-type {
+  margin-top: 10px;
+}
+.faq-item summary {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 2px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  margin-right: 6px;
+  border-right: 2px solid hsl(var(--muted-foreground));
+  border-bottom: 2px solid hsl(var(--muted-foreground));
+  transform: translateY(-2px) rotate(45deg);
+}
+.faq-item[open] summary::after {
+  transform: translateY(2px) rotate(225deg);
+}
+.faq-answer {
+  max-width: 70ch;
+  padding: 0 2px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+}
+.faq-answer a,
+.landing-footer a {
+  color: hsl(var(--primary-ink));
+  text-underline-offset: 2px;
+}
+
+.landing-footer {
+  margin-top: 40px;
+  display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: var(--text-4xs);
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
   color: hsl(var(--muted-foreground));
 }
 .lp-link {
@@ -1221,13 +1492,67 @@ body.is-comparing .empty-launchpad {
   border: 0;
   padding: 0;
   font: inherit;
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--primary-ink));
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
 }
 .lp-link:hover {
   color: hsl(var(--foreground));
+}
+
+/* ── First-run legend (after the first comparison; dismissible) ─────────── */
+.legend-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 4px 10px 4px 16px;
+  background: hsl(var(--primary-ton-1));
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 13px;
+  color: hsl(var(--foreground));
+}
+body.legend-dismissed .legend-bar {
+  display: none;
+}
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 4px;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.legend-item.touch-only {
+  display: none !important;
+}
+@media (hover: none), (pointer: coarse), (max-width: 720px) {
+  .legend-item.touch-only {
+    display: inline-flex !important;
+  }
+}
+.legend-swatch {
+  display: inline-block;
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: hsl(var(--primary));
+}
+.btn-sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+.legend-bar .btn-ghost {
+  color: hsl(var(--primary-ink));
 }
 
 .empty-state {
@@ -1388,7 +1713,7 @@ body.is-comparing .empty-launchpad {
 
 .clause.kind-hf {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
   padding: 6px 14px;
   color: hsl(var(--muted-foreground));
@@ -1505,6 +1830,7 @@ body.is-comparing .empty-launchpad {
 /* Performance: Only activate GPU backdrop-filter on the single hovered/active clause */
 .clause.is-hovered .clause-actions,
 .clause.is-active .clause-actions,
+.clause:focus-within .clause-actions,
 .clause-actions:focus-within {
   opacity: 1;
   pointer-events: auto;
@@ -1520,8 +1846,8 @@ body.is-comparing .empty-launchpad {
   }
 }
 .clause-action-btn {
-  height: 22px;
-  padding: 0 8px;
+  height: 26px;
+  padding: 0 9px;
   border-radius: var(--radius-sm);
   border: 0;
   background: transparent;
@@ -1652,10 +1978,40 @@ dialog.prime-dialog.dialog-md {
   align-items: center;
   gap: 6px;
 }
-.help-card-desc {
-  font-size: var(--text-2xs);
-  line-height: 1.5;
+.help-card-desc,
+.help-legend {
+  font-size: 13.5px;
+  line-height: 1.55;
   color: hsl(var(--muted-foreground));
+}
+.help-card-wide {
+  grid-column: 1 / -1;
+}
+.help-legend {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.help-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.help-setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  font-size: 13.5px;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+}
+.help-setting input {
+  width: 18px;
+  height: 18px;
+  accent-color: hsl(var(--primary));
+  flex-shrink: 0;
 }
 @media (max-width: 640px) {
   .help-grid {
@@ -1859,7 +2215,7 @@ body:not(.is-comparing) .floating-action-bar {
   color: hsl(var(--muted-foreground));
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -1920,7 +2276,7 @@ body:not(.is-comparing) .floating-action-bar {
   border-radius: 999px;
   background: hsl(var(--foreground) / 0.08);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1;
 }
@@ -1940,6 +2296,7 @@ body:not(.is-comparing) .floating-action-bar {
 }
 body.sidebar-collapsed .sidebar-panel {
   border-left: 0;
+  visibility: hidden;
 }
 
 .sidebar-filter-bar {
@@ -1958,14 +2315,14 @@ body:not(.is-comparing) .sidebar-filter-bar {
 .sidebar-filter-btn {
   flex: 1 1 auto;
   min-width: 0;
-  height: 24px;
-  padding: 0 5px;
+  height: 28px;
+  padding: 0 4px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: hsl(var(--muted-foreground));
   font-family: var(--font-sans);
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
@@ -1985,13 +2342,13 @@ body:not(.is-comparing) .sidebar-filter-bar {
   font-weight: 600;
   box-shadow: 0 0 0 1px var(--kante-200), var(--elev-1);
 }
-.sidebar-filter-btn.is-zero:not(.is-active) {
-  opacity: 0.42;
+.sidebar-filter-btn.is-zero:not(.is-active) .sidebar-filter-count {
+  color: hsl(var(--muted-foreground));
 }
 
 .sidebar-filter-count {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   color: hsl(var(--muted-foreground));
 }
@@ -2019,8 +2376,7 @@ body:not(.is-comparing) .sidebar-filter-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: var(--text-4xs);
+  font-size: 12px;
   color: hsl(var(--muted-foreground));
   user-select: none;
   flex-shrink: 0;
@@ -2030,37 +2386,45 @@ body:not(.is-comparing) .sidebar-filter-bar {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  min-height: 24px;
   cursor: pointer;
   background: transparent;
   border: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-4xs);
+  font-family: var(--font-sans);
+  font-size: 12px;
   color: hsl(var(--muted-foreground));
+}
+.sidebar-footer-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: inherit;
+  text-decoration: none;
+}
+.sidebar-footer-link:hover,
+.privacy-status:hover {
+  text-decoration: underline;
 }
 .privacy-status:hover {
   color: hsl(var(--foreground));
 }
 
 .nav-item {
-  padding: 8px 10px;
+  position: relative;
+  flex-shrink: 0;
   border-radius: var(--radius-sm);
-  border-left: 2.5px solid transparent;
+  border-left: 3px solid transparent;
   background: hsl(var(--card));
-  box-shadow: 0 0 0 1px var(--kante-100);
-  cursor: pointer;
-  font-size: var(--text-2xs);
-  line-height: 1.45;
+  box-shadow: 0 0 0 1px var(--kante-200);
   color: hsl(var(--foreground));
   transition: background-color 80ms ease-out, box-shadow 80ms ease-out, border-color 80ms ease-out;
-  outline: none;
 }
 .nav-item.mod { border-left-color: hsl(var(--primary)); }
 .nav-item.ins { border-left-color: hsl(var(--success)); }
 .nav-item.del { border-left-color: hsl(var(--destructive)); }
 
 .nav-item:hover,
-.nav-item.is-hovered,
-.nav-item:focus-visible {
+.nav-item.is-hovered {
   background: hsl(var(--ton-1));
   box-shadow: 0 0 0 1px var(--kante-300);
 }
@@ -2077,18 +2441,31 @@ body:not(.is-comparing) .sidebar-filter-bar {
   box-shadow: 0 0 0 1px hsl(var(--destructive) / 0.45);
 }
 
+.nav-item-main {
+  display: block;
+  width: 100%;
+  padding: 8px 10px 9px;
+  border: 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+}
+.nav-item-main:focus-visible {
+  outline-offset: -2px;
+}
+
 .nav-item-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 6px;
-  margin-bottom: 5px;
-}
-
-.nav-item-loc {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  min-height: 24px;
+  margin-bottom: 4px;
+  padding-right: 60px;
   min-width: 0;
 }
 
@@ -2096,14 +2473,14 @@ body:not(.is-comparing) .sidebar-filter-bar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 16px;
+  min-width: 20px;
+  height: 18px;
   padding: 0 4px;
   border-radius: 3px;
   background: hsl(var(--ton-2));
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--foreground));
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -2112,9 +2489,16 @@ body:not(.is-comparing) .sidebar-filter-bar {
   color: hsl(var(--background));
 }
 
+.nav-item-page {
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .nav-item-ref {
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 600;
   color: hsl(var(--foreground));
   white-space: nowrap;
@@ -2122,28 +2506,14 @@ body:not(.is-comparing) .sidebar-filter-bar {
   text-overflow: ellipsis;
 }
 
-.nav-item-page {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  color: hsl(var(--muted-foreground));
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.nav-item-right {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
 .nav-item-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
   display: inline-flex;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
   opacity: 0;
-  pointer-events: none;
   transition: opacity 80ms ease-out;
 }
 .nav-item:hover .nav-item-actions,
@@ -2151,15 +2521,19 @@ body:not(.is-comparing) .sidebar-filter-bar {
 .nav-item.is-active .nav-item-actions,
 .nav-item:focus-within .nav-item-actions {
   opacity: 1;
-  pointer-events: auto;
+}
+@media (hover: none) {
+  .nav-item-actions {
+    opacity: 1;
+  }
 }
 
 .nav-item-act-btn {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: hsl(var(--muted-foreground));
   display: inline-flex;
@@ -2167,6 +2541,10 @@ body:not(.is-comparing) .sidebar-filter-bar {
   justify-content: center;
   cursor: pointer;
   transition: background-color 80ms ease-out, color 80ms ease-out;
+}
+.nav-item-act-btn .icon {
+  width: 13px;
+  height: 13px;
 }
 .nav-item-act-btn:hover {
   background: hsl(var(--ton-2));
@@ -2176,39 +2554,12 @@ body:not(.is-comparing) .sidebar-filter-bar {
   color: hsl(var(--primary-ink));
 }
 
-.nav-item-badge {
-  display: inline-flex;
-  align-items: center;
-  height: 17px;
-  padding: 0 5px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.nav-item-badge.mod {
-  background: hsl(var(--primary-ton-1));
-  color: hsl(var(--primary-ink));
-  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.2);
-}
-.nav-item-badge.ins {
-  background: hsl(var(--success-ton-1));
-  color: hsl(var(--success-ink));
-  box-shadow: inset 0 0 0 1px hsl(var(--success) / 0.22);
-}
-.nav-item-badge.del {
-  background: hsl(var(--destructive-ton-1));
-  color: hsl(var(--destructive-ink));
-  box-shadow: inset 0 0 0 1px hsl(var(--destructive) / 0.22);
-}
-
 .nav-item-deltas {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  font-size: 11.5px;
-  line-height: 1.42;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .nav-delta-row {
@@ -2221,15 +2572,14 @@ body:not(.is-comparing) .sidebar-filter-bar {
 
 .nav-delta-arrow {
   color: hsl(var(--muted-foreground));
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   user-select: none;
   flex-shrink: 0;
 }
 
 .nav-delta-more {
-  font-family: var(--font-mono);
-  font-size: 10px;
+  display: block;
+  font-size: 12px;
   color: hsl(var(--muted-foreground));
   margin-top: 1px;
 }
@@ -2240,8 +2590,8 @@ body:not(.is-comparing) .sidebar-filter-bar {
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
-  font-size: 11.5px;
-  line-height: 1.42;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 /* ── Dialogs ───────────────────────────────────────────────────────────── */
@@ -2271,6 +2621,18 @@ dialog.prime-dialog::backdrop {
   justify-content: space-between;
   font-size: var(--text-xs);
   font-weight: 700;
+}
+.dialog-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.dialog-title:focus {
+  outline: none;
+}
+.dialog-body-single {
+  max-height: min(70dvh, 640px);
+  overflow-y: auto;
 }
 .dialog-body {
   padding: 18px;
@@ -2302,15 +2664,19 @@ dialog.prime-dialog::backdrop {
   color: hsl(var(--foreground));
   border: 0;
   border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 1px hsl(var(--input));
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
+  box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.3);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
   line-height: 1.55;
   resize: vertical;
 }
 .dialog-textarea:focus {
   outline: none;
   box-shadow: inset 0 0 0 2px hsl(var(--ring));
+}
+.dialog-textarea::placeholder {
+  color: hsl(var(--muted-foreground));
+  opacity: 1;
 }
 .dialog-footer {
   height: 52px;
@@ -2338,6 +2704,12 @@ dialog.prime-dialog::backdrop {
   }
 }
 
+@media (max-width: 1320px) {
+  .stat-breakdown {
+    display: none;
+  }
+}
+
 @media (max-width: 1380px) {
   .search-box {
     width: 150px;
@@ -2354,7 +2726,6 @@ dialog.prime-dialog::backdrop {
   #i18n-btn-text,
   #i18n-btn-clear,
   #i18n-btn-help,
-  #i18n-changes-label,
   .kbd-hint,
   #i18n-upload-left,
   #i18n-upload-right {
@@ -2365,6 +2736,13 @@ dialog.prime-dialog::backdrop {
   #btn-help {
     width: 30px;
     padding: 0;
+  }
+  #btn-clear {
+    background: transparent;
+    box-shadow: none;
+  }
+  #btn-clear:hover {
+    background: hsl(var(--ton-2));
   }
   #btn-upload-left,
   #btn-upload-right {
@@ -2422,6 +2800,7 @@ dialog.prime-dialog::backdrop {
   body.sidebar-collapsed .sidebar-panel {
     transform: translateX(105%);
     pointer-events: none;
+    transition: transform 150ms ease-out, visibility 0s linear 150ms;
   }
   .doc-pane-unified {
     padding: 16px 18px 84px 18px;
@@ -2450,7 +2829,7 @@ dialog.prime-dialog::backdrop {
     display: grid;
     grid-template-columns: 1fr auto;
     height: auto;
-    padding: 0;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
     gap: 0;
     background: hsl(var(--card) / 0.88);
     backdrop-filter: saturate(180%) blur(20px);
@@ -2481,7 +2860,7 @@ dialog.prime-dialog::backdrop {
     border-radius: 999px;
     background: hsl(var(--ton-1));
     box-shadow: inset 0 0 0 1px var(--kante-200);
-    font-size: 11px;
+    font-size: 12px;
     gap: 5px;
   }
   .header-tools {
@@ -2502,20 +2881,38 @@ dialog.prime-dialog::backdrop {
     width: 32px;
     padding: 0;
   }
+  .header-tools .btn {
+    background: transparent;
+    box-shadow: none;
+    color: hsl(var(--muted-foreground));
+  }
+  .header-tools .btn:hover {
+    background: hsl(var(--ton-2));
+    color: hsl(var(--foreground));
+  }
   /* Hide desktop-only top controls on mobile (handled in iOS Bottom Bar) */
   #btn-toggle-sidebar,
   #btn-sync-scroll,
   #btn-only-changes,
   #btn-prev,
   #btn-next,
+  #btn-paste-modal,
   .kbd-hint,
-  #i18n-changes-label,
   #i18n-btn-help,
   #i18n-btn-text,
   #i18n-btn-clear,
   .col-edit-pill,
-  .btn-clear-side {
+  .btn-clear-side,
+  .header-tools .divider-v {
     display: none !important;
+  }
+  #i18n-changes-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
   body:not(.has-docs) #btn-clear {
     display: none !important;
@@ -2531,48 +2928,64 @@ dialog.prime-dialog::backdrop {
   .header-nav {
     grid-row: 2;
     grid-column: 1 / -1;
-    height: 44px;
-    padding: 0 12px 6px 12px;
+    height: 52px;
+    padding: 0 12px 8px 12px;
     background: transparent;
     display: flex;
     align-items: center;
     gap: 8px;
     width: 100%;
+    position: relative;
   }
   .header-nav .divider-v {
     display: none;
   }
   .header-nav .seg-group {
-    height: 34px;
-    padding: 2px;
+    height: 44px;
+    padding: 0;
     border-radius: 9px;
     background: hsl(var(--ton-2));
     box-shadow: none;
-    flex: 1.15;
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
   }
   .header-nav .seg-btn {
-    flex: 1;
-    height: 30px;
-    padding: 0 8px;
-    border-radius: 7px;
-    font-size: 12px;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 44px;
+    padding: 0 4px;
+    border-radius: 9px;
+    font-size: 12.5px;
     justify-content: center;
   }
   .header-nav .search-box {
-    flex: 1;
-    width: auto;
-    min-width: 105px;
-    height: 34px;
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 0;
+    height: 44px;
     border-radius: 9px;
     background: hsl(var(--ton-2));
     box-shadow: none;
-    padding: 0 10px;
+    padding: 0 14px;
+    overflow: hidden;
   }
-  .header-nav .search-box:focus-within {
+  .header-nav .search-box input::placeholder {
+    color: transparent;
+  }
+  .header-nav .search-box:focus-within,
+  .header-nav .search-box:has(input:not(:placeholder-shown)) {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 0;
     width: auto;
+    z-index: 5;
     background: hsl(var(--card));
     box-shadow: inset 0 0 0 1.5px hsl(var(--ring));
+  }
+  .header-nav .search-box:focus-within input::placeholder {
+    color: hsl(var(--muted-foreground));
   }
   /* 16px font-size prevents iOS Safari auto-zoom on input focus */
   .header-nav .search-box input {
@@ -2617,10 +3030,10 @@ dialog.prime-dialog::backdrop {
     display: none !important;
   }
   .col-role-pill {
-    height: 19px;
-    padding: 0 5px;
+    height: 22px;
+    padding: 0 6px;
     border-radius: 4px;
-    font-size: 9.5px;
+    font-size: 12px;
   }
   #btn-upload-left,
   #btn-upload-right {
@@ -2630,7 +3043,18 @@ dialog.prime-dialog::backdrop {
     padding: 0 !important;
   }
   .col-filename {
-    font-size: 11px;
+    font-size: 12px;
+  }
+  @media (max-width: 480px) {
+    .col-filename {
+      display: none;
+    }
+    .col-title-wrap {
+      flex: 0 1 auto;
+    }
+    .col-bar {
+      justify-content: center;
+    }
   }
 
   /* Mobile Workspace Heights (accounting for iOS Bottom Toolbar) */
@@ -2639,17 +3063,11 @@ dialog.prime-dialog::backdrop {
   }
   .workspace,
   body.sidebar-collapsed .workspace {
-    height: calc(100dvh - 128px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
   }
   body.view-inline .workspace,
   body.view-inline.sidebar-collapsed .workspace {
-    height: calc(100dvh - 128px);
     grid-template-columns: 1fr !important;
-  }
-  body.view-inline:not(.has-docs) .workspace,
-  body.view-inline:not(.has-docs).sidebar-collapsed .workspace {
-    height: calc(100dvh - 90px);
   }
 
   /* Native iOS Document Reading Typography & Spacing */
@@ -2702,6 +3120,13 @@ dialog.prime-dialog::backdrop {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     gap: 8px;
+    flex-wrap: wrap;
+  }
+  .clause-action-btn {
+    white-space: nowrap;
+  }
+  .clause.has-marker .clause-actions {
+    grid-column: 1 / -1;
   }
   .clause-actions::after {
     display: none;
@@ -2710,12 +3135,12 @@ dialog.prime-dialog::backdrop {
     display: flex;
   }
   .clause-action-btn {
-    height: 30px;
-    padding: 0 12px;
+    height: 36px;
+    padding: 0 14px;
     border-radius: 999px;
     background: hsl(var(--card));
     box-shadow: 0 0 0 1px var(--kante-300), var(--elev-1);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
   }
   .clause-inline-editor {
@@ -2725,7 +3150,8 @@ dialog.prime-dialog::backdrop {
   .clause-editor-bar {
     margin-top: 8px;
     padding-top: 8px;
-    font-size: 11px;
+    font-size: 12px;
+    flex-wrap: wrap;
   }
   .clause-editor-btn {
     height: 30px;
@@ -2735,41 +3161,53 @@ dialog.prime-dialog::backdrop {
     font-weight: 600;
   }
 
-  /* iOS Grouped Cards Launchpad on Mobile */
+  /* Landing page on phones: one column, nothing wider than the screen */
   .empty-launchpad {
-    padding: 12px 12px calc(76px + env(safe-area-inset-bottom)) 12px;
-    align-items: flex-start;
+    padding: 0 max(16px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   }
-  .launchpad-card {
-    padding: 22px 18px 18px 18px;
-    border-radius: 16px;
-    margin: 0 auto;
+  .landing-inner {
+    padding-top: 24px;
   }
-  .launchpad-title {
-    font-size: 18px;
+  .landing-sub {
+    font-size: 15.5px;
   }
-  .launchpad-sub {
+  .trust-list li {
     font-size: 13px;
   }
-  .launchpad-grid {
+  .drop-slots {
     grid-template-columns: 1fr;
-    gap: 10px;
-    margin-top: 16px;
+    gap: 12px;
+    margin-top: 22px;
   }
-  .launchpad-arrow {
-    display: none;
+  .drop-slot-btn {
+    min-height: 0;
+    padding: 16px;
   }
-  .launchpad-slot {
-    padding: 14px 14px;
-    border-radius: 12px;
+  .drop-slot-cta {
+    padding-top: 8px;
   }
-  .launchpad-secondary {
-    flex-direction: column;
-    gap: 8px;
+  .drop-slot-cta-btn {
+    height: 44px;
   }
-  .launchpad-secondary .btn {
-    width: 100%;
-    height: 38px;
+  .landing-secondary .btn {
+    flex: 1 1 140px;
+    height: 44px;
+  }
+  .landing-section {
+    margin-top: 40px;
+    padding-top: 24px;
+  }
+  .how-steps,
+  .scope-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .legend-bar {
+    padding: 4px 8px 4px 12px;
+    font-size: 12.5px;
+  }
+  .legend-items {
+    column-gap: 12px;
   }
 
   /* ── Thumb-Zone iOS Bottom Toolbar ───────────────────────────────────── */
@@ -2779,7 +3217,7 @@ dialog.prime-dialog::backdrop {
     right: 0;
     bottom: 0;
     height: calc(56px + env(safe-area-inset-bottom));
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom)) 8px;
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
     background: hsl(var(--card) / 0.9);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -2794,8 +3232,8 @@ dialog.prime-dialog::backdrop {
   .mob-stepper {
     display: inline-flex;
     align-items: center;
-    height: 36px;
-    padding: 2px;
+    height: 44px;
+    padding: 0;
     border-radius: 9px;
     background: hsl(var(--ton-1));
     box-shadow: inset 0 0 0 1px var(--kante-200);
@@ -2803,9 +3241,9 @@ dialog.prime-dialog::backdrop {
     flex-shrink: 0;
   }
   .mob-step-btn {
-    width: 28px;
-    height: 32px;
-    border-radius: 7px;
+    width: 44px;
+    height: 44px;
+    border-radius: 9px;
     border: 0;
     background: transparent;
     color: hsl(var(--foreground));
@@ -2822,24 +3260,25 @@ dialog.prime-dialog::backdrop {
     pointer-events: none;
   }
   .mob-step-count {
-    min-width: 30px;
+    min-width: 34px;
     text-align: center;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: hsl(var(--foreground));
   }
   .mob-bar-btn {
-    height: 36px;
-    padding: 0 8px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0 10px;
     border-radius: 9px;
     border: 0;
     background: hsl(var(--ton-1));
     color: hsl(var(--foreground));
     box-shadow: inset 0 0 0 1px var(--kante-200);
     font-family: var(--font-sans);
-    font-size: 11.5px;
+    font-size: 12.5px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -2860,10 +3299,28 @@ dialog.prime-dialog::backdrop {
     box-shadow: none;
     padding: 0 9px;
   }
+  @media (max-width: 440px) {
+    #i18n-mob-list,
+    #i18n-mob-export {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+  }
   @media (max-width: 380px) {
-    #i18n-mob-filter,
     .col-bar .col-role-pill {
       display: none;
+    }
+    #i18n-mob-filter {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
     }
     .header-brand {
       padding-left: 10px;
@@ -2899,7 +3356,7 @@ dialog.prime-dialog::backdrop {
     border-radius: 999px;
     background: hsl(var(--ton-3));
     font-family: var(--font-mono);
-    font-size: 10.5px;
+    font-size: 12px;
     font-weight: 700;
   }
 
@@ -2941,6 +3398,7 @@ dialog.prime-dialog::backdrop {
   body.sidebar-collapsed .sidebar-panel {
     transform: translateY(105%) !important;
     pointer-events: none;
+    visibility: hidden;
   }
   .mobile-sheet-header {
     display: flex;
@@ -2969,8 +3427,8 @@ dialog.prime-dialog::backdrop {
     color: hsl(var(--foreground));
   }
   .mobile-sheet-done {
-    height: 28px;
-    padding: 0 10px;
+    height: 36px;
+    padding: 0 14px;
     border-radius: 999px;
     border: 0;
     background: hsl(var(--ton-2));
@@ -2981,13 +3439,15 @@ dialog.prime-dialog::backdrop {
     cursor: pointer;
   }
   .nav-item {
-    padding: 10px 12px;
     border-radius: 10px;
-    font-size: 13.5px;
   }
-  .nav-item-head {
-    font-size: 11px;
-    margin-bottom: 4px;
+  .nav-item-main {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .nav-item-deltas,
+  .nav-item-snippet {
+    font-size: 14px;
   }
 
   /* ── iOS Action Sheet for Export Menu (#export-menu) on Mobile ───────── */
@@ -3056,6 +3516,57 @@ dialog.prime-dialog::backdrop {
     padding: 0 14px;
     border-radius: 9px;
     font-size: 13px;
+  }
+}
+
+@media (pointer: coarse) {
+  .seg-group {
+    height: auto;
+  }
+  .header-tools .btn,
+  .header-tools .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .seg-btn,
+  .sidebar-filter-btn,
+  .dock-icon-btn,
+  .dock-btn,
+  .dock-step-badge,
+  .clause-action-btn,
+  .btn-sm,
+  .col-bar .btn,
+  .col-bar .btn-clear-side,
+  #btn-swap-docs,
+  .mobile-sheet-done,
+  .privacy-status,
+  .sidebar-footer-link {
+    min-height: 44px;
+  }
+  .nav-item-act-btn,
+  .drop-slot-clear,
+  .dock-icon-btn,
+  .col-bar .btn,
+  .col-bar .btn-clear-side,
+  #btn-swap-docs {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .nav-item-head {
+    min-height: 44px;
+    padding-right: 96px;
+  }
+  .col-bars {
+    height: auto !important;
+    min-height: 44px;
+  }
+  .header-bar {
+    height: auto;
+    min-height: 52px;
+  }
+  .floating-action-bar {
+    height: auto;
+    padding: 4px 6px;
   }
 }
 
@@ -3136,77 +3647,82 @@ dialog.prime-dialog::backdrop {
         </g>
       </svg>
       <span class="app-title">Doc Diff</span>
-      <div class="divider-v"></div>
-      <div class="stat-summary" id="stat-summary" aria-live="polite">
-        <span><strong id="count-all">0</strong> <span id="i18n-changes-label">Änderungen</span></span>
-        <span class="trenner">·</span>
-        <span style="color:hsl(var(--success-ink))">+<strong id="count-ins" style="color:inherit">0</strong></span>
-        <span style="color:hsl(var(--destructive-ink))">−<strong id="count-del" style="color:inherit">0</strong></span>
+      <div class="divider-v compare-only"></div>
+      <div class="stat-summary compare-only" id="stat-summary">
+        <span class="stat-total"><strong id="count-all">0</strong> <span id="i18n-changes-label">Änderungen</span></span>
+        <span class="stat-breakdown">
+          <span class="trenner" aria-hidden="true">·</span>
+          <span class="stat-mod"><strong id="count-mod">0</strong> <span data-i18n="statMod">geändert</span></span>
+          <span class="trenner" aria-hidden="true">·</span>
+          <span class="stat-ins"><strong id="count-ins">0</strong> <span data-i18n="statIns">neu</span></span>
+          <span class="trenner" aria-hidden="true">·</span>
+          <span class="stat-del"><strong id="count-del">0</strong> <span data-i18n="statDel">entfernt</span></span>
+        </span>
       </div>
     </div>
 
     <div class="header-right-wrap">
-      <div class="header-cluster header-nav">
-        <div class="seg-group" role="group" aria-label="View mode">
+      <div class="header-cluster header-nav compare-only">
+        <div class="seg-group" role="group" id="seg-view-mode" aria-label="Ansicht">
           <button type="button" class="seg-btn" id="btn-mode-pages" aria-pressed="true">
-            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <span id="i18n-mode-pages">Seiten</span>
           </button>
           <button type="button" class="seg-btn" id="btn-mode-split" aria-pressed="false">
-            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>
-            <span id="i18n-mode-split">Textfluss</span>
+            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>
+            <span id="i18n-mode-split">Nebeneinander</span>
           </button>
           <button type="button" class="seg-btn" id="btn-mode-inline" aria-pressed="false">
-            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
-            <span id="i18n-mode-inline">Kompakt</span>
+            <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
+            <span id="i18n-mode-inline">Untereinander</span>
           </button>
         </div>
 
         <div class="search-box" id="search-box-wrap">
-          <svg class="icon" style="color:hsl(var(--muted-foreground))" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="search-input" placeholder="Suchen…" aria-label="Search" />
-          <span class="kbd-hint">/</span>
+          <svg class="icon" style="color:hsl(var(--muted-foreground))" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" id="search-input" placeholder="Suchen…" aria-label="In beiden Fassungen suchen" autocomplete="off" />
+          <kbd class="kbd-hint" aria-hidden="true">/</kbd>
         </div>
       </div>
 
       <div class="header-cluster header-tools">
-        <button type="button" class="btn" id="btn-paste-modal">
-          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          <span id="i18n-btn-text">Text einfügen</span>
+        <button type="button" class="btn btn-icon btn-ghost compare-only" id="btn-paste-modal">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span id="i18n-btn-text" class="sr-only">Text einfügen</span>
         </button>
 
-        <button type="button" class="btn btn-ghost" id="btn-clear">
-          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          <span id="i18n-btn-clear">Zurücksetzen</span>
+        <button type="button" class="btn compare-only" id="btn-clear">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          <span id="i18n-btn-clear">Neuer Vergleich</span>
         </button>
 
-        <button type="button" class="btn" id="btn-help">
-          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-          <span id="i18n-btn-help">Anleitung</span>
+        <div class="divider-v compare-only" aria-hidden="true"></div>
+
+        <button type="button" class="btn btn-ghost" id="btn-help">
+          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          <span id="i18n-btn-help">Hilfe</span>
         </button>
 
-        <button type="button" class="btn btn-ghost font-mono" id="btn-lang" style="padding:0 8px;">
-          DE
-        </button>
+        <button type="button" class="btn btn-ghost" id="btn-lang">DE</button>
 
-        <button type="button" class="btn btn-icon btn-ghost" id="btn-theme" aria-label="Theme">
-          <svg class="icon" id="theme-icon" viewBox="0 0 24 24">
+        <button type="button" class="btn btn-icon btn-ghost" id="btn-theme">
+          <svg class="icon" id="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
           </svg>
         </button>
 
-        <button type="button" class="btn btn-icon" id="btn-toggle-sidebar" aria-pressed="true">
-          <svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
+        <button type="button" class="btn btn-icon btn-ghost compare-only" id="btn-toggle-sidebar" aria-pressed="true" aria-controls="sidebar">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
         </button>
       </div>
     </div>
   </header>
 
   <!-- ── 2. DOCUMENT BARS ───────────────────────────────────────────────────── -->
-  <div class="col-bars">
+  <section class="col-bars compare-only" id="col-bars" aria-label="Dokumente">
     <div class="col-bar col-bar-left">
       <div class="col-title-wrap">
-        <span class="col-role-pill col-role-old" id="i18n-col-left">1 · Vorher</span>
+        <span class="col-role-pill col-role-old" id="i18n-col-left">Alte Fassung</span>
         <span class="col-filename" id="filename-left">Kein Ausgangsdokument</span>
         <span class="col-meta-badge" id="meta-left"></span>
       </div>
@@ -3221,15 +3737,15 @@ dialog.prime-dialog::backdrop {
       </div>
     </div>
 
-    <div style="display:flex; align-items:center; justify-content:center;">
-      <button type="button" class="btn btn-icon btn-ghost" style="width:28px;height:28px;" id="btn-swap-docs">
+    <div class="col-swap">
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-swap-docs">
         <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
       </button>
     </div>
 
     <div class="col-bar col-bar-right">
       <div class="col-title-wrap">
-        <span class="col-role-pill col-role-new" id="i18n-col-right">2 · Nachher</span>
+        <span class="col-role-pill col-role-new" id="i18n-col-right">Neue Fassung</span>
         <span class="col-filename" id="filename-right">Kein neues Dokument</span>
         <span class="col-meta-badge" id="meta-right"></span>
         <button type="button" class="col-edit-pill" id="badge-editable">
@@ -3306,15 +3822,30 @@ dialog.prime-dialog::backdrop {
         <span id="i18n-sidebar-title">Änderungen</span>
         <span class="sidebar-count-badge" id="sidebar-count-badge">0</span>
       </div>
-      <span class="sidebar-kbd-hint" id="sidebar-kbd-hint">J / K</span>
+      <span class="sidebar-kbd-hint" id="sidebar-kbd-hint"><kbd>J</kbd> / <kbd>K</kbd></span>
     </div>
-  </div>
+  </section>
+
+  <!-- ── 2b. FIRST-RUN LEGEND (dismissible, in-memory only) ───────────────── -->
+  <section class="legend-bar compare-only" id="legend-bar" aria-label="Legende">
+    <p class="legend-items">
+      <span class="legend-item"><del class="tok-del" data-i18n="legendDelSample">durchgestrichen</del> <span data-i18n="legendDel">= entfernt</span></span>
+      <span class="legend-item"><ins class="tok-ins" data-i18n="legendInsSample">grün</ins> <span data-i18n="legendIns">= neu</span></span>
+      <span class="legend-item"><span class="legend-swatch" aria-hidden="true"></span><span data-i18n="legendMod">blauer Rand = Absatz geändert</span></span>
+      <span class="legend-item fine-pointer-only"><kbd>J</kbd> / <kbd>K</kbd> <span data-i18n="legendKeys">= nächste / vorherige Änderung</span></span>
+      <span class="legend-item touch-only" data-i18n="legendTouch">Pfeile unten = nächste / vorherige Änderung</span>
+    </p>
+    <button type="button" class="btn btn-ghost btn-sm" id="btn-legend-close">
+      <span data-i18n="legendClose">Ausblenden</span>
+    </button>
+  </section>
 
   <!-- ── 3. MAIN WORKSPACE ──────────────────────────────────────────────────── -->
-  <main class="workspace">
-    <section class="doc-pane doc-pane-left" id="pane-left" data-side="left">
+  <main class="workspace" id="main">
+    <h1 class="sr-only compare-only" id="compare-heading" tabindex="-1">Doc Diff</h1>
+    <section class="doc-pane doc-pane-left" id="pane-left" data-side="left" tabindex="0" aria-label="Alte Fassung">
       <div class="drop-zone-overlay">
-        <div class="drop-box" id="i18n-drop-left">1 · Vorher (Alter Stand) hier ablegen (PDF / DOCX / TXT)</div>
+        <div class="drop-box" id="i18n-drop-left">Alte Fassung hier ablegen</div>
       </div>
       <div class="doc-sheet" id="sheet-left"></div>
     </section>
@@ -3324,22 +3855,141 @@ dialog.prime-dialog::backdrop {
       <svg id="connector-svg"></svg>
     </div>
 
-    <section class="doc-pane doc-pane-right" id="pane-right" data-side="right">
+    <section class="doc-pane doc-pane-right" id="pane-right" data-side="right" tabindex="0" aria-label="Neue Fassung">
       <div class="drop-zone-overlay">
-        <div class="drop-box" id="i18n-drop-right">2 · Nachher (Neuer Stand) hier ablegen (PDF / DOCX / TXT)</div>
+        <div class="drop-box" id="i18n-drop-right">Neue Fassung hier ablegen</div>
       </div>
       <div class="doc-sheet" id="sheet-right"></div>
     </section>
 
     <!-- Unified Inline Redline Pane -->
-    <section class="doc-pane-unified" id="pane-unified">
+    <section class="doc-pane-unified" id="pane-unified" tabindex="0" aria-label="Vergleich in einer Spalte">
       <div class="doc-sheet" id="sheet-unified"></div>
     </section>
 
-    <!-- Centered Zero-Friction Launchpad Overlay (when < 2 documents loaded) -->
-    <div class="empty-launchpad" id="empty-launchpad"></div>
+    <!-- Empty state = landing page (static markup, translated by JS; visible without JS) -->
+    <div class="empty-launchpad landing" id="empty-launchpad">
+      <div class="landing-inner">
+        <section class="landing-hero" aria-labelledby="landing-title">
+          <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n="heroTitle">Sehen Sie Wort für Wort, was sich zwischen zwei Fassungen geändert hat.</h1>
+          <p class="landing-sub" data-i18n="heroSub">Für Verträge, Ausschreibungen und andere Dokumente. Ihre Dateien verlassen dabei nie Ihren Computer.</p>
+          <ul class="trust-list">
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustFree">Kostenlos &amp; Open Source (MIT)</span></li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustLocal">Keine Uploads – alles läuft lokal im Browser</span></li>
+            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustNoTracking">Keine Werbung, kein Tracking, keine Cookies</span></li>
+          </ul>
 
-    <aside class="sidebar-panel" id="sidebar">
+          <div class="drop-slots">
+          <div class="drop-slot" id="lp-slot-left" data-side="left">
+            <button type="button" class="drop-slot-btn" id="btn-empty-upload-left">
+              <span class="drop-slot-head">
+                <span class="drop-slot-num" aria-hidden="true">1</span>
+                <span class="drop-slot-title" id="lp-left-title" data-i18n="slotLeftTitle">Alte Fassung</span>
+              </span>
+              <span class="drop-slot-hint" id="lp-left-hint" data-i18n="slotHint">PDF (mit Text), Word (.docx), Text</span>
+              <span class="drop-slot-cta">
+                <span class="drop-slot-cta-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span id="lp-left-cta" data-i18n="slotChoose">Datei wählen</span></span>
+                <span class="drop-slot-drag fine-pointer-only" data-i18n="slotDrag">oder hierher ziehen</span>
+              </span>
+            </button>
+            <button type="button" class="drop-slot-clear" id="lp-clear-left" hidden aria-label="Alte Fassung entfernen" data-i18n-label="slotClearLeft"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          <div class="drop-slot" id="lp-slot-right" data-side="right">
+            <button type="button" class="drop-slot-btn" id="btn-empty-upload-right">
+              <span class="drop-slot-head">
+                <span class="drop-slot-num" aria-hidden="true">2</span>
+                <span class="drop-slot-title" id="lp-right-title" data-i18n="slotRightTitle">Neue Fassung</span>
+              </span>
+              <span class="drop-slot-hint" id="lp-right-hint" data-i18n="slotHint">PDF (mit Text), Word (.docx), Text</span>
+              <span class="drop-slot-cta">
+                <span class="drop-slot-cta-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span id="lp-right-cta" data-i18n="slotChoose">Datei wählen</span></span>
+                <span class="drop-slot-drag fine-pointer-only" data-i18n="slotDrag">oder hierher ziehen</span>
+              </span>
+            </button>
+            <button type="button" class="drop-slot-clear" id="lp-clear-right" hidden aria-label="Neue Fassung entfernen" data-i18n-label="slotClearRight"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          </div>
+          <p class="drop-both-hint fine-pointer-only" data-i18n="dropBothHint">Sie können auch beide Dateien auf einmal hierher ziehen – die erste gilt als alte Fassung.</p>
+
+          <div class="landing-secondary">
+            <button type="button" class="btn btn-load-sample" id="btn-lp-sample">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+              <span data-i18n="loadSample">Beispiel ansehen</span>
+            </button>
+            <button type="button" class="btn btn-open-paste" id="btn-lp-paste">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span data-i18n="pasteText">Text einfügen</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="landing-section" aria-labelledby="how-title">
+          <h2 id="how-title" data-i18n="howTitle">So funktioniert’s</h2>
+          <ol class="how-steps">
+            <li><span class="how-num" aria-hidden="true">1</span><span><strong data-i18n="how1Title">Zwei Fassungen wählen</strong> <span data-i18n="how1Text">Als PDF, Word-Datei oder eingefügten Text. Die Dateien werden nur in diesem Browser-Tab gelesen.</span></span></li>
+            <li><span class="how-num" aria-hidden="true">2</span><span><strong data-i18n="how2Title">Änderungen durchgehen</strong> <span data-i18n="how2Text">Entferntes ist rot durchgestrichen, Neues grün markiert. Die Liste rechts führt von Änderung zu Änderung.</span></span></li>
+            <li><span class="how-num" aria-hidden="true">3</span><span><strong data-i18n="how3Title">Ergebnis sichern, wenn Sie es brauchen</strong> <span data-i18n="how3Text">Als Word-Datei mit markierten Änderungen, als PDF oder als Bericht speichern.</span></span></li>
+          </ol>
+        </section>
+
+        <section class="landing-section" aria-labelledby="scope-title">
+          <h2 id="scope-title" data-i18n="scopeTitle">Was es kann – und was nicht</h2>
+          <div class="scope-grid">
+            <div class="scope-col scope-can">
+              <h3 data-i18n="scopeCanTitle">Kann</h3>
+              <ul>
+                <li data-i18n="scopeCan1">PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen</li>
+                <li data-i18n="scopeCan2">Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge</li>
+                <li data-i18n="scopeCan3">Seiten wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet</li>
+                <li data-i18n="scopeCan4">Ohne Internet arbeiten – als einzelne HTML-Datei</li>
+              </ul>
+            </div>
+            <div class="scope-col scope-cannot">
+              <h3 data-i18n="scopeCannotTitle">Kann nicht</h3>
+              <ul>
+                <li data-i18n="scopeCannot1">Gescannte PDFs lesen – es gibt keine Texterkennung (OCR)</li>
+                <li data-i18n="scopeCannot2">Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern</li>
+                <li data-i18n="scopeCannot3">Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text</li>
+                <li data-i18n="scopeCannot4">Verschobene Absätze erkennen – sie erscheinen als entfernt und an anderer Stelle neu</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="landing-section" aria-labelledby="faq-title">
+          <h2 id="faq-title" data-i18n="faqTitle">Häufige Fragen</h2>
+          <details class="faq-item">
+            <summary data-i18n="faqUploadQ">Wie kann ich prüfen, dass nichts hochgeladen wird?</summary>
+            <div class="faq-answer" data-i18n-html="faqUploadA">
+              <p>Die Seite enthält eine Sicherheitsregel (Content-Security-Policy), mit der Ihr Browser jede Netzwerkverbindung aus der Seite heraus sperrt. Ihre Dateien werden nur im Arbeitsspeicher dieses Tabs gelesen und beim Schließen verworfen.</p>
+              <p>So prüfen Sie es selbst: Öffnen Sie die Entwicklerwerkzeuge Ihres Browsers (F12), wählen Sie den Reiter „Netzwerk“ und laden Sie dann ein Dokument – es erscheint keine Anfrage. Oder laden Sie die Offline-Datei herunter, trennen Sie die Internetverbindung und öffnen Sie sie: Alles funktioniert weiter.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faqOfflineQ">Kann ich Doc Diff offline nutzen?</summary>
+            <div class="faq-answer" data-i18n-html="faqOfflineA">
+              <p>Ja. Laden Sie <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> herunter (eine einzelne Datei, etwa 2,5&nbsp;MB) und öffnen Sie sie per Doppelklick im Browser – ohne Installation und ohne Internet.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faqWhoQ">Wer steckt dahinter? Wo ist der Quellcode?</summary>
+            <div class="faq-answer" data-i18n-html="faqWhoA">
+              <p>Doc Diff ist ein privates Open-Source-Projekt von Tobias Schnorpfeil – ohne Firma, Werbung oder Datensammlung dahinter. Der vollständige Quellcode steht unter MIT-Lizenz <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">auf GitHub</a>: Sie können ihn prüfen, selbst bauen oder selbst betreiben.</p>
+            </div>
+          </details>
+        </section>
+
+        <footer class="landing-footer">
+          <button type="button" class="lp-link btn-open-privacy" data-i18n="footerPrivacy">Impressum &amp; Datenschutz</button>
+          <span aria-hidden="true">·</span>
+          <a class="lp-link" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" data-i18n="footerSource">Quellcode auf GitHub</a>
+          <span aria-hidden="true">·</span>
+          <span data-i18n="footerLicense">MIT-Lizenz</span>
+        </footer>
+      </div>
+    </div>
+
+    <aside class="sidebar-panel" id="sidebar" aria-labelledby="i18n-sidebar-title">
       <div class="mobile-sheet-header">
         <div class="sheet-grabber" aria-hidden="true"></div>
         <div class="mobile-sheet-title-row">
@@ -3347,20 +3997,20 @@ dialog.prime-dialog::backdrop {
           <button type="button" class="mobile-sheet-done" id="btn-close-sidebar-sheet">Fertig</button>
         </div>
       </div>
-      <div class="sidebar-filter-bar" id="sidebar-filter-bar" role="tablist" aria-label="Filter">
-        <button type="button" class="sidebar-filter-btn is-active" data-sidebar-filter="all" aria-selected="true">
+      <div class="sidebar-filter-bar" id="sidebar-filter-bar" role="group" aria-label="Filter" data-i18n-label="filterGroupLabel">
+        <button type="button" class="sidebar-filter-btn is-active" data-sidebar-filter="all" aria-pressed="true">
           <span id="i18n-filter-all">Alle</span>
           <span class="sidebar-filter-count" id="filter-count-all">0</span>
         </button>
-        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="modified" aria-selected="false">
+        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="modified" aria-pressed="false">
           <span id="i18n-filter-mod">Geändert</span>
           <span class="sidebar-filter-count mod" id="filter-count-mod">0</span>
         </button>
-        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="inserted" aria-selected="false">
+        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="inserted" aria-pressed="false">
           <span id="i18n-filter-ins">Neu</span>
           <span class="sidebar-filter-count ins" id="filter-count-ins">0</span>
         </button>
-        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="deleted" aria-selected="false">
+        <button type="button" class="sidebar-filter-btn" data-sidebar-filter="deleted" aria-pressed="false">
           <span id="i18n-filter-del">Entfernt</span>
           <span class="sidebar-filter-count del" id="filter-count-del">0</span>
         </button>
@@ -3370,19 +4020,19 @@ dialog.prime-dialog::backdrop {
         <button type="button" class="privacy-status" id="btn-privacy-info">
           <span id="i18n-footer-privacy">Impressum & Datenschutz</span>
         </button>
-        <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;">GitHub</a>
+        <a class="sidebar-footer-link" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </aside>
   </main>
 
   <!-- ── 3b. FROSTED GLASS FLOATING ACTION BAR (Bottom-Mid HUD) ─────────────── -->
-  <nav class="floating-action-bar" id="floating-action-bar" aria-label="Comparison controls">
+  <nav class="floating-action-bar compare-only" id="floating-action-bar" aria-label="Navigation durch die Änderungen" data-i18n-label="dockLabel">
     <div class="dock-cluster dock-stepper">
-      <button type="button" class="dock-icon-btn" id="btn-prev" aria-label="Previous change">
+      <button type="button" class="dock-icon-btn" id="btn-prev">
         <svg class="icon" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
       </button>
       <button type="button" class="dock-step-badge" id="dock-step-count">0 / 0</button>
-      <button type="button" class="dock-icon-btn" id="btn-next" aria-label="Next change">
+      <button type="button" class="dock-icon-btn" id="btn-next">
         <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
       </button>
     </div>
@@ -3405,10 +4055,10 @@ dialog.prime-dialog::backdrop {
     <div class="dock-divider" aria-hidden="true"></div>
 
     <div class="dock-cluster dock-history" id="history-group">
-      <button type="button" class="dock-icon-btn" id="btn-undo" disabled aria-label="Undo">
+      <button type="button" class="dock-icon-btn" id="btn-undo" disabled>
         <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
       </button>
-      <button type="button" class="dock-icon-btn" id="btn-redo" disabled aria-label="Redo">
+      <button type="button" class="dock-icon-btn" id="btn-redo" disabled>
         <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
       </button>
     </div>
@@ -3416,20 +4066,20 @@ dialog.prime-dialog::backdrop {
 
   <!-- ── 4. MOBILE iOS SHEET BACKDROP & THUMB-ZONE BOTTOM BAR ───────────────── -->
   <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop" aria-hidden="true"></div>
-  <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Mobile navigation">
+  <nav class="mobile-bottom-bar compare-only" id="mobile-bottom-bar" aria-label="Navigation durch die Änderungen" data-i18n-label="dockLabel">
     <div class="mob-stepper">
-      <button type="button" class="mob-step-btn" id="mob-btn-prev" aria-label="Previous change">
+      <button type="button" class="mob-step-btn" id="mob-btn-prev" aria-label="Vorherige Änderung" data-i18n-label="prevLabel">
         <svg class="icon" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
       </button>
       <span class="mob-step-count" id="mob-step-count">0/0</span>
-      <button type="button" class="mob-step-btn" id="mob-btn-next" aria-label="Next change">
+      <button type="button" class="mob-step-btn" id="mob-btn-next" aria-label="Nächste Änderung" data-i18n-label="nextLabel">
         <svg class="icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
       </button>
     </div>
 
     <button type="button" class="mob-bar-btn" id="mob-btn-only-changes" aria-pressed="false">
       <svg class="icon" style="width:13px;height:13px;" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-      <span id="i18n-mob-filter">Nur Änd.</span>
+      <span id="i18n-mob-filter">Nur Änderungen</span>
     </button>
 
     <button type="button" class="mob-bar-btn" id="mob-btn-changes" aria-pressed="false">
@@ -3447,21 +4097,24 @@ dialog.prime-dialog::backdrop {
   <!-- ── INSTANT UI TOOLTIP ─────────────────────────────────────────────────── -->
   <div class="ui-tooltip" id="ui-tooltip" role="tooltip" aria-hidden="true"></div>
 
+  <!-- ── SCREEN-READER STATUS (one polite live region for counts & navigation) ─ -->
+  <div class="sr-only" id="sr-status" role="status" aria-live="polite" aria-atomic="true"></div>
+
   <!-- ── TEXT MODAL ─────────────────────────────────────────────────────────── -->
   <dialog class="prime-dialog" id="paste-modal" closedby="any" aria-labelledby="i18n-modal-paste-title">
     <div class="dialog-header">
-      <span id="i18n-modal-paste-title">Texte direkt eingeben oder einfügen</span>
-      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-modal" aria-label="Close">
+      <h2 class="dialog-title" id="i18n-modal-paste-title">Text einfügen</h2>
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-modal" aria-label="Schließen" data-i18n-label="close">
         <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
     <div class="dialog-body">
       <div class="dialog-col">
-        <label for="textarea-left" id="i18n-modal-left-label">1 · Vorher — Alter Stand (Links)</label>
-        <textarea class="dialog-textarea" id="textarea-left" spellcheck="false"></textarea>
+        <label for="textarea-left" id="i18n-modal-left-label">Alte Fassung</label>
+        <textarea class="dialog-textarea" id="textarea-left" spellcheck="false" autofocus></textarea>
       </div>
       <div class="dialog-col">
-        <label for="textarea-right" id="i18n-modal-right-label">2 · Nachher — Neuer Stand (Rechts)</label>
+        <label for="textarea-right" id="i18n-modal-right-label">Neue Fassung</label>
         <textarea class="dialog-textarea" id="textarea-right" spellcheck="false"></textarea>
       </div>
     </div>
@@ -3474,14 +4127,20 @@ dialog.prime-dialog::backdrop {
   <!-- ── HELP / GUIDE MODAL ─────────────────────────────────────────────────── -->
   <dialog class="prime-dialog dialog-md" id="help-modal" closedby="any" aria-labelledby="i18n-help-title">
     <div class="dialog-header">
-      <span id="i18n-help-title">Kurzanleitung — So funktioniert Doc Diff</span>
-      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-help" aria-label="Close">
+      <h2 class="dialog-title" id="i18n-help-title" tabindex="-1" autofocus>So funktioniert Doc Diff</h2>
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-help" aria-label="Schließen" data-i18n-label="close">
         <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
-    <div class="dialog-body-single" id="i18n-help-body"></div>
+    <div class="dialog-body-single">
+      <div id="i18n-help-body"></div>
+      <label class="help-setting">
+        <input type="checkbox" id="chk-single-key-shortcuts" checked />
+        <span data-i18n="shortcutsToggle">Tastenkürzel mit einzelnen Buchstaben verwenden (J, K, C, H, /)</span>
+      </label>
+    </div>
     <div class="dialog-footer">
-      <button type="button" class="btn btn-load-sample" id="btn-help-sample">Beispiel laden</button>
+      <button type="button" class="btn" id="btn-help-sample">Beispiel ansehen</button>
       <button type="button" class="btn btn-primary" id="btn-ok-help">Verstanden</button>
     </div>
   </dialog>
@@ -3489,8 +4148,8 @@ dialog.prime-dialog::backdrop {
   <!-- ── PRIVACY & LEGAL MODAL ──────────────────────────────────────────────── -->
   <dialog class="prime-dialog dialog-sm" id="privacy-modal" closedby="any" aria-labelledby="i18n-privacy-title">
     <div class="dialog-header">
-      <span id="i18n-privacy-title">Impressum & Datenschutz</span>
-      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-privacy" aria-label="Close">
+      <h2 class="dialog-title" id="i18n-privacy-title" tabindex="-1" autofocus>Impressum &amp; Datenschutz</h2>
+      <button type="button" class="btn btn-icon btn-ghost" id="btn-close-privacy" aria-label="Schließen" data-i18n-label="close">
         <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
@@ -3506,30 +4165,30 @@ dialog.prime-dialog::backdrop {
 const I18N = {
   de: {
     changesLabel: 'Änderungen',
-    statTooltip: 'Gesamtzahl geänderter Absätze · Grün = Neu / Geändert · Rot = Entfernt / Geändert',
+    statTooltip: 'Absätze mit Änderungen – dieselben Zahlen wie in der Änderungsliste',
     modePages: 'Seiten',
-    modePagesTitle: 'Original Seiten-Layout: Dokumentseiten als einzelne Blätter nebeneinander darstellen',
-    modeSplit: 'Textfluss',
-    modeSplitTitle: 'Endloser Textfluss: Beide Dokumente ohne Seitenumbrüche nebeneinander darstellen',
-    modeInline: 'Kompakt',
-    modeInlineTitle: '1-Spalten-Leseansicht: Alle Änderungen kombiniert im Seiten-Layout',
+    modePagesTitle: 'Beide Fassungen nebeneinander, mit Seitenumbrüchen wie im Original',
+    modeSplit: 'Nebeneinander',
+    modeSplitTitle: 'Beide Fassungen nebeneinander als durchgehender Text',
+    modeInline: 'Untereinander',
+    modeInlineTitle: 'Eine Spalte: Entferntes und Neues direkt im Text markiert',
     hfFilterBtn: 'Ohne Kopf-/Fußzeile',
-    hfFilterTitle: 'Kopf- und Fußzeilen sowie Seitenzahlen automatisch aus dem Diff herausfiltern (Taste H)',
+    hfFilterTitle: 'Wiederkehrende Kopf- und Fußzeilen sowie Seitenzahlen beim Vergleich ignorieren (Taste H)',
     pageLabel: 'Seite',
     pageShort: 'S.',
     pageOf: 'von',
     pageUnchanged: 'Unverändert',
     typeHf: 'Kopf-/Fußzeile',
     searchPlaceholder: 'Suchen…',
-    searchTitle: 'Beide Dokumente durchsuchen (Taste /)',
-    prevTitle: 'Vorherige Änderung anspringen (Taste K)',
-    nextTitle: 'Nächste Änderung anspringen (Taste J)',
+    searchTitle: 'In beiden Fassungen suchen (Taste /)',
+    prevTitle: 'Vorherige Änderung (Taste K)',
+    nextTitle: 'Nächste Änderung (Taste J)',
     onlyChanges: 'Nur Änderungen',
-    onlyChangesTitle: 'Unveränderte Absätze ausblenden und nur Abweichungen zeigen (Taste C)',
+    onlyChangesTitle: 'Unveränderte Absätze ausblenden (Taste C)',
     syncBtn: 'Sync-Scroll',
-    syncTitle: 'Beide Spalten beim Scrollen automatisch parallel mitbewegen',
+    syncTitle: 'Beide Spalten beim Scrollen gemeinsam bewegen',
     textBtn: 'Text einfügen',
-    textBtnTitle: 'Texte für Vorher & Nachher direkt per Copy & Paste eingeben',
+    textBtnTitle: 'Texte der alten und neuen Fassung einfügen oder bearbeiten',
     exportBtn: 'Speichern / Export',
     exportTitle: 'Neuen Stand (Rechts) kopieren oder als Datei speichern',
     expCopy: 'Neuen Stand kopieren',
@@ -3541,77 +4200,51 @@ const I18N = {
     expMd: 'Markdown-Bericht',
     editBtn: 'Bearbeiten',
     editInsertBtn: 'Einfügen',
-    editTitle: 'Diesen Absatz im neuen Stand direkt bearbeiten (oder Doppelklick)',
-    revertBtn: 'Vorher übernehmen',
-    revertTitle: 'Änderung verwerfen und den alten Stand (Vorher) übernehmen (⌘Z für Rückgängig)',
+    editTitle: 'Diesen Absatz in der neuen Fassung bearbeiten (oder Doppelklick)',
+    revertBtn: 'Alte Fassung übernehmen',
+    revertTitle: 'Änderung verwerfen und den Text der alten Fassung übernehmen (Strg+Z / ⌘Z macht es rückgängig)',
     editHint: 'Doppelklick oder „Bearbeiten“ klicken, um diesen Absatz im neuen Stand anzupassen',
     editorHintText: 'Enter = Übernehmen · Esc = Abbrechen · ⌘Z = Rückgängig',
     editorSave: 'Übernehmen',
     editorCancel: 'Abbrechen',
     badgeEditable: 'Bearbeitbar',
-    badgeEditableTitle: 'Rechts ist das Zieldokument: Absätze per Klick auf „Bearbeiten“ oder Doppelklick direkt anpassen',
-    clearBtn: 'Zurücksetzen',
-    clearBtnTitle: 'Beide Dokumente schließen und Arbeitsspeicher leeren',
-    helpBtn: 'Anleitung',
-    helpBtnTitle: 'Kurzanleitung, Farblegende & Tastenkürzel öffnen',
+    badgeEditableTitle: 'Die neue Fassung können Sie direkt anpassen: Absatz auswählen und „Bearbeiten“ wählen oder doppelklicken',
+    clearBtn: 'Neuer Vergleich',
+    clearBtnTitle: 'Beide Dokumente schließen und von vorn beginnen',
+    helpBtn: 'Hilfe',
+    helpBtnTitle: 'Kurzanleitung, Farben und Tastenkürzel',
     langTitle: 'Sprache wechseln (Deutsch / English)',
-    themeTitle: 'Darstellung wechseln (Hell / Dunkel · Standard: System)',
-    sidebarToggleTitle: 'Änderungsliste rechts ein-/ausblenden',
-    mobFilter: 'Nur Änd.',
+    themeTitle: 'Hell / Dunkel umschalten',
+    sidebarToggleTitle: 'Änderungsliste ein- oder ausblenden',
+    mobFilter: 'Nur Änderungen',
     mobList: 'Liste',
     mobExport: 'Export',
     mobDone: 'Fertig',
-    colLeft: '1 · Vorher',
-    colLeftTitle: 'Ausgangsdokument (Alte Fassung · schreibgeschützte Referenz)',
-    colRight: '2 · Nachher',
-    colRightTitle: 'Zieldokument (Neue Fassung · direkt bearbeitbar & speicherbar)',
-    noFileLeft: 'Kein Ausgangsdokument',
-    noFileRight: 'Kein neues Dokument',
+    colLeft: 'Alte Fassung',
+    colLeftTitle: 'Die alte Fassung ist die Vergleichsgrundlage und wird nicht verändert',
+    colRight: 'Neue Fassung',
+    colRightTitle: 'Die neue Fassung – Abweichungen zur alten sind markiert',
+    noFileLeft: 'Keine alte Fassung',
+    noFileRight: 'Keine neue Fassung',
     noFile: 'Keine Datei geladen',
     fileBtn: 'Datei laden',
-    fileLeftTitle: 'Ausgangsdokument (Vorher) als PDF, Word (.docx) oder Text laden',
-    fileRightTitle: 'Neues Dokument (Nachher) als PDF, Word (.docx) oder Text laden',
-    clearSideTitle: 'Dieses Dokument entfernen',
-    swapTitle: 'Vorher (Links) und Nachher (Rechts) miteinander tauschen',
+    fileLeftTitle: 'Andere Datei als alte Fassung laden (PDF, Word .docx oder Text)',
+    fileRightTitle: 'Andere Datei als neue Fassung laden (PDF, Word .docx oder Text)',
+    clearSideTitle: 'Dieses Dokument schließen',
+    swapTitle: 'Alte und neue Fassung tauschen',
     sidebarTitle: 'Änderungen',
-    dropLeft: '1 · Vorher (Alter Stand) hier ablegen (PDF / DOCX / TXT)',
-    dropRight: '2 · Nachher (Neuer Stand) hier ablegen (PDF / DOCX / TXT)',
-    lpTitle: 'Zwei Dokumentstände vergleichen',
-    lpSub: 'Wählen Sie links die alte Fassung (Vorher) und rechts den neuen Stand (Nachher) — oder ziehen Sie beide Dateien direkt hierher.',
-    lpLeftTitle: 'Ausgangsdokument (Vorher)',
-    lpLeftHint: 'PDF, Word (.docx) oder Text',
-    lpRightTitle: 'Überarbeiteter Stand (Nachher)',
-    lpRightHint: 'Abweichungen werden sofort markiert',
+    dropLeft: 'Alte Fassung hier ablegen',
+    dropRight: 'Neue Fassung hier ablegen',
     lpLoaded: 'Geladen',
-    lpChangeFile: 'Andere Datei wählen…',
-    lpStep1: 'Vorher & Nachher wählen',
-    lpStep2: 'Abweichungen prüfen',
-    lpStep3: 'Rechts anpassen & speichern',
-    lpTrust: '100 % lokal im Browser (kein Upload)',
-    stepLeftBadge: 'Schritt 1 · Vorher (Alter Stand)',
-    stepRightBadge: 'Schritt 2 · Nachher (Neuer Stand)',
-    emptyLeftTitle: 'Ausgangsdokument (Vorher) laden',
-    emptyRightTitle: 'Neuen Stand (Nachher) laden',
-    emptyLeftDesc: 'Laden Sie hier die ursprüngliche Fassung (z. B. Vertrag v1 oder Vorversion) als PDF, Word (.docx) oder Text.',
-    emptyRightDesc: 'Laden Sie hier die überarbeitete Fassung (z. B. Gegenentwurf oder v2). Abweichungen werden sofort markiert.',
-    chooseFileLeft: 'Datei wählen (Vorher)',
-    chooseFileRight: 'Datei wählen (Nachher)',
-    pasteText: 'Text direkt einfügen',
-    loadSample: 'Beispiel-Vergleich starten (Vertrag Vorher vs. Nachher)',
-    guideLeftHead: 'So funktioniert Doc Diff in 3 Schritten',
-    guideStep1: '<strong>Links (Vorher):</strong> Alte Fassung als schreibgeschützte Referenz laden.',
-    guideStep2: '<strong>Rechts (Nachher):</strong> Neue Fassung zum Abgleich gegenüberstellen.',
-    guideStep3: '<strong>Rechts anpassen & speichern:</strong> Im neuen Stand Absätze per <strong>Bearbeiten</strong> oder <strong>Vorher übernehmen</strong> anpassen und oben rechts unter <strong>Speichern / Export</strong> herunterladen.',
-    guideRightHead: 'Farblegende & Bearbeitung im neuen Stand (Rechts)',
-    guideLegendDel: '<del class="tok-del">Rot durchgestrichen</del> = Im neuen Stand entfernt',
-    guideLegendIns: '<ins class="tok-ins">Grün markiert</ins> = Im neuen Stand neu hinzugefügt',
-    guideLegendEdit: '<strong>Bearbeiten</strong> & <strong>Vorher übernehmen</strong> = Direkt hier im rechten Dokument anpassbar',
+    lpChangeFile: 'Andere Datei wählen',
+    pasteText: 'Text einfügen',
+    loadSample: 'Beispiel ansehen',
     sidebarEmptyTitle: 'Noch kein Vergleich aktiv',
-    sidebarEmptyDesc: 'Sobald links (Vorher) und rechts (Nachher) geladen sind, erscheinen hier alle geänderten Absätze zum schnellen Anspringen.',
+    sidebarEmptyDesc: 'Sobald beide Fassungen geladen sind, erscheinen hier alle Änderungen.',
     noMatchesTitle: 'Keine Treffer',
     noMatchesDesc: 'Keine Änderung entspricht dem Suchbegriff.',
     identicalTitle: 'Dokumente sind identisch',
-    identicalDesc: 'Zwischen Vorher (Links) und Nachher (Rechts) wurden keine Textabweichungen festgestellt.',
+    identicalDesc: 'Zwischen alter und neuer Fassung gibt es keine Textunterschiede.',
     typeMod: 'Geändert',
     typeIns: 'Neu',
     typeDel: 'Entfernt',
@@ -3622,41 +4255,49 @@ const I18N = {
     moreDeltas: 'weitere Änderungen',
     undoTitle: 'Letzte Bearbeitung rückgängig machen (⌘Z / Strg+Z)',
     redoTitle: 'Wiederherstellen (⇧⌘Z / Strg+Y)',
-    stepCountTitle: 'Aktuelle Änderung · Klicken oder J / K zum Springen zwischen Abweichungen',
-    sidebarKbdTitle: 'Tastenkürzel: J = Nächste Änderung · K = Vorherige Änderung',
+    stepCountTitle: 'Aktuelle Änderung – J / K springt weiter',
+    sidebarKbdTitle: 'Tasten J und K: nächste und vorherige Änderung',
     unitPara: 'Abs.',
     readingFile: 'Lese',
     readError: 'Fehler beim Lesen der Datei',
-    manualLeft: 'Manueller Text (Vorher)',
-    manualRight: 'Manueller Text (Nachher)',
-    modalPasteTitle: 'Texte direkt eingeben oder einfügen',
-    modalLeftLabel: '1 · Vorher — Alter Stand (Links, Referenz)',
-    modalRightLabel: '2 · Nachher — Neuer Stand (Rechts, bearbeitbar)',
-    modalLeftPh: 'Ursprünglichen Text (Vorher) hier einfügen…',
-    modalRightPh: 'Neuen / überarbeiteten Text (Nachher) hier einfügen…',
+    manualLeft: 'Eingefügter Text (alte Fassung)',
+    manualRight: 'Eingefügter Text (neue Fassung)',
+    modalPasteTitle: 'Text einfügen',
+    modalLeftLabel: 'Alte Fassung',
+    modalRightLabel: 'Neue Fassung',
+    modalLeftPh: 'Text der alten Fassung hier einfügen…',
+    modalRightPh: 'Text der neuen Fassung hier einfügen…',
     cancel: 'Abbrechen',
-    compare: 'Jetzt vergleichen',
-    helpTitle: 'Kurzanleitung — So funktioniert Doc Diff',
-    helpSampleBtn: 'Beispiel laden',
+    compare: 'Vergleichen',
+    helpTitle: 'So funktioniert Doc Diff',
+    helpSampleBtn: 'Beispiel ansehen',
     helpOkBtn: 'Verstanden',
     helpBodyHtml: `
       <div class="help-grid">
-        <div class="help-card">
-          <div class="help-card-title"><span class="col-role-pill col-role-old">1 · Vorher</span> vs. <span class="col-role-pill col-role-new">2 · Nachher</span></div>
-          <div class="help-card-desc"><strong>Links (Vorher)</strong> liegt Ihr unverändertes Ausgangsdokument als Referenz. <strong>Rechts (Nachher)</strong> liegt der neue Stand, den Sie prüfen, anpassen und speichern.</div>
-        </div>
-        <div class="help-card">
-          <div class="help-card-title">Seiten-Layout & Kopf-/Fußzeilen-Filter</div>
-          <div class="help-card-desc">In der Ansicht <strong>Seiten</strong> bleiben originale Seitenumbrüche, Überschriften, Unterkapitel und Aufzählungen erhalten. Wiederkehrende Kopf-/Fußzeilen und Seitenzahlen werden automatisch aus dem Diff gefiltert (unten per <strong>Ohne Kopf-/Fußzeile</strong> umschaltbar).</div>
-        </div>
-        <div class="help-card">
-          <div class="help-card-title">Direkt bearbeiten & speichern</div>
-          <div class="help-card-desc">Fahren Sie rechts über einen Absatz: Mit <strong>Bearbeiten</strong> (oder Doppelklick) passen Sie den Text an, mit <strong>Vorher übernehmen</strong> setzen Sie ihn zurück. Über <strong>Speichern / Export</strong> laden Sie das Ergebnis herunter.</div>
-        </div>
-        <div class="help-card">
-          <div class="help-card-title">Tastenkürzel & 100 % Lokaler Schutz</div>
-          <div class="help-card-desc"><strong>J / K</strong> Nächste/Vorherige Änderung · <strong>/</strong> Suche · <strong>C</strong> Nur Änderungen · <strong>H</strong> Kopf-/Fußzeilen · <strong>⌘Z</strong> Rückgängig.<br/>Alle Daten bleiben zu 100 % lokal im Browser (<code>connect-src 'none'</code>).</div>
-        </div>
+        <section class="help-card">
+          <h3 class="help-card-title">Alte und neue Fassung</h3>
+          <p class="help-card-desc">Links steht die alte Fassung, rechts die neue. In der Ansicht <strong>Untereinander</strong> sehen Sie beides in einer Spalte – Entferntes und Neues direkt im Text.</p>
+        </section>
+        <section class="help-card">
+          <h3 class="help-card-title">Farben</h3>
+          <ul class="help-legend">
+            <li><del class="tok-del">durchgestrichen</del> = in der neuen Fassung entfernt</li>
+            <li><ins class="tok-ins">grün</ins> = in der neuen Fassung neu</li>
+            <li><span class="legend-swatch" aria-hidden="true"></span> blauer Rand = Absatz wurde geändert</li>
+          </ul>
+        </section>
+        <section class="help-card">
+          <h3 class="help-card-title">Änderungen durchgehen</h3>
+          <p class="help-card-desc"><kbd>J</kbd> nächste · <kbd>K</kbd> vorherige Änderung · <kbd>/</kbd> suchen · <kbd>C</kbd> nur Änderungen · <kbd>H</kbd> Kopf- und Fußzeilen ein/aus. Oder Sie nutzen die Pfeile in der Leiste unten und die Liste der Änderungen.</p>
+        </section>
+        <section class="help-card">
+          <h3 class="help-card-title">Anpassen und speichern (optional)</h3>
+          <p class="help-card-desc">Wählen Sie einen Absatz der neuen Fassung: <strong>Bearbeiten</strong> ändert den Text, <strong>Alte Fassung übernehmen</strong> nimmt die Änderung zurück. Über <strong>Speichern / Export</strong> sichern Sie das Ergebnis.</p>
+        </section>
+        <section class="help-card help-card-wide">
+          <h3 class="help-card-title">Ihre Daten bleiben bei Ihnen</h3>
+          <p class="help-card-desc">Die Seite verbietet Ihrem Browser jede Netzwerkverbindung. Ihre Dateien werden nur im Arbeitsspeicher dieses Tabs gelesen und beim Schließen verworfen – nichts wird hochgeladen oder dauerhaft gespeichert.</p>
+        </section>
       </div>
     `,
     footerPrivacy: 'Impressum & Datenschutz',
@@ -3668,33 +4309,112 @@ const I18N = {
     `,
     sampleLeftName: 'Vertrag_v1_Vorher.docx',
     sampleRightName: 'Vertrag_v2_Nachher.docx',
+    // First-run landing page, header counts, legend & accessibility labels
+    statMod: 'geändert',
+    statIns: 'neu',
+    statDel: 'entfernt',
+    viewModeLabel: 'Ansicht',
+    searchLabel: 'In beiden Fassungen suchen',
+    docsLabel: 'Dokumente',
+    paneUnifiedLabel: 'Vergleich in einer Spalte',
+    filterGroupLabel: 'Änderungen filtern',
+    dockLabel: 'Navigation durch die Änderungen',
+    prevLabel: 'Vorherige Änderung',
+    nextLabel: 'Nächste Änderung',
+    undoLabel: 'Rückgängig',
+    redoLabel: 'Wiederherstellen',
+    close: 'Schließen',
+    legendLabel: 'Legende',
+    legendDelSample: 'durchgestrichen',
+    legendDel: '= entfernt',
+    legendInsSample: 'grün',
+    legendIns: '= neu',
+    legendMod: 'blauer Rand = Absatz geändert',
+    legendKeys: '= nächste / vorherige Änderung',
+    legendTouch: 'Pfeile unten = nächste / vorherige Änderung',
+    legendClose: 'Ausblenden',
+    shortcutsToggle: 'Tastenkürzel mit einzelnen Buchstaben verwenden (J, K, C, H, /)',
+    heroTitle: 'Sehen Sie Wort für Wort, was sich zwischen zwei Fassungen geändert hat.',
+    heroSub: 'Für Verträge, Ausschreibungen und andere Dokumente. Ihre Dateien verlassen dabei nie Ihren Computer.',
+    trustFree: 'Kostenlos & Open Source (MIT)',
+    trustLocal: 'Keine Uploads – alles läuft lokal im Browser',
+    trustNoTracking: 'Keine Werbung, kein Tracking, keine Cookies',
+    slotLeftTitle: 'Alte Fassung',
+    slotRightTitle: 'Neue Fassung',
+    slotHint: 'PDF (mit Text), Word (.docx), Text',
+    slotChoose: 'Datei wählen',
+    slotDrag: 'oder hierher ziehen',
+    slotClearLeft: 'Alte Fassung entfernen',
+    slotClearRight: 'Neue Fassung entfernen',
+    dropBothHint: 'Sie können auch beide Dateien auf einmal hierher ziehen – die erste gilt als alte Fassung.',
+    howTitle: 'So funktioniert’s',
+    how1Title: 'Zwei Fassungen wählen',
+    how1Text: 'Als PDF, Word-Datei oder eingefügten Text. Die Dateien werden nur in diesem Browser-Tab gelesen.',
+    how2Title: 'Änderungen durchgehen',
+    how2Text: 'Entferntes ist rot durchgestrichen, Neues grün markiert. Die Liste der Änderungen führt Sie von Stelle zu Stelle.',
+    how3Title: 'Ergebnis sichern, wenn Sie es brauchen',
+    how3Text: 'Als Word-Datei mit markierten Änderungen, als PDF oder als Bericht.',
+    scopeTitle: 'Was es kann – und was nicht',
+    scopeCanTitle: 'Kann',
+    scopeCan1: 'PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen',
+    scopeCan2: 'Änderungen Wort für Wort zeigen – auch geänderte Zahlen, Daten und Beträge',
+    scopeCan3: 'Seiten wie im Original anzeigen; wiederkehrende Kopf- und Fußzeilen werden ausgeblendet',
+    scopeCan4: 'Ohne Internet arbeiten – als einzelne HTML-Datei',
+    scopeCannotTitle: 'Kann nicht',
+    scopeCannot1: 'Gescannte PDFs lesen – es gibt keine Texterkennung (OCR)',
+    scopeCannot2: 'Alte Word-Dateien (.doc) öffnen – bitte vorher als .docx speichern',
+    scopeCannot3: 'Formatierung vergleichen – Fett, Kursiv, Tabellenlayout und Bilder werden ignoriert, verglichen wird nur der Text',
+    scopeCannot4: 'Verschobene Absätze erkennen – sie erscheinen als entfernt und an anderer Stelle neu',
+    faqTitle: 'Häufige Fragen',
+    faqUploadQ: 'Wie kann ich prüfen, dass nichts hochgeladen wird?',
+    faqUploadA: `
+              <p>Die Seite enthält eine Sicherheitsregel (Content-Security-Policy), mit der Ihr Browser jede Netzwerkverbindung aus der Seite heraus sperrt. Ihre Dateien werden nur im Arbeitsspeicher dieses Tabs gelesen und beim Schließen verworfen.</p>
+              <p>So prüfen Sie es selbst: Öffnen Sie die Entwicklerwerkzeuge Ihres Browsers (F12), wählen Sie den Reiter „Netzwerk“ und laden Sie dann ein Dokument – es erscheint keine Anfrage. Oder laden Sie die Offline-Datei herunter, trennen Sie die Internetverbindung und öffnen Sie sie: Alles funktioniert weiter.</p>
+            `,
+    faqOfflineQ: 'Kann ich Doc Diff offline nutzen?',
+    faqOfflineA: `
+              <p>Ja. Laden Sie <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> herunter (eine einzelne Datei, etwa 2,5&nbsp;MB) und öffnen Sie sie per Doppelklick im Browser – ohne Installation und ohne Internet.</p>
+            `,
+    faqWhoQ: 'Wer steckt dahinter? Wo ist der Quellcode?',
+    faqWhoA: `
+              <p>Doc Diff ist ein privates Open-Source-Projekt von Tobias Schnorpfeil – ohne Firma, Werbung oder Datensammlung dahinter. Der vollständige Quellcode steht unter MIT-Lizenz <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">auf GitHub</a>: Sie können ihn prüfen, selbst bauen oder selbst betreiben.</p>
+            `,
+    footerSource: 'Quellcode auf GitHub',
+    footerLicense: 'MIT-Lizenz',
+    announceCompared: 'Vergleich fertig: {n} Änderungen. Mit J und K springen Sie von Änderung zu Änderung.',
+    announceIdentical: 'Vergleich fertig: keine Textunterschiede.',
+    announceStep: 'Änderung {i} von {n}: {ref}, {type}',
+    compareHeading: 'Vergleich: {left} mit {right}',
+    demoLabel: 'Beispiel',
+    changeLabelOne: 'Änderung',
+    announceComparedOne: 'Vergleich fertig: 1 Änderung. Mit J und K springen Sie zu ihr.',
   },
   en: {
     changesLabel: 'changes',
-    statTooltip: 'Total changed paragraphs · Green = Added / Modified · Red = Removed / Modified',
+    statTooltip: 'Paragraphs with changes – the same numbers as in the list of changes',
     modePages: 'Pages',
-    modePagesTitle: 'Original page layout: Render document pages as distinct paper sheets side-by-side',
-    modeSplit: 'Stream',
-    modeSplitTitle: 'Continuous stream: Show both documents side-by-side without page breaks',
-    modeInline: 'Unified',
-    modeInlineTitle: '1-column reading view: All changes combined inline with page layout',
+    modePagesTitle: 'Both versions side by side, with the original page breaks',
+    modeSplit: 'Side by side',
+    modeSplitTitle: 'Both versions side by side as continuous text',
+    modeInline: 'Inline',
+    modeInlineTitle: 'One column: removed and added text marked in place',
     hfFilterBtn: 'No Header/Footer',
-    hfFilterTitle: 'Automatically filter running headers, footers, and page numbers from the diff (Key H)',
+    hfFilterTitle: 'Ignore repeating headers, footers and page numbers (key H)',
     pageLabel: 'Page',
     pageShort: 'p.',
     pageOf: 'of',
     pageUnchanged: 'Unchanged',
     typeHf: 'Header/Footer',
     searchPlaceholder: 'Search…',
-    searchTitle: 'Search across both documents (Key /)',
-    prevTitle: 'Jump to previous change (Key K)',
-    nextTitle: 'Jump to next change (Key J)',
+    searchTitle: 'Search both versions (key /)',
+    prevTitle: 'Previous change (key K)',
+    nextTitle: 'Next change (key J)',
     onlyChanges: 'Changes only',
-    onlyChangesTitle: 'Hide unchanged paragraphs and show differences only (Key C)',
+    onlyChangesTitle: 'Hide unchanged paragraphs (key C)',
     syncBtn: 'Sync-Scroll',
-    syncTitle: 'Scroll both document columns together automatically',
+    syncTitle: 'Scroll both columns together',
     textBtn: 'Paste text',
-    textBtnTitle: 'Paste or type text for Before & After directly',
+    textBtnTitle: 'Paste or edit the text of both versions',
     exportBtn: 'Save / Export',
     exportTitle: 'Copy the new version (Right) or download as a file',
     expCopy: 'Copy new version text',
@@ -3706,77 +4426,51 @@ const I18N = {
     expMd: 'Markdown Report',
     editBtn: 'Edit',
     editInsertBtn: 'Insert',
-    editTitle: 'Edit this paragraph directly in the new version (or double-click)',
-    revertBtn: 'Use old',
-    revertTitle: 'Discard change and restore the old version (Before) (Cmd+Z to undo)',
+    editTitle: 'Edit this paragraph in the new version (or double-click)',
+    revertBtn: 'Use old version',
+    revertTitle: 'Discard this change and restore the old text (Ctrl+Z / Cmd+Z to undo)',
     editHint: 'Double-click or click "Edit" to modify this paragraph in the new version',
     editorHintText: 'Enter = Apply · Esc = Cancel · Cmd+Z = Undo',
     editorSave: 'Apply',
     editorCancel: 'Cancel',
     badgeEditable: 'Editable',
-    badgeEditableTitle: 'Right column is your target document: click "Edit" or double-click any paragraph to edit',
-    clearBtn: 'Reset',
-    clearBtnTitle: 'Close both documents and wipe memory',
-    helpBtn: 'Guide',
-    helpBtnTitle: 'Open quick guide, color legend & keyboard shortcuts',
+    badgeEditableTitle: 'You can adjust the new version directly: select a paragraph and choose “Edit”, or double-click it',
+    clearBtn: 'New comparison',
+    clearBtnTitle: 'Close both documents and start over',
+    helpBtn: 'Help',
+    helpBtnTitle: 'Quick guide, colours and keyboard shortcuts',
     langTitle: 'Switch language (Deutsch / English)',
-    themeTitle: 'Switch appearance (Light / Dark · Default: System)',
-    sidebarToggleTitle: 'Show / hide changes list on the right',
-    mobFilter: 'Changes',
+    themeTitle: 'Switch between light and dark',
+    sidebarToggleTitle: 'Show or hide the list of changes',
+    mobFilter: 'Changes only',
     mobList: 'List',
     mobExport: 'Export',
     mobDone: 'Done',
-    colLeft: '1 · Before',
-    colLeftTitle: 'Baseline document (Old version · read-only reference)',
-    colRight: '2 · After',
-    colRightTitle: 'Target document (New version · directly editable & exportable)',
-    noFileLeft: 'No baseline file',
-    noFileRight: 'No new file',
+    colLeft: 'Old version',
+    colLeftTitle: 'The old version is the reference and is never changed',
+    colRight: 'New version',
+    colRightTitle: 'The new version – differences from the old one are marked',
+    noFileLeft: 'No old version',
+    noFileRight: 'No new version',
     noFile: 'No file loaded',
     fileBtn: 'Load file',
-    fileLeftTitle: 'Load baseline document (Before) as PDF, Word (.docx), or text',
-    fileRightTitle: 'Load new document (After) as PDF, Word (.docx), or text',
-    clearSideTitle: 'Remove this document',
-    swapTitle: 'Swap Before (Left) and After (Right) documents',
+    fileLeftTitle: 'Load another file as the old version (PDF, Word .docx or text)',
+    fileRightTitle: 'Load another file as the new version (PDF, Word .docx or text)',
+    clearSideTitle: 'Close this document',
+    swapTitle: 'Swap old and new version',
     sidebarTitle: 'Changes',
-    dropLeft: '1 · Drop Before (Old version) here (PDF / DOCX / TXT)',
-    dropRight: '2 · Drop After (New version) here (PDF / DOCX / TXT)',
-    lpTitle: 'Compare two document versions',
-    lpSub: 'Select the baseline version (Before) on the left and the revised version (After) on the right — or drop both files right here.',
-    lpLeftTitle: 'Baseline document (Before)',
-    lpLeftHint: 'PDF, Word (.docx), or text',
-    lpRightTitle: 'Revised version (After)',
-    lpRightHint: 'Differences are highlighted instantly',
+    dropLeft: 'Drop the old version here',
+    dropRight: 'Drop the new version here',
     lpLoaded: 'Loaded',
-    lpChangeFile: 'Choose another file…',
-    lpStep1: 'Select Before & After',
-    lpStep2: 'Review differences',
-    lpStep3: 'Edit & export on the right',
-    lpTrust: '100% local in browser (no upload)',
-    stepLeftBadge: 'Step 1 · Before (Old Version)',
-    stepRightBadge: 'Step 2 · After (New Version)',
-    emptyLeftTitle: 'Load baseline document (Before)',
-    emptyRightTitle: 'Load new version (After)',
-    emptyLeftDesc: 'Drop the original version (e.g. Contract v1 or prior draft) here as PDF, Word (.docx), or text.',
-    emptyRightDesc: 'Drop the revised version (e.g. counter-proposal or v2) here. All differences are highlighted instantly.',
-    chooseFileLeft: 'Choose file (Before)',
-    chooseFileRight: 'Choose file (After)',
-    pasteText: 'Paste text directly',
-    loadSample: 'Load interactive sample (Contract Before vs. After)',
-    guideLeftHead: 'How Doc Diff works in 3 steps',
-    guideStep1: '<strong>Left (Before):</strong> Load the old version as your read-only baseline.',
-    guideStep2: '<strong>Right (After):</strong> Load the new version to compare against it.',
-    guideStep3: '<strong>Edit & Save on the Right:</strong> Click <strong>Edit</strong> or <strong>Use old</strong> on any paragraph in the new version, then export via <strong>Save / Export</strong> at the top right.',
-    guideRightHead: 'Color legend & editing in the new version (Right)',
-    guideLegendDel: '<del class="tok-del">Red strikethrough</del> = Removed in the new version',
-    guideLegendIns: '<ins class="tok-ins">Green highlight</ins> = Added in the new version',
-    guideLegendEdit: '<strong>Edit</strong> & <strong>Use old</strong> = Directly adjustable in the right document',
+    lpChangeFile: 'Choose another file',
+    pasteText: 'Paste text',
+    loadSample: 'View example',
     sidebarEmptyTitle: 'No active comparison',
-    sidebarEmptyDesc: 'Once both Before (Left) and After (Right) are loaded, all changed clauses appear here for quick navigation.',
+    sidebarEmptyDesc: 'Once both versions are loaded, all changes appear here.',
     noMatchesTitle: 'No matches',
     noMatchesDesc: 'No change matches your search query.',
     identicalTitle: 'Documents are identical',
-    identicalDesc: 'No text differences were found between Before (Left) and After (Right).',
+    identicalDesc: 'There are no text differences between the old and the new version.',
     typeMod: 'Modified',
     typeIns: 'Added',
     typeDel: 'Removed',
@@ -3787,41 +4481,49 @@ const I18N = {
     moreDeltas: 'more changes',
     undoTitle: 'Undo last edit (Cmd+Z / Ctrl+Z)',
     redoTitle: 'Redo (Shift+Cmd+Z / Ctrl+Y)',
-    stepCountTitle: 'Current change · Click or press J / K to jump between differences',
-    sidebarKbdTitle: 'Shortcuts: J = Next change · K = Previous change',
+    stepCountTitle: 'Current change – J / K moves on',
+    sidebarKbdTitle: 'Keys J and K: next and previous change',
     unitPara: 'paras',
     readingFile: 'Reading',
     readError: 'Failed to read file',
-    manualLeft: 'Pasted text (Before)',
-    manualRight: 'Pasted text (After)',
-    modalPasteTitle: 'Type or paste texts directly',
-    modalLeftLabel: '1 · Before — Old Version (Left, Reference)',
-    modalRightLabel: '2 · After — New Version (Right, Editable)',
-    modalLeftPh: 'Paste baseline text (Before) here…',
-    modalRightPh: 'Paste new / revised text (After) here…',
+    manualLeft: 'Pasted text (old version)',
+    manualRight: 'Pasted text (new version)',
+    modalPasteTitle: 'Paste text',
+    modalLeftLabel: 'Old version',
+    modalRightLabel: 'New version',
+    modalLeftPh: 'Paste the text of the old version here…',
+    modalRightPh: 'Paste the text of the new version here…',
     cancel: 'Cancel',
-    compare: 'Compare now',
-    helpTitle: 'Quick Guide — How Doc Diff Works',
-    helpSampleBtn: 'Load sample',
+    compare: 'Compare',
+    helpTitle: 'How Doc Diff works',
+    helpSampleBtn: 'View example',
     helpOkBtn: 'Got it',
     helpBodyHtml: `
       <div class="help-grid">
-        <div class="help-card">
-          <div class="help-card-title"><span class="col-role-pill col-role-old">1 · Before</span> vs. <span class="col-role-pill col-role-new">2 · After</span></div>
-          <div class="help-card-desc"><strong>Left (Before)</strong> holds your unchanged baseline document as a reference. <strong>Right (After)</strong> holds the new version that you review, edit, and export.</div>
-        </div>
-        <div class="help-card">
-          <div class="help-card-title">Page Layout & Header/Footer Filter</div>
-          <div class="help-card-desc">In <strong>Pages</strong> view, original page breaks, headings, sub-headings, and bullet lists are preserved. Repeating headers, footers, and page numbers are automatically filtered out (toggle via <strong>No Header/Footer</strong> in the bottom dock).</div>
-        </div>
-        <div class="help-card">
-          <div class="help-card-title">Edit directly & Export</div>
-          <div class="help-card-desc">Hover any paragraph on the right: click <strong>Edit</strong> (or double-click) to rewrite it, or <strong>Use old</strong> to revert. Use <strong>Save / Export</strong> to copy or download the result.</div>
-        </div>
-        <div class="help-card">
-          <div class="help-card-title">Shortcuts & 100% Local Privacy</div>
-          <div class="help-card-desc"><strong>J / K</strong> Next/Previous change · <strong>/</strong> Search · <strong>C</strong> Changes only · <strong>H</strong> Headers/Footers · <strong>Cmd+Z</strong> Undo.<br/>All data stays 100% in your browser's volatile memory (<code>connect-src 'none'</code>).</div>
-        </div>
+        <section class="help-card">
+          <h3 class="help-card-title">Old and new version</h3>
+          <p class="help-card-desc">The old version is on the left, the new one on the right. The <strong>Inline</strong> view shows both in one column, with removed and added text marked in place.</p>
+        </section>
+        <section class="help-card">
+          <h3 class="help-card-title">Colours</h3>
+          <ul class="help-legend">
+            <li><del class="tok-del">struck through</del> = removed in the new version</li>
+            <li><ins class="tok-ins">green</ins> = added in the new version</li>
+            <li><span class="legend-swatch" aria-hidden="true"></span> blue edge = paragraph was changed</li>
+          </ul>
+        </section>
+        <section class="help-card">
+          <h3 class="help-card-title">Going through the changes</h3>
+          <p class="help-card-desc"><kbd>J</kbd> next · <kbd>K</kbd> previous change · <kbd>/</kbd> search · <kbd>C</kbd> changes only · <kbd>H</kbd> headers and footers on/off. Or use the arrows in the bar at the bottom and the list of changes.</p>
+        </section>
+        <section class="help-card">
+          <h3 class="help-card-title">Adjust and save (optional)</h3>
+          <p class="help-card-desc">Select a paragraph in the new version: <strong>Edit</strong> changes its text, <strong>Use old version</strong> takes the change back. Use <strong>Save / Export</strong> to keep the result.</p>
+        </section>
+        <section class="help-card help-card-wide">
+          <h3 class="help-card-title">Your data stays with you</h3>
+          <p class="help-card-desc">The page forbids your browser from making any network connection. Your files are only read into this tab’s memory and discarded when you close it – nothing is uploaded or stored.</p>
+        </section>
       </div>
     `,
     footerPrivacy: 'Legal & Privacy',
@@ -3833,6 +4535,85 @@ const I18N = {
     `,
     sampleLeftName: 'Contract_v1_Before.docx',
     sampleRightName: 'Contract_v2_After.docx',
+    // First-run landing page, header counts, legend & accessibility labels
+    statMod: 'modified',
+    statIns: 'added',
+    statDel: 'removed',
+    viewModeLabel: 'View',
+    searchLabel: 'Search both versions',
+    docsLabel: 'Documents',
+    paneUnifiedLabel: 'Comparison in one column',
+    filterGroupLabel: 'Filter changes',
+    dockLabel: 'Change navigation',
+    prevLabel: 'Previous change',
+    nextLabel: 'Next change',
+    undoLabel: 'Undo',
+    redoLabel: 'Redo',
+    close: 'Close',
+    legendLabel: 'Legend',
+    legendDelSample: 'struck through',
+    legendDel: '= removed',
+    legendInsSample: 'green',
+    legendIns: '= added',
+    legendMod: 'blue edge = paragraph changed',
+    legendKeys: '= next / previous change',
+    legendTouch: 'Arrows at the bottom = next / previous change',
+    legendClose: 'Dismiss',
+    shortcutsToggle: 'Use single-letter keyboard shortcuts (J, K, C, H, /)',
+    heroTitle: 'See word by word what changed between two versions of a document.',
+    heroSub: 'For contracts, tenders and other documents. Your files never leave your computer.',
+    trustFree: 'Free & open source (MIT)',
+    trustLocal: 'No uploads – everything runs locally in your browser',
+    trustNoTracking: 'No ads, no tracking, no cookies',
+    slotLeftTitle: 'Old version',
+    slotRightTitle: 'New version',
+    slotHint: 'PDF (with text), Word (.docx), text',
+    slotChoose: 'Choose file',
+    slotDrag: 'or drop it here',
+    slotClearLeft: 'Remove old version',
+    slotClearRight: 'Remove new version',
+    dropBothHint: 'You can also drop both files here at once – the first one becomes the old version.',
+    howTitle: 'How it works',
+    how1Title: 'Choose two versions',
+    how1Text: 'As PDF, Word file or pasted text. The files are only read inside this browser tab.',
+    how2Title: 'Go through the changes',
+    how2Text: 'Removed text is struck through in red, added text is marked green. The list of changes takes you from one to the next.',
+    how3Title: 'Save the result if you need it',
+    how3Text: 'As a Word file with marked changes, as PDF or as a report.',
+    scopeTitle: 'What it can do – and what it can’t',
+    scopeCanTitle: 'Can',
+    scopeCan1: 'Compare PDFs with a text layer, Word files (.docx) and plain text',
+    scopeCan2: 'Show changes word by word – including changed numbers, dates and amounts',
+    scopeCan3: 'Show pages as in the original; repeating headers and footers are left out',
+    scopeCan4: 'Work without internet – as a single HTML file',
+    scopeCannotTitle: 'Can’t',
+    scopeCannot1: 'Read scanned PDFs – there is no text recognition (OCR)',
+    scopeCannot2: 'Open old Word files (.doc) – please save them as .docx first',
+    scopeCannot3: 'Compare formatting – bold, italics, table layout and images are ignored; only the text is compared',
+    scopeCannot4: 'Detect moved paragraphs – they show up as removed in one place and added in another',
+    faqTitle: 'Frequently asked questions',
+    faqUploadQ: 'How can I check that nothing is uploaded?',
+    faqUploadA: `
+              <p>The page contains a security rule (Content Security Policy) that makes your browser block every network connection from the page. Your files are only read into this tab’s memory and discarded when you close it.</p>
+              <p>To check it yourself: open your browser’s developer tools (F12), switch to the “Network” tab and then load a document – no request appears. Or download the offline file, disconnect from the internet and open it: everything keeps working.</p>
+            `,
+    faqOfflineQ: 'Can I use Doc Diff offline?',
+    faqOfflineA: `
+              <p>Yes. Download <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html" rel="noopener noreferrer">DocDiff.html</a> (a single file of about 2.5&nbsp;MB) and open it in your browser with a double-click – no installation and no internet needed.</p>
+            `,
+    faqWhoQ: 'Who is behind it? Where is the source code?',
+    faqWhoA: `
+              <p>Doc Diff is a private open-source project by Tobias Schnorpfeil – with no company, advertising or data collection behind it. The complete source code is available under the MIT licence <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer">on GitHub</a>: you can review it, build it yourself or host it yourself.</p>
+            `,
+    footerSource: 'Source code on GitHub',
+    footerLicense: 'MIT licence',
+    announceCompared: 'Comparison ready: {n} changes. Press J and K to move between changes.',
+    announceIdentical: 'Comparison ready: no text differences.',
+    announceStep: 'Change {i} of {n}: {ref}, {type}',
+    compareHeading: 'Comparison: {left} with {right}',
+    demoLabel: 'Example',
+    changeLabelOne: 'change',
+    announceComparedOne: 'Comparison ready: 1 change. Press J to go to it.',
   },
 };
 
@@ -4154,6 +4935,8 @@ const state = {
   isProgrammaticScroll: false,
   undoStack: [],
   redoStack: [],
+  legendDismissed: false,
+  singleKeyShortcuts: true,
 };
 
 function t(key) {
@@ -4170,18 +4953,70 @@ const sidebarList = document.getElementById('sidebar-list');
 const connectorSvg = document.getElementById('connector-svg');
 const minimapTrack = document.getElementById('minimap-track');
 
-function setTooltip(el, text) {
+// Shows `text` in the custom tooltip. Buttons and links also get an accessible name:
+// `name` when given (e.g. a visible label that CSS may hide on narrow screens), otherwise
+// the tooltip text for icon-only controls, which would have no name at all.
+function setTooltip(el, text, name) {
   if (!el) return;
   el.setAttribute('data-tooltip', text);
   el.removeAttribute('title');
+  if (name) {
+    el.setAttribute('aria-label', name);
+  } else if (el.matches('button, a') && !el.textContent.trim()) {
+    el.setAttribute('aria-label', text);
+  }
+}
+
+// "1 Änderung" / "19 Änderungen"
+function changesWord(n) {
+  return n === 1 ? t('changeLabelOne') : t('changesLabel');
+}
+
+function formatMsg(key, params) {
+  return t(key).replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? String(params[k]) : ''));
+}
+
+// Polite announcements for screen readers (one shared live region, never chatty).
+let srStatusTimer = null;
+function announce(message) {
+  const el = document.getElementById('sr-status');
+  if (!el) return;
+  clearTimeout(srStatusTimer);
+  el.textContent = '';
+  srStatusTimer = setTimeout(() => {
+    el.textContent = message;
+  }, 60);
+}
+
+function applyDataI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = t(el.getAttribute('data-i18n-html'));
+  });
+  document.querySelectorAll('[data-i18n-label]').forEach(el => {
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-label')));
+  });
 }
 
 function applyTranslationsToStaticDom() {
   document.documentElement.lang = state.lang;
+  applyDataI18n();
   document.getElementById('btn-lang').textContent = state.lang.toUpperCase();
-  setTooltip(document.getElementById('btn-lang'), t('langTitle'));
+  setTooltip(
+    document.getElementById('btn-lang'),
+    t('langTitle'),
+    `${state.lang.toUpperCase()} – ${t('langTitle')}`
+  );
   document.getElementById('i18n-changes-label').textContent = t('changesLabel');
   setTooltip(document.getElementById('stat-summary'), t('statTooltip'));
+  document.getElementById('seg-view-mode').setAttribute('aria-label', t('viewModeLabel'));
+  document.getElementById('col-bars').setAttribute('aria-label', t('docsLabel'));
+  document.getElementById('legend-bar').setAttribute('aria-label', t('legendLabel'));
+  paneLeft.setAttribute('aria-label', t('colLeft'));
+  paneRight.setAttribute('aria-label', t('colRight'));
+  paneUnified.setAttribute('aria-label', t('paneUnifiedLabel'));
 
   const modePagesEl = document.getElementById('i18n-mode-pages');
   if (modePagesEl) modePagesEl.textContent = t('modePages');
@@ -4192,9 +5027,10 @@ function applyTranslationsToStaticDom() {
   setTooltip(document.getElementById('btn-mode-inline'), t('modeInlineTitle'));
 
   document.getElementById('search-input').placeholder = t('searchPlaceholder');
+  document.getElementById('search-input').setAttribute('aria-label', t('searchLabel'));
   setTooltip(document.getElementById('search-box-wrap'), t('searchTitle'));
-  setTooltip(document.getElementById('btn-prev'), t('prevTitle'));
-  setTooltip(document.getElementById('btn-next'), t('nextTitle'));
+  setTooltip(document.getElementById('btn-prev'), t('prevTitle'), t('prevLabel'));
+  setTooltip(document.getElementById('btn-next'), t('nextTitle'), t('nextLabel'));
 
   document.getElementById('i18n-btn-only-changes').textContent = t('onlyChanges');
   setTooltip(document.getElementById('btn-only-changes'), t('onlyChangesTitle'));
@@ -4204,7 +5040,7 @@ function applyTranslationsToStaticDom() {
   setTooltip(document.getElementById('btn-filter-hf'), t('hfFilterTitle'));
 
   document.getElementById('i18n-btn-text').textContent = t('textBtn');
-  setTooltip(document.getElementById('btn-paste-modal'), t('textBtnTitle'));
+  setTooltip(document.getElementById('btn-paste-modal'), t('textBtnTitle'), t('textBtn'));
 
   document.getElementById('i18n-btn-export').textContent = t('exportBtn');
   setTooltip(document.getElementById('btn-export-menu'), t('exportTitle'));
@@ -4216,10 +5052,10 @@ function applyTranslationsToStaticDom() {
   document.getElementById('i18n-exp-md').textContent = t('expMd');
 
   document.getElementById('i18n-btn-clear').textContent = t('clearBtn');
-  setTooltip(document.getElementById('btn-clear'), t('clearBtnTitle'));
+  setTooltip(document.getElementById('btn-clear'), t('clearBtnTitle'), t('clearBtn'));
 
   document.getElementById('i18n-btn-help').textContent = t('helpBtn');
-  setTooltip(document.getElementById('btn-help'), t('helpBtnTitle'));
+  setTooltip(document.getElementById('btn-help'), t('helpBtnTitle'), t('helpBtn'));
 
   setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
   setTooltip(document.getElementById('btn-toggle-sidebar'), t('sidebarToggleTitle'));
@@ -4239,15 +5075,15 @@ function applyTranslationsToStaticDom() {
   setTooltip(document.getElementById('badge-editable'), t('badgeEditableTitle'));
 
   document.getElementById('i18n-upload-left').textContent = t('fileBtn');
-  setTooltip(document.getElementById('btn-upload-left'), t('fileLeftTitle'));
+  setTooltip(document.getElementById('btn-upload-left'), t('fileLeftTitle'), `${t('fileBtn')}: ${t('colLeft')}`);
   document.getElementById('i18n-upload-right').textContent = t('fileBtn');
-  setTooltip(document.getElementById('btn-upload-right'), t('fileRightTitle'));
+  setTooltip(document.getElementById('btn-upload-right'), t('fileRightTitle'), `${t('fileBtn')}: ${t('colRight')}`);
 
-  setTooltip(document.getElementById('btn-clear-left'), t('clearSideTitle'));
-  setTooltip(document.getElementById('btn-clear-right'), t('clearSideTitle'));
+  setTooltip(document.getElementById('btn-clear-left'), t('clearSideTitle'), t('slotClearLeft'));
+  setTooltip(document.getElementById('btn-clear-right'), t('clearSideTitle'), t('slotClearRight'));
   setTooltip(document.getElementById('btn-swap-docs'), t('swapTitle'));
-  setTooltip(document.getElementById('btn-undo'), t('undoTitle'));
-  setTooltip(document.getElementById('btn-redo'), t('redoTitle'));
+  setTooltip(document.getElementById('btn-undo'), t('undoTitle'), t('undoLabel'));
+  setTooltip(document.getElementById('btn-redo'), t('redoTitle'), t('redoLabel'));
   setTooltip(document.getElementById('dock-step-count'), t('stepCountTitle'));
   setTooltip(document.getElementById('sidebar-kbd-hint'), t('sidebarKbdTitle'));
 
@@ -5036,114 +5872,45 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
   return '';
 }
 
-function renderGhostSheet() {
-  return `
-    <div class="ghost-sheet" data-empty-state aria-hidden="true">
-      <div class="ghost-block">
-        <div class="ghost-line h"></div>
-      </div>
-      <div class="ghost-block">
-        <div class="ghost-line" style="width:94%"></div>
-        <div class="ghost-line" style="width:88%"></div>
-        <div class="ghost-line" style="width:62%"></div>
-      </div>
-      <div class="ghost-block">
-        <div class="ghost-line" style="width:91%"></div>
-        <div class="ghost-line" style="width:76%"></div>
-      </div>
-      <div class="ghost-block">
-        <div class="ghost-line h" style="width:48%"></div>
-      </div>
-      <div class="ghost-block">
-        <div class="ghost-line" style="width:96%"></div>
-        <div class="ghost-line" style="width:84%"></div>
-        <div class="ghost-line" style="width:54%"></div>
-      </div>
-    </div>
-  `;
-}
+// The landing page markup is static (src/template.html); this only reflects which
+// versions are already loaded in its two slots.
+function updateLandingSlots(left, right) {
+  [
+    { side: 'left', info: left, name: state.leftName, fmt: state.leftFormat, titleKey: 'slotLeftTitle' },
+    { side: 'right', info: right, name: state.rightName, fmt: state.rightFormat, titleKey: 'slotRightTitle' },
+  ].forEach(({ side, info, name, fmt, titleKey }) => {
+    const slot = document.getElementById(`lp-slot-${side}`);
+    if (!slot) return;
+    const loaded = info.blocks > 0;
+    const otherLoaded = side === 'left' ? right.blocks > 0 : left.blocks > 0;
+    slot.classList.toggle('is-loaded', loaded);
+    slot.classList.toggle('is-next-step', !loaded && (side === 'left' || otherLoaded));
 
-function renderLaunchpadHtml(leftCount, rightCount) {
-  const leftLoaded = leftCount > 0;
-  const rightLoaded = rightCount > 0;
-  const leftSlotClass = leftLoaded ? 'is-loaded' : 'is-next-step';
-  const rightSlotClass = rightLoaded ? 'is-loaded' : leftLoaded ? 'is-next-step' : '';
-
-  const leftTitle = leftLoaded ? state.leftName || 'Vorher' : t('lpLeftTitle');
-  const leftHint = leftLoaded ? `${t('lpLoaded')} · ${leftCount} ${t('unitPara')}` : t('lpLeftHint');
-  const leftBtnClass = !leftLoaded ? 'btn btn-primary' : 'btn';
-  const leftBtnLabel = leftLoaded ? t('lpChangeFile') : t('chooseFileLeft');
-
-  const rightTitle = rightLoaded ? state.rightName || 'Nachher' : t('lpRightTitle');
-  const rightHint = rightLoaded ? `${t('lpLoaded')} · ${rightCount} ${t('unitPara')}` : t('lpRightHint');
-  const rightBtnClass = leftLoaded && !rightLoaded ? 'btn btn-primary' : 'btn';
-  const rightBtnLabel = rightLoaded ? t('lpChangeFile') : t('chooseFileRight');
-
-  const uploadSvg = '<svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
-  const sepSvg = '<svg class="icon lp-sep" style="width:12px;height:12px;" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>';
-
-  return `
-    <div class="launchpad-card">
-      <div class="launchpad-head">
-        <h1 class="launchpad-title">${escapeHtml(t('lpTitle'))}</h1>
-        <p class="launchpad-sub">${escapeHtml(t('lpSub'))}</p>
-      </div>
-
-      <div class="launchpad-grid">
-        <div class="launchpad-slot ${leftSlotClass}" id="lp-slot-left" data-side="left">
-          <div class="lp-slot-top">
-            <span class="col-role-pill col-role-old">${escapeHtml(t('colLeft'))}</span>
-          </div>
-          <div class="lp-slot-title">${escapeHtml(leftTitle)}</div>
-          <div class="lp-slot-hint">${escapeHtml(leftHint)}</div>
-          <button type="button" class="${leftBtnClass}" id="btn-empty-upload-left">
-            ${uploadSvg}
-            <span>${escapeHtml(leftBtnLabel)}</span>
-          </button>
-        </div>
-
-        <div class="launchpad-slot ${rightSlotClass}" id="lp-slot-right" data-side="right">
-          <div class="lp-slot-top">
-            <span class="col-role-pill col-role-new">${escapeHtml(t('colRight'))}</span>
-          </div>
-          <div class="lp-slot-title">${escapeHtml(rightTitle)}</div>
-          <div class="lp-slot-hint">${escapeHtml(rightHint)}</div>
-          <button type="button" class="${rightBtnClass}" id="btn-empty-upload-right">
-            ${uploadSvg}
-            <span>${escapeHtml(rightBtnLabel)}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="launchpad-secondary">
-        <button type="button" class="btn btn-open-paste">
-          <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          <span>${escapeHtml(t('pasteText'))}</span>
-        </button>
-        <button type="button" class="btn btn-load-sample">
-          <svg class="icon" style="width:13px;height:13px;" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <span>${escapeHtml(t('loadSample'))}</span>
-        </button>
-      </div>
-
-      <div class="launchpad-footer">
-        <div class="launchpad-steps">
-          <span class="lp-step"><span class="lp-step-num">1</span><span>${escapeHtml(t('lpStep1'))}</span></span>
-          ${sepSvg}
-          <span class="lp-step"><span class="lp-step-num">2</span><span>${escapeHtml(t('lpStep2'))}</span></span>
-          ${sepSvg}
-          <span class="lp-step"><span class="lp-step-num">3</span><span>${escapeHtml(t('lpStep3'))}</span></span>
-        </div>
-        <div class="launchpad-trust">
-          <span>${escapeHtml(t('lpTrust'))}</span>
-          <span>·</span>
-          <button type="button" class="lp-link btn-open-privacy">${escapeHtml(t('footerPrivacy'))}</button>
-          <span>·</span>
-          <a href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer" class="lp-link">GitHub</a>
-        </div>
-      </div>
-    </div>
-  `;
+    const titleEl = document.getElementById(`lp-${side}-title`);
+    const hintEl = document.getElementById(`lp-${side}-hint`);
+    const ctaEl = document.getElementById(`lp-${side}-cta`);
+    const clearBtn = document.getElementById(`lp-clear-${side}`);
+    if (loaded) {
+      const parts = [t(titleKey)];
+      if (fmt && fmt !== 'DEMO') parts.push(fmt);
+      if (info.pages > 1) parts.push(`${info.pages} ${t('pageShort')}`);
+      parts.push(`${info.blocks} ${t('unitPara')}`);
+      titleEl.textContent = name || t(titleKey);
+      titleEl.removeAttribute('data-i18n');
+      hintEl.textContent = `${t('lpLoaded')} · ${parts.join(' · ')}`;
+      hintEl.removeAttribute('data-i18n');
+      ctaEl.removeAttribute('data-i18n');
+      ctaEl.textContent = t('lpChangeFile');
+    } else {
+      titleEl.setAttribute('data-i18n', titleKey);
+      titleEl.textContent = t(titleKey);
+      hintEl.setAttribute('data-i18n', 'slotHint');
+      hintEl.textContent = t('slotHint');
+      ctaEl.setAttribute('data-i18n', 'slotChoose');
+      ctaEl.textContent = t('slotChoose');
+    }
+    if (clearBtn) clearBtn.hidden = !loaded;
+  });
 }
 
 function updateMobileBarState() {
@@ -5182,7 +5949,8 @@ function updateMobileBarState() {
 function updateColumnMeta(side, blocksCount, pagesCount = 0) {
   const metaEl = document.getElementById(side === 'left' ? 'meta-left' : 'meta-right');
   const clearBtn = document.getElementById(side === 'left' ? 'btn-clear-left' : 'btn-clear-right');
-  const fmt = side === 'left' ? state.leftFormat : state.rightFormat;
+  const rawFmt = side === 'left' ? state.leftFormat : state.rightFormat;
+  const fmt = rawFmt === 'DEMO' ? t('demoLabel') : rawFmt;
 
   if (blocksCount > 0) {
     const pageStr = pagesCount > 0 ? `${pagesCount} ${t('pageShort')} · ` : '';
@@ -5233,70 +6001,49 @@ function runComparison() {
   updateColumnMeta('right', rightBlocks.length, rightPages);
 
   const bothLoaded = leftBlocks.length > 0 && rightBlocks.length > 0;
+  const wasComparing = document.body.classList.contains('is-comparing');
+  const emptyLaunchpad = document.getElementById('empty-launchpad');
+  // Focus sat on something that is about to disappear (landing page or comparison chrome)?
+  const active = document.activeElement;
+  const focusWasLost = !active || active === document.body;
+  const focusInLanding = Boolean(emptyLaunchpad && active && emptyLaunchpad.contains(active));
+  const focusInCompareChrome = Boolean(active && active.closest && active.closest('.compare-only'));
+
   document.body.classList.toggle('has-docs', leftBlocks.length > 0 || rightBlocks.length > 0);
   document.body.classList.toggle('is-comparing', bothLoaded);
+  document.body.classList.toggle('legend-dismissed', state.legendDismissed);
   const badgeEditable = document.getElementById('badge-editable');
   if (badgeEditable) {
     badgeEditable.classList.toggle('is-visible', bothLoaded);
   }
 
-  const emptyLaunchpad = document.getElementById('empty-launchpad');
-
   if (!bothLoaded) {
     state.alignedRows = [];
     state.changeRows = [];
-    document.getElementById('count-all').textContent = '0';
-    document.getElementById('count-ins').textContent = '0';
-    document.getElementById('count-del').textContent = '0';
+    updateHeaderCounts(0, 0, 0);
     updateMobileBarState();
     updateUndoRedoButtons();
 
-    if (leftBlocks.length === 0) {
-      setSafeContainerHtml(sheetLeft, renderGhostSheet());
-    } else {
-      setSafeContainerHtml(
-        sheetLeft,
-        `<div class="doc-page-card"><div class="doc-page-body">${leftBlocks
-          .map(
-            b =>
-              `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${getClauseTypeClasses(
-                b
-              )}">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
-          )
-          .join('')}</div></div>`
-      );
-    }
-
-    if (rightBlocks.length === 0) {
-      setSafeContainerHtml(sheetRight, renderGhostSheet());
-    } else {
-      setSafeContainerHtml(
-        sheetRight,
-        `<div class="doc-page-card"><div class="doc-page-body">${rightBlocks
-          .map(
-            b =>
-              `<div class="diff-row-anchor" data-type="equal"><div class="clause state-equal ${getClauseTypeClasses(
-                b
-              )}">${escapeAndHighlightText(b.text, state.searchQuery)}</div></div>`
-          )
-          .join('')}</div></div>`
-      );
-    }
-
-    setSafeContainerHtml(sheetUnified, renderGhostSheet());
-    if (emptyLaunchpad) {
-      setSafeContainerHtml(emptyLaunchpad, renderLaunchpadHtml(leftBlocks.length, rightBlocks.length));
-    }
+    // Panes stay hidden until both versions exist; the landing slots show what is loaded.
+    setSafeContainerHtml(sheetLeft, '');
+    setSafeContainerHtml(sheetRight, '');
+    setSafeContainerHtml(sheetUnified, '');
+    updateLandingSlots(
+      { blocks: leftBlocks.length, pages: leftPages },
+      { blocks: rightBlocks.length, pages: rightPages }
+    );
 
     bindEmptyStateButtons();
     renderSidebarList(bothLoaded);
     minimapTrack.innerHTML = '';
     connectorSvg.innerHTML = '';
-    return;
-  }
 
-  if (emptyLaunchpad) {
-    emptyLaunchpad.innerHTML = '';
+    if (wasComparing && (focusWasLost || focusInCompareChrome)) {
+      const heading = document.getElementById('landing-title');
+      if (emptyLaunchpad) emptyLaunchpad.scrollTop = 0;
+      if (heading) heading.focus({ preventScroll: true });
+    }
+    return;
   }
 
   state.alignedRows = alignDocumentBlocks(leftBlocks, rightBlocks);
@@ -5305,10 +6052,15 @@ function runComparison() {
   const modCount = state.alignedRows.filter(r => r.type === 'modified').length;
   const insCount = state.alignedRows.filter(r => r.type === 'inserted').length;
   const delCount = state.alignedRows.filter(r => r.type === 'deleted').length;
+  updateHeaderCounts(modCount, insCount, delCount);
 
-  document.getElementById('count-all').textContent = String(modCount + insCount + delCount);
-  document.getElementById('count-ins').textContent = String(insCount + modCount);
-  document.getElementById('count-del').textContent = String(delCount + modCount);
+  const compareHeading = document.getElementById('compare-heading');
+  if (compareHeading) {
+    compareHeading.textContent = formatMsg('compareHeading', {
+      left: state.leftName || t('colLeft'),
+      right: state.rightName || t('colRight'),
+    });
+  }
 
   renderDocumentPanes();
   renderSidebarList(true);
@@ -5332,21 +6084,76 @@ function runComparison() {
     if (state.viewMode !== 'inline') equalizeRowHeights();
     scheduleGutterDraw();
   });
+
+  if (!wasComparing) {
+    const total = state.changeRows.length;
+    announce(
+      total === 0
+        ? t('announceIdentical')
+        : total === 1
+        ? t('announceComparedOne')
+        : formatMsg('announceCompared', { n: total })
+    );
+    // The landing page (and whatever had focus in it) just disappeared: hand focus to the
+    // document so keyboard users continue with Tab or J / K from a sensible place.
+    if (focusWasLost || focusInLanding) {
+      const pane = state.viewMode === 'inline' ? paneUnified : paneRight;
+      requestAnimationFrame(() => pane.focus({ preventScroll: true }));
+    }
+  }
 }
 
+// The header shows the same three numbers as the sidebar filters (a modified paragraph
+// counts once, as "modified" – not once as added and once as removed).
+function updateHeaderCounts(modCount, insCount, delCount) {
+  const total = modCount + insCount + delCount;
+  document.getElementById('count-all').textContent = String(total);
+  document.getElementById('i18n-changes-label').textContent = changesWord(total);
+  document.getElementById('count-mod').textContent = String(modCount);
+  document.getElementById('count-ins').textContent = String(insCount);
+  document.getElementById('count-del').textContent = String(delCount);
+  const summary = document.getElementById('stat-summary');
+  if (summary) {
+    summary.querySelector('.stat-mod').classList.toggle('is-zero', modCount === 0);
+    summary.querySelector('.stat-ins').classList.toggle('is-zero', insCount === 0);
+    summary.querySelector('.stat-del').classList.toggle('is-zero', delCount === 0);
+  }
+}
+
+function loadSampleComparison() {
+  const sample = SAMPLES[state.lang] || SAMPLES.de;
+  state.leftName = t('sampleLeftName');
+  state.leftFormat = 'DEMO';
+  state.leftText = sample.v1;
+  state.rightName = t('sampleRightName');
+  state.rightFormat = 'DEMO';
+  state.rightText = sample.v2;
+  runComparison();
+}
+
+function clearLandingSide(side) {
+  if (side === 'left') {
+    state.leftText = '';
+    state.leftName = '';
+    state.leftFormat = '';
+    document.getElementById('file-input-left').value = '';
+  } else {
+    state.rightText = '';
+    state.rightName = '';
+    state.rightFormat = '';
+    state.undoStack = [];
+    state.redoStack = [];
+    document.getElementById('file-input-right').value = '';
+  }
+  runComparison();
+  const btn = document.getElementById(`btn-empty-upload-${side}`);
+  if (btn) btn.focus();
+}
+
+let landingBound = false;
 function bindEmptyStateButtons() {
-  document.querySelectorAll('#btn-empty-upload-left').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      document.getElementById('file-input-left').click();
-    });
-  });
-  document.querySelectorAll('#btn-empty-upload-right').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      document.getElementById('file-input-right').click();
-    });
-  });
+  if (landingBound) return;
+  landingBound = true;
 
   const slotLeft = document.getElementById('lp-slot-left');
   const slotRight = document.getElementById('lp-slot-right');
@@ -5355,7 +6162,11 @@ function bindEmptyStateButtons() {
     { el: slotRight, side: 'right', inputId: 'file-input-right' },
   ].forEach(({ el, side, inputId }) => {
     if (!el) return;
-    el.addEventListener('click', () => document.getElementById(inputId).click());
+    document
+      .getElementById(`btn-empty-upload-${side}`)
+      .addEventListener('click', () => document.getElementById(inputId).click());
+    const clearBtn = document.getElementById(`lp-clear-${side}`);
+    if (clearBtn) clearBtn.addEventListener('click', () => clearLandingSide(side));
     el.addEventListener('dragover', e => {
       e.preventDefault();
       e.stopPropagation();
@@ -5396,16 +6207,7 @@ function bindEmptyStateButtons() {
   });
 
   document.querySelectorAll('.btn-load-sample').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const sample = SAMPLES[state.lang] || SAMPLES.de;
-      state.leftName = t('sampleLeftName');
-      state.leftFormat = 'DEMO';
-      state.leftText = sample.v1;
-      state.rightName = t('sampleRightName');
-      state.rightFormat = 'DEMO';
-      state.rightText = sample.v2;
-      runComparison();
-    });
+    btn.addEventListener('click', loadSampleComparison);
   });
 }
 
@@ -5439,7 +6241,7 @@ function renderPageCardHeaderHtml(pageNum, totalPages, rowsInPage) {
       : '';
   const changeCount = rowsInPage.filter(r => r.type !== 'equal').length;
   const pillLabel =
-    changeCount > 0 ? `${changeCount} ${escapeHtml(t('changesLabel'))}` : escapeHtml(t('pageUnchanged'));
+    changeCount > 0 ? `${changeCount} ${escapeHtml(changesWord(changeCount))}` : escapeHtml(t('pageUnchanged'));
 
   return `
     <header class="doc-page-header" aria-label="${escapeHtml(t('pageLabel'))} ${pageNum}">
@@ -5661,51 +6463,62 @@ function extractDeltaPairs(wordDiffs) {
 
 function renderSidebarDeltaHtml(row, query) {
   if (row.type === 'deleted') {
-    return `<div class="nav-item-snippet"><del class="tok-del">${escapeAndHighlightText(
+    return `<span class="nav-item-snippet"><del class="tok-del">${escapeAndHighlightText(
       truncateClean(row.leftBlock.text, 92),
       query
-    )}</del></div>`;
+    )}</del></span>`;
   }
   if (row.type === 'inserted') {
-    return `<div class="nav-item-snippet"><ins class="tok-ins">${escapeAndHighlightText(
+    return `<span class="nav-item-snippet"><ins class="tok-ins">${escapeAndHighlightText(
       truncateClean(row.rightBlock.text, 92),
       query
-    )}</ins></div>`;
+    )}</ins></span>`;
   }
   const pairs = extractDeltaPairs(row.wordDiffs || []);
   if (pairs.length === 0) {
-    return `<div class="nav-item-snippet">${renderUnifiedBlockHtml(row, query)}</div>`;
+    return `<span class="nav-item-snippet">${renderUnifiedBlockHtml(row, query)}</span>`;
   }
   const maxPairs = 3;
   const visible = pairs.slice(0, maxPairs);
   const rowsHtml = visible
     .map(pair => {
       if (pair.del && pair.ins) {
-        return `<div class="nav-delta-row"><del class="tok-del">${escapeAndHighlightText(
+        return `<span class="nav-delta-row"><del class="tok-del">${escapeAndHighlightText(
           truncateClean(pair.del, 34),
           query
         )}</del><span class="nav-delta-arrow" aria-hidden="true">→</span><ins class="tok-ins">${escapeAndHighlightText(
           truncateClean(pair.ins, 34),
           query
-        )}</ins></div>`;
+        )}</ins></span>`;
       }
       if (pair.ins) {
-        return `<div class="nav-delta-row"><ins class="tok-ins">+ ${escapeAndHighlightText(
+        return `<span class="nav-delta-row"><ins class="tok-ins">+ ${escapeAndHighlightText(
           truncateClean(pair.ins, 46),
           query
-        )}</ins></div>`;
+        )}</ins></span>`;
       }
-      return `<div class="nav-delta-row"><del class="tok-del">− ${escapeAndHighlightText(
+      return `<span class="nav-delta-row"><del class="tok-del">− ${escapeAndHighlightText(
         truncateClean(pair.del, 46),
         query
-      )}</del></div>`;
+      )}</del></span>`;
     })
     .join('');
   const moreHtml =
     pairs.length > maxPairs
-      ? `<div class="nav-delta-more">+${pairs.length - maxPairs} ${escapeHtml(t('moreDeltas'))}</div>`
+      ? `<span class="nav-delta-more">+${pairs.length - maxPairs} ${escapeHtml(t('moreDeltas'))}</span>`
       : '';
-  return `<div class="nav-item-deltas">${rowsHtml}${moreHtml}</div>`;
+  return `<span class="nav-item-deltas">${rowsHtml}${moreHtml}</span>`;
+}
+
+function getChangeTypeLabel(row) {
+  return row.type === 'modified' ? t('statMod') : row.type === 'inserted' ? t('statIns') : t('statDel');
+}
+
+// Clause reference for display, without the bullet glyph used internally for list items.
+function getDisplayRef(row) {
+  const block = row.rightBlock || row.leftBlock;
+  const ref = block && block.refCode ? String(block.refCode) : '';
+  return ref.replace(/\s*[•‣▪◦]\s*$/, '').trim();
 }
 
 function getFilteredChangeRows() {
@@ -5754,7 +6567,7 @@ function updateSidebarHeaderState() {
     const f = btn.getAttribute('data-sidebar-filter');
     const isActive = f === state.sidebarFilter;
     btn.classList.toggle('is-active', isActive);
-    btn.setAttribute('aria-selected', String(isActive));
+    btn.setAttribute('aria-pressed', String(isActive));
     const countForTab =
       f === 'all' ? total : f === 'modified' ? modCount : f === 'inserted' ? insCount : delCount;
     btn.classList.toggle('is-zero', countForTab === 0);
@@ -5798,8 +6611,8 @@ function renderSidebarList(bothLoaded) {
     return;
   }
 
-  const editSvg = '<svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
-  const revertSvg = '<svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+  const editSvg = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  const revertSvg = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
 
   setSafeContainerHtml(
     sidebarList,
@@ -5808,29 +6621,27 @@ function renderSidebarList(bothLoaded) {
         const globalIdx = state.changeRows.indexOf(row) + 1;
         const cls = row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del';
         const isActive = row.id === state.activeRowId;
-        const typeLabel =
-          row.type === 'modified' ? t('typeMod') : row.type === 'inserted' ? t('typeIns') : t('typeDel');
-        const refCode = row.rightBlock ? row.rightBlock.refCode : row.leftBlock.refCode;
+        const typeLabel = getChangeTypeLabel(row);
+        const refCode = getDisplayRef(row);
         const pageNum = row.pageNum || 1;
         const deltaHtml = renderSidebarDeltaHtml(row, state.searchQuery);
+        const editLabel = row.rightBlock ? t('editBtn') : t('editInsertBtn');
 
         return `
-          <div class="nav-item ${cls}${isActive ? ' is-active' : ''}" data-row-id="${row.id}" tabindex="0" role="button">
-            <div class="nav-item-head">
-              <div class="nav-item-loc">
+          <div class="nav-item ${cls}${isActive ? ' is-active' : ''}" data-row-id="${row.id}">
+            <button type="button" class="nav-item-main">
+              <span class="nav-item-head">
                 <span class="nav-item-idx">${globalIdx}</span>
                 <span class="nav-item-page">${escapeHtml(t('pageShort'))} ${pageNum}</span>
-                <span class="nav-item-ref">${escapeHtml(refCode)}</span>
-              </div>
-              <div class="nav-item-right">
-                <div class="nav-item-actions">
-                  <button type="button" class="nav-item-act-btn" data-edit-row="${row.id}" aria-label="${escapeHtml(t('editBtn'))}">${editSvg}</button>
-                  <button type="button" class="nav-item-act-btn is-revert" data-revert-row="${row.id}" aria-label="${escapeHtml(t('revertBtn'))}">${revertSvg}</button>
-                </div>
-                <span class="nav-item-badge ${cls}">${escapeHtml(typeLabel)}</span>
-              </div>
-            </div>
-            ${deltaHtml}
+                ${refCode ? `<span class="nav-item-ref">${escapeHtml(refCode)}</span>` : ''}
+                <span class="sr-only">– ${escapeHtml(typeLabel)}:</span>
+              </span>
+              ${deltaHtml}
+            </button>
+            <span class="nav-item-actions">
+              <button type="button" class="nav-item-act-btn" data-edit-row="${row.id}" aria-label="${escapeHtml(`${editLabel} (${globalIdx})`)}" data-tooltip="${escapeHtml(editLabel)}">${editSvg}</button>
+              <button type="button" class="nav-item-act-btn is-revert" data-revert-row="${row.id}" aria-label="${escapeHtml(`${t('revertBtn')} (${globalIdx})`)}" data-tooltip="${escapeHtml(t('revertBtn'))}">${revertSvg}</button>
+            </span>
           </div>
         `;
       })
@@ -6772,6 +7583,23 @@ function stepChange(direction) {
     nextIdx = (curIdx + direction + rows.length) % rows.length;
   }
   selectAndScrollToRow(rows[nextIdx].id, true, true);
+  announceActiveChange();
+}
+
+// "Change 3 of 19: p. 1, § 1 (2), modified" – read out after J / K or the step buttons.
+function announceActiveChange() {
+  const idx = state.changeRows.findIndex(r => r.id === state.activeRowId);
+  if (idx < 0) return;
+  const row = state.changeRows[idx];
+  const ref = [`${t('pageShort')} ${row.pageNum || 1}`, getDisplayRef(row)].filter(Boolean).join(', ');
+  announce(
+    formatMsg('announceStep', {
+      i: idx + 1,
+      n: state.changeRows.length,
+      ref,
+      type: getChangeTypeLabel(row),
+    })
+  );
 }
 
 document.getElementById('btn-prev').addEventListener('click', () => stepChange(-1));
@@ -6835,28 +7663,48 @@ window.addEventListener('click', () => {
 
 const searchInput = document.getElementById('search-input');
 
+function isTextEntryElement(el) {
+  if (!el) return false;
+  if (el.isContentEditable || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+  if (el.tagName !== 'INPUT') return false;
+  const nonText = ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file'];
+  return !nonText.includes((el.type || '').toLowerCase());
+}
+
 window.addEventListener('keydown', e => {
-  if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-    if (e.key === 'Escape') document.activeElement.blur();
+  if (e.defaultPrevented || e.isComposing) return;
+  const activeEl = document.activeElement;
+  if (isTextEntryElement(activeEl)) {
+    if (e.key === 'Escape' && activeEl === searchInput) activeEl.blur();
     return;
   }
-  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
-    if (state.undoStack.length > 0) {
-      e.preventDefault();
-      performUndo();
+  // Never act behind an open dialog.
+  if (document.querySelector('dialog[open]')) return;
+
+  const key = (e.key || '').toLowerCase();
+  if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+    // Only the explicit undo / redo combos are ours; Ctrl/Cmd+C, +K, +J, +H … stay with the browser.
+    if (key === 'z' && !e.shiftKey) {
+      if (state.undoStack.length > 0) {
+        e.preventDefault();
+        performUndo();
+      }
+    } else if ((key === 'z' && e.shiftKey) || (key === 'y' && !e.shiftKey)) {
+      if (state.redoStack.length > 0) {
+        e.preventDefault();
+        performRedo();
+      }
     }
     return;
   }
-  if (
-    ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z')) ||
-    ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === 'y' || e.key === 'Y'))
-  ) {
-    if (state.redoStack.length > 0) {
-      e.preventDefault();
-      performRedo();
-    }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'Escape') {
+    closeMobileSheets();
     return;
   }
+  // Single-character shortcuts (WCAG 2.1.4): can be switched off in the help dialog and
+  // only apply while a comparison is shown.
+  if (!state.singleKeyShortcuts || !document.body.classList.contains('is-comparing')) return;
   if (e.key === 'j' || e.key === 'J') {
     e.preventDefault();
     stepChange(1);
@@ -6872,8 +7720,6 @@ window.addEventListener('keydown', e => {
   } else if (e.key === 'h' || e.key === 'H') {
     e.preventDefault();
     if (btnFilterHf) btnFilterHf.click();
-  } else if (e.key === 'Escape') {
-    closeMobileSheets();
   }
 });
 
@@ -7029,19 +7875,30 @@ document.getElementById('btn-apply-modal').addEventListener('click', () => {
 });
 
 const helpModal = document.getElementById('help-modal');
-document.getElementById('btn-help').addEventListener('click', () => helpModal.showModal());
+const chkSingleKeyShortcuts = document.getElementById('chk-single-key-shortcuts');
+document.getElementById('btn-help').addEventListener('click', () => {
+  chkSingleKeyShortcuts.checked = state.singleKeyShortcuts;
+  helpModal.showModal();
+});
+chkSingleKeyShortcuts.addEventListener('change', () => {
+  state.singleKeyShortcuts = chkSingleKeyShortcuts.checked;
+});
 document.getElementById('btn-close-help').addEventListener('click', () => helpModal.close());
 document.getElementById('btn-ok-help').addEventListener('click', () => helpModal.close());
 document.getElementById('btn-help-sample').addEventListener('click', () => {
-  const sample = SAMPLES[state.lang] || SAMPLES.de;
-  state.leftName = t('sampleLeftName');
-  state.leftFormat = 'DEMO';
-  state.leftText = sample.v1;
-  state.rightName = t('sampleRightName');
-  state.rightFormat = 'DEMO';
-  state.rightText = sample.v2;
   helpModal.close();
-  runComparison();
+  loadSampleComparison();
+});
+
+// First-run legend: dismissible for this session only (nothing is stored).
+document.getElementById('btn-legend-close').addEventListener('click', () => {
+  state.legendDismissed = true;
+  document.body.classList.add('legend-dismissed');
+  (state.viewMode === 'inline' ? paneUnified : paneRight).focus({ preventScroll: true });
+  requestAnimationFrame(() => {
+    equalizeRowHeights();
+    scheduleGutterDraw();
+  });
 });
 
 document.getElementById('badge-editable').addEventListener('click', () => {
@@ -7084,7 +7941,6 @@ function showTooltipFor(target) {
   if (!text || !uiTooltip) return;
   activeTooltipTarget = target;
   uiTooltip.textContent = text;
-  uiTooltip.setAttribute('aria-hidden', 'false');
   uiTooltip.classList.add('is-visible');
 
   const rect = target.getBoundingClientRect();

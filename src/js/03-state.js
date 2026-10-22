@@ -34,6 +34,8 @@ const state = {
   isProgrammaticScroll: false,
   undoStack: [],
   redoStack: [],
+  legendDismissed: false,
+  singleKeyShortcuts: true,
 };
 
 function t(key) {
@@ -50,18 +52,70 @@ const sidebarList = document.getElementById('sidebar-list');
 const connectorSvg = document.getElementById('connector-svg');
 const minimapTrack = document.getElementById('minimap-track');
 
-function setTooltip(el, text) {
+// Shows `text` in the custom tooltip. Buttons and links also get an accessible name:
+// `name` when given (e.g. a visible label that CSS may hide on narrow screens), otherwise
+// the tooltip text for icon-only controls, which would have no name at all.
+function setTooltip(el, text, name) {
   if (!el) return;
   el.setAttribute('data-tooltip', text);
   el.removeAttribute('title');
+  if (name) {
+    el.setAttribute('aria-label', name);
+  } else if (el.matches('button, a') && !el.textContent.trim()) {
+    el.setAttribute('aria-label', text);
+  }
+}
+
+// "1 Änderung" / "19 Änderungen"
+function changesWord(n) {
+  return n === 1 ? t('changeLabelOne') : t('changesLabel');
+}
+
+function formatMsg(key, params) {
+  return t(key).replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? String(params[k]) : ''));
+}
+
+// Polite announcements for screen readers (one shared live region, never chatty).
+let srStatusTimer = null;
+function announce(message) {
+  const el = document.getElementById('sr-status');
+  if (!el) return;
+  clearTimeout(srStatusTimer);
+  el.textContent = '';
+  srStatusTimer = setTimeout(() => {
+    el.textContent = message;
+  }, 60);
+}
+
+function applyDataI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = t(el.getAttribute('data-i18n-html'));
+  });
+  document.querySelectorAll('[data-i18n-label]').forEach(el => {
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-label')));
+  });
 }
 
 function applyTranslationsToStaticDom() {
   document.documentElement.lang = state.lang;
+  applyDataI18n();
   document.getElementById('btn-lang').textContent = state.lang.toUpperCase();
-  setTooltip(document.getElementById('btn-lang'), t('langTitle'));
+  setTooltip(
+    document.getElementById('btn-lang'),
+    t('langTitle'),
+    `${state.lang.toUpperCase()} – ${t('langTitle')}`
+  );
   document.getElementById('i18n-changes-label').textContent = t('changesLabel');
   setTooltip(document.getElementById('stat-summary'), t('statTooltip'));
+  document.getElementById('seg-view-mode').setAttribute('aria-label', t('viewModeLabel'));
+  document.getElementById('col-bars').setAttribute('aria-label', t('docsLabel'));
+  document.getElementById('legend-bar').setAttribute('aria-label', t('legendLabel'));
+  paneLeft.setAttribute('aria-label', t('colLeft'));
+  paneRight.setAttribute('aria-label', t('colRight'));
+  paneUnified.setAttribute('aria-label', t('paneUnifiedLabel'));
 
   const modePagesEl = document.getElementById('i18n-mode-pages');
   if (modePagesEl) modePagesEl.textContent = t('modePages');
@@ -72,9 +126,10 @@ function applyTranslationsToStaticDom() {
   setTooltip(document.getElementById('btn-mode-inline'), t('modeInlineTitle'));
 
   document.getElementById('search-input').placeholder = t('searchPlaceholder');
+  document.getElementById('search-input').setAttribute('aria-label', t('searchLabel'));
   setTooltip(document.getElementById('search-box-wrap'), t('searchTitle'));
-  setTooltip(document.getElementById('btn-prev'), t('prevTitle'));
-  setTooltip(document.getElementById('btn-next'), t('nextTitle'));
+  setTooltip(document.getElementById('btn-prev'), t('prevTitle'), t('prevLabel'));
+  setTooltip(document.getElementById('btn-next'), t('nextTitle'), t('nextLabel'));
 
   document.getElementById('i18n-btn-only-changes').textContent = t('onlyChanges');
   setTooltip(document.getElementById('btn-only-changes'), t('onlyChangesTitle'));
@@ -84,7 +139,7 @@ function applyTranslationsToStaticDom() {
   setTooltip(document.getElementById('btn-filter-hf'), t('hfFilterTitle'));
 
   document.getElementById('i18n-btn-text').textContent = t('textBtn');
-  setTooltip(document.getElementById('btn-paste-modal'), t('textBtnTitle'));
+  setTooltip(document.getElementById('btn-paste-modal'), t('textBtnTitle'), t('textBtn'));
 
   document.getElementById('i18n-btn-export').textContent = t('exportBtn');
   setTooltip(document.getElementById('btn-export-menu'), t('exportTitle'));
@@ -96,10 +151,10 @@ function applyTranslationsToStaticDom() {
   document.getElementById('i18n-exp-md').textContent = t('expMd');
 
   document.getElementById('i18n-btn-clear').textContent = t('clearBtn');
-  setTooltip(document.getElementById('btn-clear'), t('clearBtnTitle'));
+  setTooltip(document.getElementById('btn-clear'), t('clearBtnTitle'), t('clearBtn'));
 
   document.getElementById('i18n-btn-help').textContent = t('helpBtn');
-  setTooltip(document.getElementById('btn-help'), t('helpBtnTitle'));
+  setTooltip(document.getElementById('btn-help'), t('helpBtnTitle'), t('helpBtn'));
 
   setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
   setTooltip(document.getElementById('btn-toggle-sidebar'), t('sidebarToggleTitle'));
@@ -119,15 +174,15 @@ function applyTranslationsToStaticDom() {
   setTooltip(document.getElementById('badge-editable'), t('badgeEditableTitle'));
 
   document.getElementById('i18n-upload-left').textContent = t('fileBtn');
-  setTooltip(document.getElementById('btn-upload-left'), t('fileLeftTitle'));
+  setTooltip(document.getElementById('btn-upload-left'), t('fileLeftTitle'), `${t('fileBtn')}: ${t('colLeft')}`);
   document.getElementById('i18n-upload-right').textContent = t('fileBtn');
-  setTooltip(document.getElementById('btn-upload-right'), t('fileRightTitle'));
+  setTooltip(document.getElementById('btn-upload-right'), t('fileRightTitle'), `${t('fileBtn')}: ${t('colRight')}`);
 
-  setTooltip(document.getElementById('btn-clear-left'), t('clearSideTitle'));
-  setTooltip(document.getElementById('btn-clear-right'), t('clearSideTitle'));
+  setTooltip(document.getElementById('btn-clear-left'), t('clearSideTitle'), t('slotClearLeft'));
+  setTooltip(document.getElementById('btn-clear-right'), t('clearSideTitle'), t('slotClearRight'));
   setTooltip(document.getElementById('btn-swap-docs'), t('swapTitle'));
-  setTooltip(document.getElementById('btn-undo'), t('undoTitle'));
-  setTooltip(document.getElementById('btn-redo'), t('redoTitle'));
+  setTooltip(document.getElementById('btn-undo'), t('undoTitle'), t('undoLabel'));
+  setTooltip(document.getElementById('btn-redo'), t('redoTitle'), t('redoLabel'));
   setTooltip(document.getElementById('dock-step-count'), t('stepCountTitle'));
   setTooltip(document.getElementById('sidebar-kbd-hint'), t('sidebarKbdTitle'));
 
