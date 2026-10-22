@@ -575,6 +575,40 @@ test('DOCX table row vs the same row from a PDF (cell separator) is not a change
   assertInvariant(changed.changes[0].leftBlock.text, changed.changes[0].rightBlock.text, changed.changes[0].wordDiffs);
 });
 
+test('classification: ordinary sentences are never headings; real headings stay headings', () => {
+  const kinds = text => plain(core.parseIntoBlocks(text).map(b => b.kind));
+  const body = [
+    'Vertrag',
+    '§ 2 Der Auftragnehmer erbringt die Leistungen fristgerecht und vollständig.',
+    '§ 3 Die Vergütung wird innerhalb von 30 Tagen nach Zugang der Rechnung fällig.',
+    '1. Der Auftragnehmer haftet für alle Schäden ohne jede Begrenzung der Höhe nach und zeitlich unbegrenzt',
+    'ALLE RECHTE BLEIBEN VORBEHALTEN UND DIESE ERKLÄRUNG GILT FÜR ALLE VERTRAGSPARTEIEN GLEICHERMASSEN SOWIE DEREN RECHTSNACHFOLGER.',
+  ];
+  assert.deepEqual(kinds(body.join('\n\n')).slice(1), ['p', 'p', 'p', 'p']);
+  const headings = ['Vertrag', '§ 2 Vergütung', '1. Scope of Services', '2.1 Cost Calculation Basis and Overhead Markups', 'Artikel 4 Haftung und Gewährleistung'];
+  assert.deepEqual(kinds(headings.join('\n\n')).slice(1), ['h2', 'h2', 'h3', 'h2']);
+  // A sentence-like "§" paragraph still sets the section reference of the clauses below it.
+  const blocks = core.parseIntoBlocks(['Titel', body[1], '(1) Erster Absatz des Paragraphen.'].join('\n\n'));
+  assert.equal(blocks[2].refCode, '§ 2 (1)');
+});
+
+test('alignment: editing one heading (kind changes to paragraph) changes only that row', () => {
+  for (const lang of ['de', 'en']) {
+    const { v1, v2 } = core.SAMPLES[lang];
+    const base = core.computeComparison({ leftText: v1, rightText: v2, ignoreHeadersFooters: true });
+    const sig = rows => rows.map(r => `${r.leftBlock ? r.leftBlock.index : '-'}:${r.rightBlock ? r.rightBlock.index : '-'}`);
+    for (const b of base.allRightBlocks.filter(x => x.isHeading)) {
+      for (const suffix of [' extended', '. This sentence was added by the reviewer.', '.']) {
+        const edited = v2.replace(b.text, b.text + suffix);
+        const res = core.computeComparison({ leftText: v1, rightText: edited, ignoreHeadersFooters: true });
+        assert.deepEqual(sig(res.alignedRows), sig(base.alignedRows), `${lang}: "${b.text}" + "${suffix}"`);
+        const row = res.alignedRows.find(r => r.rightBlock && r.rightBlock.index === b.index);
+        assert.ok(row.leftBlock && row.type === 'modified', `${lang}: edited heading is shown as modified`);
+      }
+    }
+  }
+});
+
 test('PDF: private-use bullet glyphs (Symbol/Wingdings/OpenSymbol) become "•"', () => {
   const item = (str, x, width, y) => ({ str, transform: [11, 0, 0, 11, x, y], width, hasEOL: false });
   const lines = core.buildPdfPageLines(
