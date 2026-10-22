@@ -228,6 +228,9 @@ function updateUndoRedoButtons() {
 function resetEditHistory() {
   state.undoStack = [];
   state.redoStack = [];
+  // A row id of the previous document would select an unrelated row in the new one.
+  state.activeRowId = null;
+  state.hoveredRowId = null;
   updateUndoRedoButtons();
 }
 

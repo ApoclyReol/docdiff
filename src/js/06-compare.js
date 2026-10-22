@@ -37,6 +37,8 @@ function applyComparisonResult(request, result, opts = {}) {
 
   if (!bothLoaded) {
     pendingRowFocus = null;
+    state.activeRowId = null;
+    state.hoveredRowId = null;
     cancelPaneRender();
     resetRowLayoutRegistry();
     state.alignedRows = [];
@@ -59,7 +61,7 @@ function applyComparisonResult(request, result, opts = {}) {
     minimapTrack.innerHTML = '';
     connectorSvg.innerHTML = '';
 
-    if (wasComparing && (focusWasLost || focusInCompareChrome)) {
+    if (wasComparing && (focusWasLost || focusInCompareChrome || focusInDocument)) {
       const heading = document.getElementById('landing-title');
       if (emptyLaunchpad) emptyLaunchpad.scrollTop = 0;
       if (heading) heading.focus({ preventScroll: true });
@@ -69,6 +71,9 @@ function applyComparisonResult(request, result, opts = {}) {
 
   state.alignedRows = result.alignedRows;
   state.changeRows = state.alignedRows.filter(r => r.type !== 'equal');
+  // The selected / hovered row may be gone after an edit that removed paragraphs.
+  if (state.activeRowId && !state.alignedRows.some(r => r.id === state.activeRowId)) state.activeRowId = null;
+  if (state.hoveredRowId && !state.alignedRows.some(r => r.id === state.hoveredRowId)) state.hoveredRowId = null;
 
   const counts = getChangeCounts();
   updateHeaderCounts(counts.mod, counts.ins, counts.del);
