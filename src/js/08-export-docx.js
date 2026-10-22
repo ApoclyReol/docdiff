@@ -1,4 +1,4 @@
-/* ── Word redline export: a real .docx (OOXML) with tracked changes, built in the browser ──
+/* ── Word export: a real .docx (OOXML) with tracked changes, built in the browser ──
  * Everything here is dependency-free: a minimal ZIP writer (STORE, CRC-32) plus hand-written
  * WordprocessingML. Changes are emitted as genuine revisions (<w:ins>/<w:del>), so Word,
  * LibreOffice and Google Docs offer "Accept / Reject change" on every edit.
@@ -185,10 +185,18 @@ function buildDocxDocumentXml(rows, meta) {
   for (const row of rows) {
     const block = row.rightBlock || row.leftBlock;
     const style = docxStyleForBlock(block);
-    const tokens = docxApplyMarkerTab(getExportDiffTokens(row), block);
+    // Word semantics: a change accepted in Doc Diff is plain text (an accepted deletion is
+    // simply gone); open changes become tracked changes. Rejected changes are already reverted
+    // in the rows (they compare as unchanged).
+    const accepted = row.type !== 'equal' && meta.reviewStatusOf && meta.reviewStatusOf(row) === 'accepted';
+    if (accepted && !row.rightBlock) continue;
+    const tokens = docxApplyMarkerTab(
+      accepted ? [{ value: cleanExportText(row.rightBlock.text) }] : getExportDiffTokens(row),
+      block
+    );
     let markRev = '';
-    if (row.type === 'inserted') markRev = `<w:rPr><w:ins ${revAttrs()}/></w:rPr>`;
-    if (row.type === 'deleted') markRev = `<w:rPr><w:del ${revAttrs()}/></w:rPr>`;
+    if (!accepted && row.type === 'inserted') markRev = `<w:rPr><w:ins ${revAttrs()}/></w:rPr>`;
+    if (!accepted && row.type === 'deleted') markRev = `<w:rPr><w:del ${revAttrs()}/></w:rPr>`;
     const pPr = `<w:pPr><w:pStyle w:val="${style}"/>${markRev}</w:pPr>`;
 
     const runs = tokens
@@ -349,23 +357,28 @@ function buildDocxPackageFiles(rows, meta) {
 /** Builds the complete .docx file (Uint8Array) for the current comparison state. */
 function buildDocxRedline(date = new Date()) {
   const counts = getExportCounts();
+  const lines = [
+    [t('exportLabelOriginal'), getDisplayDocName('left')],
+    [t('exportLabelRevised'), getDisplayDocName('right')],
+    [t('exportLabelCreated'), formatExportDate(date)],
+    [t('exportLabelChanges'), formatExportCountsLine(counts)],
+  ];
+  const review = getExportReviewLine();
+  if (review) lines.push([t('exportLabelReview'), review]);
+  lines.push([t('exportLabelHf'), state.ignoreHeadersFooters ? t('exportHfIgnored') : t('exportHfIncluded')]);
   const meta = {
     lang: state.lang,
     date,
     title: getExportTitle(),
     subject: t('docxSubject'),
-    lines: [
-      [t('exportLabelOriginal'), getDisplayDocName('left')],
-      [t('exportLabelRevised'), getDisplayDocName('right')],
-      [t('exportLabelCreated'), formatExportDate(date)],
-      [t('exportLabelChanges'), formatExportCountsLine(counts)],
-      [t('exportLabelHf'), state.ignoreHeadersFooters ? t('exportHfIgnored') : t('exportHfIncluded')],
-    ],
+    lines,
+    reviewStatusOf: row => row.reviewStatus || '',
     note: t('docxNote'),
     footer: `${getDisplayDocName('right')} ${t('exportVs')} ${getDisplayDocName('left')}`,
     pageLabel: t('pageLabel'),
     pageOfLabel: t('pageOf'),
   };
-  // The redline always contains the full document so that "Accept all" yields the new version.
+  // The document is always complete: "Accept all" in Word yields the new version (with the
+  // rejections applied), "Reject all" the old version with the accepted changes applied.
   return buildZipArchive(buildDocxPackageFiles(state.alignedRows, meta), date);
 }

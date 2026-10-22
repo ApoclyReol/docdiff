@@ -1,71 +1,139 @@
-function renderMinimap() {
-  const totalRows = state.alignedRows.length || 1;
-  setSafeContainerHtml(
-    minimapTrack,
-    state.changeRows
-      .map(row => {
-        const pct = ((row.rowNumber - 1) / totalRows) * 100;
-        const cls =
-          (row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del') + (row.moved ? ' moved' : '');
-        return `<div class="minimap-tick ${cls}" style="top: ${pct}%" data-row-id="${row.id}"></div>`;
-      })
-      .join('')
-  );
-}
+/* ── Overview ruler: where the changes are, and which part of the document is in view ─── */
 
-let gutterRafPending = false;
-function scheduleGutterDraw() {
-  if (gutterRafPending) return;
-  gutterRafPending = true;
-  requestAnimationFrame(() => {
-    gutterRafPending = false;
-    drawGutterConnectors();
+const rulerEl = document.getElementById('ruler');
+const rulerTrack = document.getElementById('ruler-track');
+const rulerWindow = document.getElementById('ruler-window');
+let rulerRaf = 0;
+let rulerWindowRaf = 0;
+
+function scheduleRulerDraw() {
+  if (rulerRaf) return;
+  rulerRaf = requestAnimationFrame(() => {
+    rulerRaf = 0;
+    drawRuler();
   });
 }
 
-function drawGutterConnectors() {
-  if (state.viewMode === 'inline') {
-    connectorSvg.innerHTML = '';
-    return;
-  }
-  const gutterRect = connectorSvg.getBoundingClientRect();
-  if (!gutterRect.width || !gutterRect.height) return;
-
-  const targetIds = new Set([state.hoveredRowId, state.activeRowId].filter(Boolean));
-  if (targetIds.size === 0) {
-    connectorSvg.innerHTML = '';
-    return;
-  }
-
-  const paths = [];
-  const w = gutterRect.width;
-
-  targetIds.forEach(rowId => {
-    const { l: leftEl, r: rightEl } = getRowElements(rowId);
-    if (!leftEl || !rightEl) return;
-
-    const lRect = leftEl.getBoundingClientRect();
-    const rRect = rightEl.getBoundingClientRect();
-
-    const yLeft = lRect.top + lRect.height / 2 - gutterRect.top;
-    const yRight = rRect.top + rRect.height / 2 - gutterRect.top;
-
-    const d = `M 0 ${yLeft} C ${w * 0.45} ${yLeft}, ${w * 0.55} ${yRight}, ${w} ${yRight}`;
-    paths.push(`<path d="${d}" fill="none" stroke="hsl(var(--ring))" stroke-width="1.5" />`);
-  });
-
-  connectorSvg.innerHTML = paths.join('');
+function clearRuler() {
+  rulerTrack.innerHTML = '';
+  rulerWindow.style.height = '0';
 }
 
-// Elements of a row across panes, sidebar and minimap, without scanning the whole document.
+// "S. 2 · § 3 (1) · geändert"
+function rulerLabel(item) {
+  return [`${t('pageShort')} ${getItemPage(item)}`, getItemRef(item), getChangeTypeLabel(item)].filter(Boolean).join(' · ') +
+    (item.status !== 'open' ? ` (${getStatusLabel(item.status)})` : '');
+}
+
+function drawRuler() {
+  if (!document.body.classList.contains('is-comparing')) return clearRuler();
+  const pane = activeDocPane();
+  const H = rulerTrack.clientHeight;
+  const sh = pane.scrollHeight;
+  if (!H || !sh) return;
+  const paneTop = pane.getBoundingClientRect().top - pane.scrollTop;
+  const key = state.viewMode === 'inline' ? 'u' : 'r';
+  const total = state.alignedRows.length || 1;
+  const activeItem = getActiveItem();
+  const html = [];
+  for (const item of state.listItems) {
+    const el = getRowElements(item.rowId)[key];
+    let top;
+    let h = 3;
+    const rect = el && el.isConnected ? el.getBoundingClientRect() : null;
+    if (rect && rect.height) {
+      top = ((rect.top - paneTop) / sh) * H;
+      h = Math.max(3, (rect.height / sh) * H);
+    } else if (rect) {
+      continue; // hidden ("only changes" or a collapsed header/footer group)
+    } else {
+      top = ((item.row.rowNumber - 1) / total) * H; // not rendered yet
+    }
+    if (item.ghost && item.type === 'inserted') top += h;
+    const cls = `rm rm-${item.type === 'modified' ? 'mod' : item.type === 'inserted' ? 'ins' : 'del'} is-${item.status}${item === activeItem ? ' is-active' : ''}`;
+    html.push(
+      `<div class="${cls}" style="top:${Math.min(H - 3, top).toFixed(1)}px;height:${Math.min(h, 40).toFixed(1)}px" data-row-id="${item.rowId}" data-item-id="${item.id}" data-tooltip="${escapeHtml(rulerLabel(item))}"></div>`
+    );
+  }
+  rulerTrack.innerHTML = html.join('');
+  updateRulerWindow();
+}
+
+function updateRulerWindow() {
+  const pane = activeDocPane();
+  const H = rulerTrack.clientHeight;
+  const sh = pane.scrollHeight;
+  if (!H || !sh) return;
+  const h = Math.max(18, (pane.clientHeight / sh) * H);
+  const top = Math.min(H - h, (pane.scrollTop / sh) * H);
+  rulerWindow.style.transform = `translateY(${top.toFixed(1)}px)`;
+  rulerWindow.style.height = `${h.toFixed(1)}px`;
+}
+
+function scheduleRulerWindow() {
+  if (rulerWindowRaf) return;
+  rulerWindowRaf = requestAnimationFrame(() => {
+    rulerWindowRaf = 0;
+    updateRulerWindow();
+  });
+}
+
+// Click a marker to jump to that change; press and drag anywhere else to scroll.
+(function initRulerPointer() {
+  let drag = null;
+  const scrollTo = clientY => {
+    const pane = activeDocPane();
+    const rect = rulerTrack.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    pane.scrollTop = frac * pane.scrollHeight - pane.clientHeight / 2;
+  };
+  rulerEl.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    const rect = rulerTrack.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    // Markers are slim: accept a click within a few pixels.
+    let best = null;
+    let bestDist = 6;
+    for (const m of rulerTrack.children) {
+      const top = parseFloat(m.style.top);
+      const bottom = top + parseFloat(m.style.height);
+      const d = y < top ? top - y : y > bottom ? y - bottom : 0;
+      if (d < bestDist) {
+        best = m;
+        bestDist = d;
+      }
+    }
+    e.preventDefault();
+    if (best) {
+      selectAndScrollToRow(best.getAttribute('data-row-id'), true, true, { itemId: best.getAttribute('data-item-id') });
+      announceActiveChange();
+      return;
+    }
+    drag = { id: e.pointerId };
+    rulerEl.setPointerCapture(e.pointerId);
+    rulerEl.classList.add('is-dragging');
+    scrollTo(e.clientY);
+  });
+  rulerEl.addEventListener('pointermove', e => {
+    if (drag && e.pointerId === drag.id) scrollTo(e.clientY);
+  });
+  const end = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag = null;
+    rulerEl.classList.remove('is-dragging');
+  };
+  rulerEl.addEventListener('pointerup', end);
+  rulerEl.addEventListener('pointercancel', end);
+})();
+
+/* ── Hover (mouse only), selection and scrolling ───────────────────────── */
+
+// Elements of a row across panes, list and ruler, without scanning the whole document.
 function getRowDecoratedElements(rowId) {
   if (!rowId) return [];
   const els = getRowElements(rowId);
   const out = [els.l, els.r, els.u].filter(Boolean);
-  const nav = sidebarList.querySelector(`.nav-item[data-row-id="${rowId}"]`);
-  if (nav) out.push(nav);
-  const tick = minimapTrack.querySelector(`.minimap-tick[data-row-id="${rowId}"]`);
-  if (tick) out.push(tick);
+  for (const nav of sidebarList.querySelectorAll(`.nav-item[data-row-id="${rowId}"]`)) out.push(nav);
   return out;
 }
 
@@ -73,20 +141,12 @@ function setHoveredRow(rowId) {
   if (state.hoveredRowId === rowId) return;
   const prevId = state.hoveredRowId;
   state.hoveredRowId = rowId;
-
   for (const el of getRowDecoratedElements(prevId)) el.classList.remove('is-hovered');
-  if (rowId) {
-    for (const el of getRowDecoratedElements(rowId)) {
-      if (!el.classList.contains('minimap-tick')) el.classList.add('is-hovered');
-    }
-  }
-  scheduleGutterDraw();
+  if (rowId) for (const el of getRowDecoratedElements(rowId)) el.classList.add('is-hovered');
 }
 
 function prefersReducedMotion() {
-  return Boolean(
-    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
+  return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
 
 function scrollBehavior(smooth) {
@@ -100,13 +160,20 @@ function getScrollTargetTop(pane, targetEl) {
   const paneRect = pane.getBoundingClientRect();
   const targetRect = targetEl.getBoundingClientRect();
   const offsetInContent = pane.scrollTop + (targetRect.top - paneRect.top);
-  const leadSpace = Math.max(24, Math.min(130, Math.round(pane.clientHeight * 0.22)));
+  const leadSpace = Math.max(56, Math.min(140, Math.round(pane.clientHeight * 0.22)));
   return Math.max(0, Math.round(offsetInContent - leadSpace));
+}
+
+function isFullyInView(pane, el) {
+  const p = pane.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  return r.height > 0 && r.top >= p.top + 40 && r.bottom <= p.bottom - 8;
 }
 
 // Only the previously active and the newly active row are touched: no re-render, no
 // document-wide queries, and no forced re-measurement of every row.
-function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true) {
+// opts.flash (default true): brief outline pulse; opts.keepIfVisible: no scroll when in view.
+function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true, opts = {}) {
   const prevIds = new Set([lastActiveRowId, state.activeRowId]);
   state.activeRowId = rowId;
   lastActiveRowId = rowId;
@@ -114,28 +181,33 @@ function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true) {
     for (const el of getRowDecoratedElements(id)) el.classList.remove('is-active', 'is-jump-flash');
   }
 
-  updateMobileBarState();
-  updateSidebarHeaderState();
-  if (!rowId) return;
+  updateStepper();
+  if (!rowId) {
+    placeReviewBar();
+    updateListActiveCard(opts.itemId);
+    return;
+  }
 
   // The target may sit in a page that is still waiting to be rendered.
   if (!getRowElements(rowId).l) flushPaneRender();
 
   const els = getRowElements(rowId);
-  for (const el of getRowDecoratedElements(rowId)) {
-    el.classList.add('is-active');
-    if (scrollPanes && el.classList.contains('clause')) {
-      el.classList.add('is-jump-flash');
-    }
+  // A collapsed header/footer group opens when one of its rows is selected.
+  for (const el of [els.l, els.r, els.u]) {
+    const group = el && el.closest('.hf-group.is-collapsed');
+    if (group) toggleHfGroup(group.getAttribute('data-hf-group'), false);
   }
-
-  const navTarget = sidebarList.querySelector(`.nav-item[data-row-id="${rowId}"]`);
+  const flash = opts.flash !== false && scrollPanes;
+  for (const el of [els.l, els.r, els.u]) {
+    if (!el) continue;
+    el.classList.add('is-active');
+    if (flash) el.classList.add('is-jump-flash');
+  }
+  placeReviewBar();
+  updateListActiveCard(opts.itemId);
   const behavior = scrollBehavior(smooth);
 
   if (scrollPanes) {
-    state.isProgrammaticScroll = true;
-    clearTimeout(programmaticScrollTimer);
-
     const targets =
       state.viewMode === 'inline'
         ? [[paneUnified, els.u]]
@@ -143,38 +215,67 @@ function selectAndScrollToRow(rowId, smooth = true, scrollPanes = true) {
             [paneLeft, els.l],
             [paneRight, els.r],
           ];
-    for (const [pane, target] of targets) {
-      if (target) pane.scrollTo({ top: getScrollTargetTop(pane, target), behavior });
-    }
-
-    programmaticScrollTimer = setTimeout(
-      () => {
-        state.isProgrammaticScroll = false;
-        // Rows rendered for the first time during the scroll may have changed height above
-        // the target (content-visibility); settle on the exact position.
-        if (state.activeRowId === rowId) {
-          for (const [pane, target] of targets) {
-            if (!target || !target.isConnected) continue;
-            const top = getScrollTargetTop(pane, target);
-            const drift = Math.abs(pane.scrollTop - top);
-            // Skip if the user has scrolled away in the meantime.
-            if (drift > 2 && drift < pane.clientHeight) pane.scrollTo({ top, behavior: 'auto' });
+    const needed = !opts.keepIfVisible || targets.some(([pane, el]) => el && !isFullyInView(pane, el));
+    if (needed) {
+      state.isProgrammaticScroll = true;
+      clearTimeout(programmaticScrollTimer);
+      for (const [pane, target] of targets) {
+        if (target) pane.scrollTo({ top: getScrollTargetTop(pane, target), behavior });
+      }
+      programmaticScrollTimer = setTimeout(
+        () => {
+          state.isProgrammaticScroll = false;
+          // Rows rendered for the first time during the scroll may have changed height above
+          // the target (content-visibility); settle on the exact position.
+          if (state.activeRowId === rowId) {
+            for (const [pane, target] of targets) {
+              if (!target || !target.isConnected) continue;
+              const top = getScrollTargetTop(pane, target);
+              const drift = Math.abs(pane.scrollTop - top);
+              if (drift > 2 && drift < pane.clientHeight) pane.scrollTo({ top, behavior: 'auto' });
+            }
           }
-        }
-        scheduleGutterDraw();
-      },
-      behavior === 'smooth' ? 480 : 50
-    );
-  } else {
-    scheduleGutterDraw();
+          scheduleRulerDraw();
+        },
+        behavior === 'smooth' ? 480 : 50
+      );
+    }
   }
+  scheduleRulerDraw();
+  const navTarget = sidebarList.querySelector('.nav-item.is-active');
+  if (navTarget) navTarget.scrollIntoView({ block: 'nearest', behavior });
+}
 
-  if (navTarget) {
-    navTarget.scrollIntoView({ block: 'nearest', behavior });
+// Moves the "active" card (and its action buttons) in the list without re-rendering it.
+function updateListActiveCard(itemId) {
+  const item = itemId ? state.listItems.find(i => i.id === itemId) || getActiveItem() : getActiveItem();
+  const focusInList = sidebarList.contains(document.activeElement);
+  for (const el of sidebarList.querySelectorAll('.nav-item.is-active')) {
+    if (item && el.getAttribute('data-item-id') === item.id) continue;
+    el.classList.remove('is-active');
+    const main = el.querySelector('.nav-item-main');
+    if (main) main.removeAttribute('aria-current');
+    const actions = el.querySelector('.nav-item-actions');
+    if (actions) actions.remove();
+  }
+  if (!item) return;
+  const card = sidebarList.querySelector(`.nav-item[data-item-id="${item.id}"]`);
+  if (!card) return;
+  card.classList.add('is-active');
+  const main = card.querySelector('.nav-item-main');
+  main.setAttribute('aria-current', 'true');
+  if (!card.querySelector('.nav-item-actions')) {
+    card.insertAdjacentHTML(
+      'beforeend',
+      `<div class="nav-item-actions" role="group" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
+    );
+  }
+  if (!focusInList) {
+    for (const b of sidebarList.querySelectorAll('.nav-item-main')) b.tabIndex = b === main ? 0 : -1;
   }
 }
 
-// Edits, reverts and undo re-render the row (or the whole pane) and remove the control that
+// Edits, rejections and undo re-render the row (or the whole pane) and remove the control that
 // had keyboard focus. A request made right before such an action puts focus back on the
 // same row once it is rendered, instead of leaving it on <body>.
 let pendingRowFocus = null;
@@ -185,8 +286,8 @@ function requestRowFocus(rowId, fromSidebar) {
   pendingRowFocus = { rowId, fromSidebar: Boolean(fromSidebar), sidebarIndex };
 }
 
-// A request that was not consumed by a re-render (no-op revert, comparison still running in
-// the worker) must not move focus later; the worker path consumes it when its result lands.
+// A request that was not consumed by a re-render (no-op, comparison still running in the
+// worker) must not move focus later; the worker path consumes it when its result lands.
 function applyPendingRowFocusIfIdle() {
   if (isShownComparisonCurrent()) applyPendingRowFocus();
 }
@@ -196,24 +297,24 @@ function applyPendingRowFocus() {
   pendingRowFocus = null;
   if (!req || !document.body.classList.contains('is-comparing')) return;
   const active = document.activeElement;
-  if (active && active !== document.body && active.isConnected) return;
+  if (active && active !== document.body && active.isConnected && active.getClientRects().length) return;
   let target = null;
   if (req.fromSidebar) {
-    target = sidebarList.querySelector(`.nav-item[data-row-id="${req.rowId}"] .nav-item-main`);
+    target =
+      sidebarList.querySelector(`.nav-item[data-row-id="${state.activeRowId}"] .nav-item-main`) ||
+      sidebarList.querySelector(`.nav-item[data-row-id="${req.rowId}"] .nav-item-main`);
     if (!target && req.sidebarIndex >= 0) {
       const items = sidebarList.querySelectorAll('.nav-item[data-row-id] .nav-item-main');
       target = items[Math.min(req.sidebarIndex, items.length - 1)] || null;
     }
   }
-  const pane = state.viewMode === 'inline' ? paneUnified : paneRight;
-  if (!target) {
-    const sheet = state.viewMode === 'inline' ? sheetUnified : sheetRight;
-    target = sheet.querySelector(`.clause[data-row-id="${req.rowId}"] [data-edit-row]`);
-  }
+  if (!target && reviewBar && reviewBar.isConnected) target = reviewBar.querySelector('button[tabindex="0"]');
   if (target) target.focus({ preventScroll: true });
-  // Hidden controls (e.g. row actions on narrow screens) cannot take focus: use the pane.
-  if (document.activeElement !== target) pane.focus({ preventScroll: true });
+  // Hidden controls (e.g. a closed list drawer) cannot take focus: use the pane.
+  if (document.activeElement !== target) activeDocPane().focus({ preventScroll: true });
 }
+
+/* ── Undo / redo: snapshots of the new version's text and the review status ─ */
 
 function updateUndoRedoButtons() {
   const btnUndo = document.getElementById('btn-undo');
@@ -222,20 +323,34 @@ function updateUndoRedoButtons() {
   if (btnRedo) btnRedo.disabled = state.redoStack.length === 0;
 }
 
-// Undo/redo history belongs to the currently loaded pair of documents. Call this whenever
-// a document is replaced (upload, paste dialog, swap, sample, clear), so Undo can never
-// bring back text from a different document under the new file name.
+// Undo/redo history and review status belong to the currently loaded pair of documents. Call
+// this whenever a document is replaced (upload, paste dialog, swap, sample, clear), so Undo can
+// never bring back text from a different document under the new file name.
 function resetEditHistory() {
   state.undoStack = [];
   state.redoStack = [];
+  resetReviews();
   // A row id of the previous document would select an unrelated row in the new one.
   state.activeRowId = null;
   state.hoveredRowId = null;
   updateUndoRedoButtons();
 }
 
+function makeHistorySnapshot() {
+  return { text: state.rightText, reviews: cloneReviews() };
+}
+
+// Returns true when the text of the new version changed (a re-comparison is needed).
+function restoreHistorySnapshot(snap) {
+  const text = typeof snap === 'string' ? snap : snap.text;
+  const changed = text !== state.rightText;
+  state.rightText = text;
+  state.reviews = cloneReviews(typeof snap === 'string' ? {} : snap.reviews);
+  return changed;
+}
+
 function pushUndoSnapshot() {
-  state.undoStack.push(state.rightText);
+  state.undoStack.push(makeHistorySnapshot());
   if (state.undoStack.length > 50) state.undoStack.shift();
   state.redoStack = [];
   updateUndoRedoButtons();
@@ -243,22 +358,24 @@ function pushUndoSnapshot() {
 
 function performUndo() {
   if (!state.undoStack.length) return;
-  state.redoStack.push(state.rightText);
-  state.rightText = state.undoStack.pop();
+  state.redoStack.push(makeHistorySnapshot());
+  const changed = restoreHistorySnapshot(state.undoStack.pop());
   updateUndoRedoButtons();
-  runComparison();
+  if (changed) runComparison();
+  else refreshReviewState();
 }
 
 function performRedo() {
   if (!state.redoStack.length) return;
-  state.undoStack.push(state.rightText);
-  state.rightText = state.redoStack.pop();
+  state.undoStack.push(makeHistorySnapshot());
+  const changed = restoreHistorySnapshot(state.redoStack.pop());
   updateUndoRedoButtons();
-  runComparison();
+  if (changed) runComparison();
+  else refreshReviewState();
 }
 
 // True when the rows on screen (state.alignedRows) were computed from the current texts.
-// While a long document is re-compared in the worker they are not: an edit or revert built
+// While a long document is re-compared in the worker they are not: an edit or review built
 // from those rows would silently drop the change that started the comparison.
 function isShownComparisonCurrent() {
   const req = typeof lastComparison !== 'undefined' && lastComparison && lastComparison.request;
@@ -349,14 +466,13 @@ function sameBlock(a, b) {
   return a.text === b.text && a.pageNum === b.pageNum && a.index === b.index && a.isHeaderFooter === b.isHeaderFooter;
 }
 
+// "Ablehnen" for one row: restores the old wording of the paragraph (see rejectItem()).
 function revertRowToOriginal(targetRowId) {
   if (!state.alignedRows.length) return;
   const targetRow = state.alignedRows.find(r => r.id === targetRowId);
   if (!targetRow || !isShownComparisonCurrent()) return;
-  pushUndoSnapshot();
-  const revertedText = targetRow.leftBlock ? targetRow.leftBlock.text : '';
-  state.rightText = rebuildRightTextFromRows(targetRowId, revertedText);
-  runComparison();
+  const item = state.listItems.find(i => i.rowId === targetRowId && !i.ghost);
+  if (item) rejectItem(item, { silent: true });
 }
 
 function startInlineClauseEdit(clauseEl, rowId) {
@@ -368,29 +484,28 @@ function startInlineClauseEdit(clauseEl, rowId) {
   const rightTextAtOpen = state.rightText;
 
   hideTooltip();
+  if (state.activeRowId !== rowId) selectAndScrollToRow(rowId, false, false);
   // Where keyboard focus returns once the edit is saved or cancelled with the keyboard.
   const opener = document.activeElement;
   const openerInSidebar = Boolean(opener && opener.closest && opener.closest('#sidebar-list'));
+  if (reviewBar && reviewBar.parentElement === clauseEl) reviewBar.remove();
 
-  const initialText = row.rightBlock
-    ? row.rightBlock.text
-    : row.leftBlock
-    ? row.leftBlock.text
-    : '';
+  const initialText = row.rightBlock ? row.rightBlock.text : row.leftBlock ? row.leftBlock.text : '';
   const originalHtml = clauseEl.innerHTML;
 
   clauseEl.classList.add('is-editing');
   const editor = document.createElement('textarea');
   editor.className = 'clause-inline-editor';
   editor.value = initialText;
+  editor.setAttribute('aria-label', `${t('editBtn')}: ${getDisplayRef(row) || t('colRight')}`);
 
   const helperBar = document.createElement('div');
   helperBar.className = 'clause-editor-bar';
   helperBar.innerHTML = `
     <span>${escapeHtml(t('editorHintText'))}</span>
     <div class="clause-editor-btns">
-      <button type="button" class="clause-editor-btn cancel" data-editor-cancel>${escapeHtml(t('editorCancel'))}</button>
-      <button type="button" class="clause-editor-btn save" data-editor-save>${escapeHtml(t('editorSave'))}</button>
+      <button type="button" class="btn clause-editor-btn cancel" data-editor-cancel>${escapeHtml(t('editorCancel'))}</button>
+      <button type="button" class="btn btn-primary clause-editor-btn save" data-editor-save>${escapeHtml(t('editorSave'))}</button>
     </div>
   `;
 
@@ -402,7 +517,6 @@ function startInlineClauseEdit(clauseEl, rowId) {
   const autoSize = () => {
     editor.style.height = 'auto';
     editor.style.height = `${Math.max(32, editor.scrollHeight)}px`;
-    scheduleGutterDraw();
   };
   autoSize();
   editor.addEventListener('input', autoSize);
@@ -413,7 +527,7 @@ function startInlineClauseEdit(clauseEl, rowId) {
   // Saving or cancelling from the keyboard (Enter, Esc, the editor buttons) keeps focus on
   // this row; a commit by blur leaves focus wherever the user moved it.
   const restoreFocus = () => {
-    if (opener && opener !== document.body && opener.isConnected && opener !== editor) {
+    if (opener && opener !== document.body && opener.isConnected && opener !== editor && opener.getClientRects().length) {
       opener.focus({ preventScroll: true });
     } else {
       requestRowFocus(rowId, openerInSidebar);
@@ -424,7 +538,7 @@ function startInlineClauseEdit(clauseEl, rowId) {
     clauseEl.classList.remove('is-editing');
     clauseEl.innerHTML = originalHtml;
     resetEqualizedRowHeights(rowId);
-    scheduleGutterDraw();
+    placeReviewBar();
     if (keepFocus) restoreFocus();
   };
   const commit = keepFocus => {
@@ -443,6 +557,7 @@ function startInlineClauseEdit(clauseEl, rowId) {
     state.rightText = rebuildRightTextFromRows(rowId, newText);
     if (keepFocus) requestRowFocus(rowId, openerInSidebar);
     runComparison();
+    showUndoToast('toastEdited');
   };
 
   const cancel = () => {
@@ -461,6 +576,11 @@ function startInlineClauseEdit(clauseEl, rowId) {
     ev.stopPropagation();
     commit(true);
   });
+  // Keyboard activation of the editor buttons (mousedown does not fire).
+  helperBar.addEventListener('click', ev => {
+    if (ev.target.closest('[data-editor-cancel]')) cancel();
+    else if (ev.target.closest('[data-editor-save]')) commit(true);
+  });
 
   editor.addEventListener('keydown', ev => {
     if (ev.key === 'Escape') {
@@ -473,175 +593,157 @@ function startInlineClauseEdit(clauseEl, rowId) {
       commit(true);
     }
   });
-  editor.addEventListener('blur', () => {
+  editor.addEventListener('blur', ev => {
+    // Moving to the editor's own buttons is not leaving the editor.
+    if (ev.relatedTarget && helperBar.contains(ev.relatedTarget)) return;
     commit(false);
   });
 }
 
-function closeMobileSheets() {
-  document.body.classList.remove('mobile-sheet-open');
-  exportMenu.classList.remove('is-open');
-  btnExportMenu.setAttribute('aria-expanded', 'false');
-  const mobExpBtn = document.getElementById('mob-btn-export');
-  if (mobExpBtn) mobExpBtn.setAttribute('aria-expanded', 'false');
-  if (window.innerWidth <= 960) {
-    document.body.classList.add('sidebar-collapsed');
-    document.getElementById('btn-toggle-sidebar').setAttribute('aria-pressed', 'false');
-    const mobChangesBtn = document.getElementById('mob-btn-changes');
-    if (mobChangesBtn) mobChangesBtn.setAttribute('aria-pressed', 'false');
-  }
+function toggleHfGroup(id, collapse) {
+  document.querySelectorAll(`.hf-group[data-hf-group="${id}"]`).forEach(g => {
+    const now = collapse === undefined ? !g.classList.contains('is-collapsed') : collapse;
+    g.classList.toggle('is-collapsed', now);
+    const btn = g.querySelector('.hf-toggle');
+    if (btn) btn.setAttribute('aria-expanded', String(!now));
+  });
+  scheduleRulerDraw();
 }
 
+/* ── Pointer and keyboard in the panes and the list ─────────────────────── */
+
 [sheetLeft, sheetRight, sheetUnified, sidebarList].forEach(container => {
-  container.addEventListener('mouseover', e => {
+  // Hover highlight only for a real mouse (never sticky after a tap).
+  container.addEventListener('pointerover', e => {
+    if (e.pointerType !== 'mouse') return;
     const target = e.target.closest('[data-row-id]');
     if (target) setHoveredRow(target.getAttribute('data-row-id'));
   });
-  container.addEventListener('mouseleave', () => setHoveredRow(null));
+  container.addEventListener('pointerleave', () => setHoveredRow(null));
   container.addEventListener('click', e => {
-    const editBtn = e.target.closest('[data-edit-row]');
-    if (editBtn) {
+    const actionBtn = e.target.closest('[data-review-action]');
+    if (actionBtn) {
       e.stopPropagation();
-      const rowId = editBtn.getAttribute('data-edit-row');
-      if (container === sidebarList) {
-        selectAndScrollToRow(rowId, false, true);
-        if (window.innerWidth <= 960) closeMobileSheets();
+      const fromList = container === sidebarList;
+      const card = actionBtn.closest('.nav-item[data-row-id]');
+      if (card && card.getAttribute('data-row-id') !== state.activeRowId) {
+        selectAndScrollToRow(card.getAttribute('data-row-id'), false, true, { itemId: card.getAttribute('data-item-id') });
       }
-      const activeSheet = state.viewMode === 'inline' ? sheetUnified : sheetRight;
-      const hostClause =
-        editBtn.closest('.clause[data-row-id]') ||
-        activeSheet.querySelector(`.clause[data-row-id="${rowId}"]`);
-      if (hostClause) startInlineClauseEdit(hostClause, rowId);
+      const action = actionBtn.getAttribute('data-review-action');
+      if (action === 'edit' && fromList && isTabletOrSmaller()) closeListSheet(false);
+      runReviewAction(action, fromList);
       return;
     }
-    const revertBtn = e.target.closest('[data-revert-row]');
-    if (revertBtn) {
-      e.stopPropagation();
-      hideTooltip();
-      const revertId = revertBtn.getAttribute('data-revert-row');
-      requestRowFocus(revertId, container === sidebarList);
-      revertRowToOriginal(revertId);
-      applyPendingRowFocusIfIdle();
+    const hfToggle = e.target.closest('[data-hf-toggle]');
+    if (hfToggle) {
+      toggleHfGroup(hfToggle.getAttribute('data-hf-toggle'));
       return;
     }
     if (e.target.closest('.clause-inline-editor') || e.target.closest('.clause-editor-bar')) return;
+    // Selecting text must not jump around.
+    const sel = window.getSelection && window.getSelection();
+    if (sel && !sel.isCollapsed && container !== sidebarList) return;
     const target = e.target.closest('[data-row-id]');
-    if (target) {
-      const fromSidebar = container === sidebarList;
-      selectAndScrollToRow(target.getAttribute('data-row-id'), true, fromSidebar);
-      if (window.innerWidth <= 960 && fromSidebar) {
-        closeMobileSheets();
-      }
+    if (!target) return;
+    const fromSidebar = container === sidebarList;
+    selectAndScrollToRow(target.getAttribute('data-row-id'), true, fromSidebar, { itemId: target.getAttribute('data-item-id') });
+    if (fromSidebar) {
+      announceActiveChange();
+      if (isTabletOrSmaller()) closeListSheet(false);
     }
   });
 });
 
+// The list: one tab stop; arrow keys move between the cards (selection follows focus).
 sidebarList.addEventListener('keydown', e => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    const navItem = e.target.closest('.nav-item[data-row-id]');
-    if (navItem && !e.target.closest('button')) {
-      e.preventDefault();
-      selectAndScrollToRow(navItem.getAttribute('data-row-id'), true, true);
-      if (window.innerWidth <= 960) closeMobileSheets();
-    }
-  }
+  const main = e.target.closest('.nav-item-main');
+  if (!main) return;
+  const all = Array.from(sidebarList.querySelectorAll('.nav-item-main'));
+  const i = all.indexOf(main);
+  let next = null;
+  if (e.key === 'ArrowDown') next = all[Math.min(all.length - 1, i + 1)];
+  else if (e.key === 'ArrowUp') next = all[Math.max(0, i - 1)];
+  else if (e.key === 'Home') next = all[0];
+  else if (e.key === 'End') next = all[all.length - 1];
+  if (!next) return;
+  e.preventDefault();
+  for (const b of all) b.tabIndex = b === next ? 0 : -1;
+  next.focus();
+  const card = next.closest('.nav-item');
+  selectAndScrollToRow(card.getAttribute('data-row-id'), true, true, { itemId: card.getAttribute('data-item-id'), flash: false });
+  next.focus({ preventScroll: true });
+});
+
+// Tab into the list lands on the active card.
+sidebarList.addEventListener('focusin', e => {
+  if (!e.target.classList.contains('nav-item-main')) return;
+  for (const b of sidebarList.querySelectorAll('.nav-item-main')) b.tabIndex = b === e.target ? 0 : -1;
 });
 
 const sidebarFilterBar = document.getElementById('sidebar-filter-bar');
-if (sidebarFilterBar) {
-  sidebarFilterBar.addEventListener('click', e => {
-    const btn = e.target.closest('[data-sidebar-filter]');
-    if (!btn) return;
-    const nextFilter = btn.getAttribute('data-sidebar-filter');
-    state.sidebarFilter =
-      state.sidebarFilter === nextFilter && nextFilter !== 'all' ? 'all' : nextFilter;
-    renderSidebarList(state.alignedRows.length > 0);
-  });
-}
-
-// When Undo (Redo) empties its stack the button gets disabled and would drop keyboard focus:
-// hand it to the other history button.
-function keepFocusOnHistoryButtons(selfId, otherId) {
-  updateUndoRedoButtons();
-  const self = document.getElementById(selfId);
-  const other = document.getElementById(otherId);
-  const active = document.activeElement;
-  if (self.disabled && (active === self || active === document.body) && !other.disabled) {
-    other.focus();
+function setListFilter(f, focus) {
+  state.sidebarFilter = f;
+  renderSidebarList(state.alignedRows.length > 0);
+  updateStepper();
+  if (focus) {
+    const tab = sidebarFilterBar.querySelector(`[data-sidebar-filter="${f}"]`);
+    if (tab) tab.focus();
   }
 }
-document.getElementById('btn-undo').addEventListener('click', () => {
-  performUndo();
-  keepFocusOnHistoryButtons('btn-undo', 'btn-redo');
+sidebarFilterBar.addEventListener('click', e => {
+  const btn = e.target.closest('[data-sidebar-filter]');
+  if (btn) setListFilter(btn.getAttribute('data-sidebar-filter'), false);
 });
-document.getElementById('btn-redo').addEventListener('click', () => {
-  performRedo();
-  keepFocusOnHistoryButtons('btn-redo', 'btn-undo');
+// Tabs: arrow keys move between the filters.
+sidebarFilterBar.addEventListener('keydown', e => {
+  const tabs = Array.from(sidebarFilterBar.querySelectorAll('[data-sidebar-filter]'));
+  const i = tabs.indexOf(document.activeElement);
+  if (i < 0) return;
+  let n = -1;
+  if (e.key === 'ArrowRight') n = (i + 1) % tabs.length;
+  else if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
+  else if (e.key === 'Home') n = 0;
+  else if (e.key === 'End') n = tabs.length - 1;
+  if (n < 0) return;
+  e.preventDefault();
+  setListFilter(tabs[n].getAttribute('data-sidebar-filter'), true);
 });
 
-// Editing in the Right ("Nachher / Neuer Stand") pane and Unified ("Kompakt") pane
+// Editing the new version: double-click a paragraph.
 [sheetRight, sheetUnified].forEach(editableSheet => {
   editableSheet.addEventListener('dblclick', e => {
     if (
-      e.target.closest('[data-revert-row]') ||
-      e.target.closest('[data-edit-row]') ||
+      e.target.closest('[data-review-action]') ||
+      e.target.closest('.review-bar') ||
       e.target.closest('.clause-inline-editor') ||
-      e.target.closest('.clause-editor-bar')
+      e.target.closest('.clause-editor-bar') ||
+      e.target.closest('.hf-toggle')
     ) {
       return;
     }
     const clauseEl = e.target.closest('.clause[data-row-id]');
-    if (clauseEl) {
-      startInlineClauseEdit(clauseEl, clauseEl.getAttribute('data-row-id'));
-    }
+    if (clauseEl) startInlineClauseEdit(clauseEl, clauseEl.getAttribute('data-row-id'));
   });
-});
-
-minimapTrack.addEventListener('click', e => {
-  const tick = e.target.closest('[data-row-id]');
-  if (tick) selectAndScrollToRow(tick.getAttribute('data-row-id'), true);
 });
 
 function handlePaneScroll(sourcePane, targetPane) {
   if (Math.abs(targetPane.scrollTop - sourcePane.scrollTop) > 0.5) {
     targetPane.scrollTop = sourcePane.scrollTop;
   }
-  scheduleGutterDraw();
+  scheduleRulerWindow();
 }
 
 paneLeft.addEventListener('scroll', () => handlePaneScroll(paneLeft, paneRight), { passive: true });
 paneRight.addEventListener('scroll', () => handlePaneScroll(paneRight, paneLeft), { passive: true });
-document.getElementById('center-gutter').addEventListener(
-  'wheel',
-  e => {
-    if (state.viewMode === 'inline') return;
-    paneRight.scrollTop += e.deltaY;
-    paneLeft.scrollTop = paneRight.scrollTop;
-    scheduleGutterDraw();
-  },
-  { passive: true }
-);
-
-function attachScrollEnd(scroller, callback) {
-  if ('onscrollend' in window) {
-    scroller.addEventListener('scrollend', callback, { passive: true });
-  } else {
-    let timer = null;
-    scroller.addEventListener('scroll', () => {
-      clearTimeout(timer);
-      timer = setTimeout(callback, 100);
-    }, { passive: true });
-  }
-}
-
-attachScrollEnd(paneLeft, () => scheduleGutterDraw());
-attachScrollEnd(paneRight, () => scheduleGutterDraw());
+paneUnified.addEventListener('scroll', scheduleRulerWindow, { passive: true });
 
 let resizeTimer = null;
+let lastTier = null;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    equalizeRowHeights();
-    scheduleGutterDraw();
+    updateFileLabels();
+    applyLayoutTier();
+    scheduleRulerDraw();
   }, 60);
 });

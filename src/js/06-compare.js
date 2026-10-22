@@ -10,9 +10,7 @@ function applyComparisonResult(request, result, opts = {}) {
 
   document.getElementById('filename-left').textContent = state.leftName || t('noFileLeft');
   document.getElementById('filename-right').textContent = state.rightName || t('noFileRight');
-
-  updateColumnMeta('left', leftBlocks.length, leftPages);
-  updateColumnMeta('right', rightBlocks.length, rightPages);
+  updateFileLabels();
 
   const bothLoaded = leftBlocks.length > 0 && rightBlocks.length > 0;
   const wasComparing = document.body.classList.contains('is-comparing');
@@ -30,22 +28,21 @@ function applyComparisonResult(request, result, opts = {}) {
   document.body.classList.toggle('has-docs', leftBlocks.length > 0 || rightBlocks.length > 0);
   document.body.classList.toggle('is-comparing', bothLoaded);
   document.body.classList.toggle('legend-dismissed', state.legendDismissed);
-  const badgeEditable = document.getElementById('badge-editable');
-  if (badgeEditable) {
-    badgeEditable.classList.toggle('is-visible', bothLoaded);
-  }
 
   if (!bothLoaded) {
     pendingRowFocus = null;
+    pendingSelectAfterReject = null;
     state.activeRowId = null;
     state.hoveredRowId = null;
     cancelPaneRender();
     resetRowLayoutRegistry();
     state.alignedRows = [];
     state.changeRows = [];
-    updateHeaderCounts(0, 0, 0);
-    updateMobileBarState();
+    state.listItems = [];
+    removeReviewBar();
+    updateStepper();
     updateUndoRedoButtons();
+    closeSearch(false);
 
     // Panes stay hidden until both versions exist; the landing slots show what is loaded.
     setSafeContainerHtml(sheetLeft, '');
@@ -57,9 +54,8 @@ function applyComparisonResult(request, result, opts = {}) {
     );
 
     bindEmptyStateButtons();
-    renderSidebarList(bothLoaded);
-    minimapTrack.innerHTML = '';
-    connectorSvg.innerHTML = '';
+    renderSidebarList(false);
+    clearRuler();
 
     if (wasComparing && (focusWasLost || focusInCompareChrome || focusInDocument)) {
       const heading = document.getElementById('landing-title');
@@ -71,12 +67,18 @@ function applyComparisonResult(request, result, opts = {}) {
 
   state.alignedRows = result.alignedRows;
   state.changeRows = state.alignedRows.filter(r => r.type !== 'equal');
+  rebuildReviewIndex();
   // The selected / hovered row may be gone after an edit that removed paragraphs.
   if (state.activeRowId && !state.alignedRows.some(r => r.id === state.activeRowId)) state.activeRowId = null;
   if (state.hoveredRowId && !state.alignedRows.some(r => r.id === state.hoveredRowId)) state.hoveredRowId = null;
-
-  const counts = getChangeCounts();
-  updateHeaderCounts(counts.mod, counts.ins, counts.del);
+  if (pendingSelectAfterReject !== null) {
+    const row = state.alignedRows[Math.min(pendingSelectAfterReject, state.alignedRows.length - 1)];
+    pendingSelectAfterReject = null;
+    if (row) state.activeRowId = row.id;
+  }
+  // Change 1 is selected as soon as a comparison is shown.
+  const preselect = !state.activeRowId && state.listItems.length > 0;
+  if (preselect) state.activeRowId = state.listItems[0].rowId;
 
   const compareHeading = document.getElementById('compare-heading');
   if (compareHeading) {
@@ -86,30 +88,35 @@ function applyComparisonResult(request, result, opts = {}) {
     });
   }
 
-  // Edits, reverts, undo and redo usually change a single row: patch it in place instead of
+  applyPageBreaks();
+  updateHfMenuItem();
+
+  // Edits, rejections, undo and redo usually change a single row: patch it in place instead of
   // re-rendering all three panes. Clauses of the active row get `is-active` while rendering.
   if (!(opts.changedRowIds && patchRenderedRows(opts.changedRowIds))) {
     renderDocumentPanes();
   }
   renderSidebarList(true);
-  renderMinimap();
-  updateMobileBarState();
+  updateStepper();
   updateUndoRedoButtons();
+  placeReviewBar();
+  if (state.searchQuery) scheduleSearchRecount();
 
-  if (state.activeRowId) {
-    const tick = minimapTrack.querySelector(`.minimap-tick[data-row-id="${state.activeRowId}"]`);
-    if (tick) tick.classList.add('is-active');
+  scheduleRulerDraw();
+  if (preselect || !wasComparing) {
+    const id = state.activeRowId;
+    if (id) requestAnimationFrame(() => {
+      if (state.activeRowId === id) selectAndScrollToRow(id, false, !wasComparing || preselect, { flash: false, keepIfVisible: wasComparing });
+    });
   }
-
-  scheduleGutterDraw();
   applyPendingRowFocus();
   const focusNow = document.activeElement;
   if (focusInDocument && wasComparing && (!focusNow || focusNow === document.body || !focusNow.isConnected)) {
-    (state.viewMode === 'inline' ? paneUnified : paneRight).focus({ preventScroll: true });
+    activeDocPane().focus({ preventScroll: true });
   }
 
   if (!wasComparing) {
-    const total = state.changeRows.length;
+    const total = state.listItems.length;
     announce(
       total === 0
         ? t('announceIdentical')
@@ -120,37 +127,32 @@ function applyComparisonResult(request, result, opts = {}) {
     // The landing page (and whatever had focus in it) just disappeared: hand focus to the
     // document so keyboard users continue with Tab or J / K from a sensible place.
     if (focusWasLost || focusInLanding) {
-      const pane = state.viewMode === 'inline' ? paneUnified : paneRight;
-      requestAnimationFrame(() => pane.focus({ preventScroll: true }));
+      requestAnimationFrame(() => activeDocPane().focus({ preventScroll: true }));
     }
   }
 }
 
-// Single source for the header counts and the sidebar filter counts.
+function activeDocPane() {
+  return state.viewMode === 'inline' ? paneUnified : paneRight;
+}
+
+// Counts per change type over the whole list (rejected changes keep their type).
 function getChangeCounts() {
   const counts = { mod: 0, ins: 0, del: 0 };
-  for (const r of state.changeRows) {
-    if (r.type === 'modified') counts.mod++;
-    else if (r.type === 'inserted') counts.ins++;
-    else if (r.type === 'deleted') counts.del++;
+  for (const item of state.listItems) {
+    if (item.type === 'modified') counts.mod++;
+    else if (item.type === 'inserted') counts.ins++;
+    else if (item.type === 'deleted') counts.del++;
   }
   return counts;
 }
 
-// The header shows the same three numbers as the sidebar filters (a modified paragraph
-// counts once, as "modified" – not once as added and once as removed).
-function updateHeaderCounts(modCount, insCount, delCount) {
-  const total = modCount + insCount + delCount;
-  document.getElementById('count-all').textContent = String(total);
-  document.getElementById('i18n-changes-label').textContent = changesWord(total);
-  document.getElementById('count-mod').textContent = String(modCount);
-  document.getElementById('count-ins').textContent = String(insCount);
-  document.getElementById('count-del').textContent = String(delCount);
-  const summary = document.getElementById('stat-summary');
-  if (summary) {
-    summary.querySelector('.stat-mod').classList.toggle('is-zero', modCount === 0);
-    summary.querySelector('.stat-ins').classList.toggle('is-zero', insCount === 0);
-    summary.querySelector('.stat-del').classList.toggle('is-zero', delCount === 0);
+function updateHfMenuItem() {
+  setMenuChecked('btn-filter-hf', state.ignoreHeadersFooters);
+  const badge = document.getElementById('hf-count-badge');
+  if (badge) {
+    badge.textContent =
+      state.ignoreHeadersFooters && state.filteredHfCount > 0 ? formatMsg('hfHiddenCount', { n: state.filteredHfCount }) : '';
   }
 }
 
@@ -177,8 +179,7 @@ function clearLandingSide(side) {
     state.rightText = '';
     state.rightName = '';
     state.rightFormat = '';
-    state.undoStack = [];
-    state.redoStack = [];
+    resetEditHistory();
     document.getElementById('file-input-right').value = '';
   }
   runComparison();
@@ -255,47 +256,8 @@ function renderMovedNoteHtml(row) {
   return `<span class="moved-note">${escapeHtml(label)}</span>`;
 }
 
-// Rendered for every clause of the right and unified panes, so it is kept lean: icons are CSS
-// masks (`.icon-edit` etc. in styles.css) instead of inline SVG (~12k fewer DOM nodes for an
-// 80-page contract).
-function renderRightActionsHtml(row) {
-  const editLabel = row.rightBlock ? t('editBtn') : t('editInsertBtn');
-  const editIcon = row.rightBlock ? 'icon-edit' : 'icon-insert';
-  const editBtn = `<button type="button" class="clause-action-btn ${editIcon}" data-edit-row="${row.id}">${escapeHtml(editLabel)}</button>`;
-  const revertBtn =
-    row.type !== 'equal'
-      ? `<button type="button" class="clause-action-btn is-revert icon-revert" data-revert-row="${row.id}">${escapeHtml(t('revertBtn'))}</button>`
-      : '';
-  return `<div class="clause-actions">${editBtn}${revertBtn}</div>`;
-}
-
-function renderPageCardHeaderHtml(pageNum, totalPages, rowsInPage) {
-  const sections = [];
-  for (const r of rowsInPage) {
-    const b = r.rightBlock || r.leftBlock;
-    if (b && b.sectionRef && !sections.includes(b.sectionRef)) {
-      sections.push(b.sectionRef);
-    }
-  }
-  const secRange =
-    sections.length === 1
-      ? sections[0]
-      : sections.length > 1
-      ? `${sections[0]} – ${sections[sections.length - 1]}`
-      : '';
-  const changeCount = rowsInPage.filter(r => r.type !== 'equal').length;
-  const pillLabel =
-    changeCount > 0 ? `${changeCount} ${escapeHtml(changesWord(changeCount))}` : escapeHtml(t('pageUnchanged'));
-
-  return `
-    <header class="doc-page-header" aria-label="${escapeHtml(t('pageLabel'))} ${pageNum}">
-      <div class="page-head-left">
-        <span class="page-num-label">${escapeHtml(t('pageLabel'))} ${pageNum} ${escapeHtml(t('pageOf'))} ${totalPages}</span>
-        ${secRange ? `<span class="page-sec-range">· ${escapeHtml(secRange)}</span>` : ''}
-      </div>
-      <span class="page-change-pill ${changeCount === 0 ? 'is-clean' : ''}">${pillLabel}</span>
-    </header>
-  `;
+function renderPageCardHeaderHtml(pageNum, totalPages) {
+  return `<header class="doc-page-header"><span class="page-num-label">${escapeHtml(t('pageLabel'))} ${pageNum} ${escapeHtml(t('pageOf'))} ${totalPages}</span></header>`;
 }
 
 function getRowStateClass(row, side) {
@@ -306,27 +268,36 @@ function getRowStateClass(row, side) {
   return row.type === 'inserted' ? 'state-inserted' : 'state-deleted';
 }
 
+function isHeaderFooterRow(row) {
+  const b = row.rightBlock || row.leftBlock;
+  return Boolean(b && (b.isHeaderFooter || b.kind === 'hf'));
+}
+
 // HTML of one aligned row in the three panes (left, right, unified). Kept free of
 // indentation whitespace: every whitespace text node is a DOM node to parse and lay out.
 function renderRowAnchorsHtml(row, idx, q) {
   const deferClass = idx > 18 ? ' deferred-block' : '';
   const activeClass = row.id === state.activeRowId ? ' is-active' : '';
-  const extra = deferClass + activeClass;
+  const reviewClass = row.reviewStatus === 'accepted' ? ' is-accepted' : '';
+  const extra = deferClass + activeClass + reviewClass;
   const movedClass = row.moved ? ' is-moved' : '';
   const movedNote = renderMovedNoteHtml(row);
-  const rightActionsHtml = renderRightActionsHtml(row);
-  const anchorOpen = `<div class="diff-row-anchor" data-row-id="${row.id}" data-type="${row.type}">`;
+  const ghostClass = row.ghostNote ? ' has-ghost' : '';
+  const ghostNote = row.ghostNote
+    ? `<span class="review-note is-rejected">${escapeHtml(t('rejectedNote'))}</span>`
+    : '';
+  const anchorOpen = `<div class="diff-row-anchor${ghostClass}" data-row-id="${row.id}" data-type="${row.type}">`;
 
   const left = row.leftBlock
     ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'left')} ${getClauseTypeClasses(row.leftBlock)}${movedClass}${extra}" data-row-id="${row.id}">${movedNote}${renderLeftBlockHtml(row, q)}</div></div>`
     : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}"></div></div>`;
 
   const right = row.rightBlock
-    ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'right')} ${getClauseTypeClasses(row.rightBlock)}${movedClass}${extra}" data-row-id="${row.id}">${movedNote}${renderRightBlockHtml(row, q)}${rightActionsHtml}</div></div>`
-    : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}">${rightActionsHtml}</div></div>`;
+    ? `${anchorOpen}<div class="clause ${getRowStateClass(row, 'right')} ${getClauseTypeClasses(row.rightBlock)}${movedClass}${extra}" data-row-id="${row.id}">${ghostNote}${movedNote}${renderRightBlockHtml(row, q)}</div></div>`
+    : `${anchorOpen}<div class="clause state-placeholder${extra}" data-row-id="${row.id}"></div></div>`;
 
   const primaryBlock = row.rightBlock || row.leftBlock;
-  const unified = `${anchorOpen}<div class="clause ${getRowStateClass(row, 'unified')} ${getClauseTypeClasses(primaryBlock)}${movedClass}${extra}" data-row-id="${row.id}">${movedNote}${renderUnifiedBlockHtml(row, q, true)}${rightActionsHtml}</div></div>`;
+  const unified = `${anchorOpen}<div class="clause ${getRowStateClass(row, 'unified')} ${getClauseTypeClasses(primaryBlock)}${movedClass}${extra}" data-row-id="${row.id}">${ghostNote}${movedNote}${renderUnifiedBlockHtml(row, q, true)}</div></div>`;
 
   return { left, right, unified };
 }
@@ -365,10 +336,9 @@ function renderDocumentPanes() {
   paneRenderJob = job;
   renderPaneChunk(job, PANE_RENDER_FIRST_PAGES, 0);
 
-  // Re-render of a document the user had scrolled into (search over a single document,
-  // header/footer toggle, undo of a large change): render up to the previous position right
-  // away so the view does not jump to the top.
-  const activePane = state.viewMode === 'inline' ? paneUnified : paneRight;
+  // Re-render of a document the user had scrolled into (header/footer toggle, undo of a large
+  // change): render up to the previous position right away so the view does not jump.
+  const activePane = activeDocPane();
   const target = prevScroll[panes.indexOf(activePane)];
   if (target > 0) {
     while (paneRenderJob === job && activePane.scrollHeight < target + 2 * activePane.clientHeight) {
@@ -381,8 +351,30 @@ function renderDocumentPanes() {
   schedulePaneRenderChunk(job);
 }
 
+// Consecutive header/footer lines of a page form one muted, collapsible group (in all three
+// panes alike, so the rows stay aligned).
+function wrapHeaderFooterGroups(entries, pageNum, rowsHtml) {
+  const out = [];
+  let i = 0;
+  let groupNo = 0;
+  while (i < entries.length) {
+    if (!isHeaderFooterRow(entries[i].row)) {
+      out.push(rowsHtml[i]);
+      i++;
+      continue;
+    }
+    const start = i;
+    while (i < entries.length && isHeaderFooterRow(entries[i].row)) i++;
+    const id = `hf-${pageNum}-${groupNo++}`;
+    out.push(
+      `<div class="hf-group" data-hf-group="${id}"><button type="button" class="hf-toggle" tabindex="-1" aria-expanded="true" data-hf-toggle="${id}">${escapeHtml(t('hfGroup'))}</button>${rowsHtml.slice(start, i).join('')}</div>`
+    );
+  }
+  return out.join('');
+}
+
 function renderPageCardsHtml(pageNum, entries, totalPages, q) {
-  const pageHeaderHtml = renderPageCardHeaderHtml(pageNum, totalPages, entries.map(e => e.row));
+  const pageHeaderHtml = renderPageCardHeaderHtml(pageNum, totalPages);
   const leftRows = [];
   const rightRows = [];
   const unifiedRows = [];
@@ -393,7 +385,7 @@ function renderPageCardsHtml(pageNum, entries, totalPages, q) {
     unifiedRows.push(html.unified);
   }
   const card = rowsHtml =>
-    `<section class="doc-page-card" data-page="${pageNum}">${pageHeaderHtml}<div class="doc-page-body">${rowsHtml.join('')}</div></section>`;
+    `<section class="doc-page-card" data-page="${pageNum}">${pageHeaderHtml}<div class="doc-page-body">${wrapHeaderFooterGroups(entries, pageNum, rowsHtml)}</div></section>`;
   return { left: card(leftRows), right: card(rightRows), unified: card(unifiedRows) };
 }
 
@@ -430,7 +422,10 @@ function schedulePaneRenderChunk(job) {
     job.timer = null;
     renderPaneChunk(job, 1, PANE_RENDER_CHUNK_MS);
     if (paneRenderJob === job) schedulePaneRenderChunk(job);
-    else scheduleGutterDraw();
+    else {
+      scheduleRulerDraw();
+      if (state.searchQuery) scheduleSearchRecount();
+    }
   }, 0);
 }
 
@@ -463,41 +458,36 @@ function rerenderRowInPlace(row) {
   const r = replaceAnchor(els.r, html.right);
   const u = replaceAnchor(els.u, html.unified);
   registerRowElements(row.id, l, r, u);
+  if (row.id === state.activeRowId) placeReviewBar();
   return true;
 }
 
-// Incremental update after an edit / revert / undo (same row ids, a few rows changed).
+// Incremental update after an edit / rejection / undo (same row ids, a few rows changed).
 // Returns false if the DOM does not hold the previous rendering, so a full render is needed.
 function patchRenderedRows(changedRowIds) {
   flushPaneRender();
   const rows = changedRowIds.map(id => state.alignedRows.find(r => r.id === id));
   if (rows.some(row => !row || !getRowElements(row.id).l)) return false;
-
-  const totalPages = sheetLeft.children.length || 1;
-  const pagesDone = new Set();
+  // A header/footer row that joins or leaves a group needs the group markup: render fully.
+  if (rows.some(row => isHeaderFooterRow(row) !== Boolean(getRowElements(row.id).l.closest('.hf-group')))) return false;
   for (const row of rows) {
     if (!rerenderRowInPlace(row)) return false;
-    const pageNum = row.pageNum || 1;
-    if (pagesDone.has(pageNum)) continue;
-    pagesDone.add(pageNum);
-    const pageRows = state.alignedRows.filter(r => (r.pageNum || 1) === pageNum);
-    const headerHtml = renderPageCardHeaderHtml(pageNum, totalPages, pageRows).trim();
-    const els = getRowElements(row.id);
-    for (const el of [els.l, els.r, els.u]) {
-      const card = el && el.closest('.doc-page-card');
-      const header = card && card.querySelector(':scope > .doc-page-header');
-      if (!header) continue;
-      const tpl = document.createElement('template');
-      tpl.innerHTML = headerHtml;
-      header.replaceWith(tpl.content.firstElementChild);
-    }
   }
+  // Ghost notes and review classes of other rows may have changed (undo of a rejection).
+  for (const row of state.alignedRows) {
+    const els = getRowElements(row.id);
+    if (!els.r) continue;
+    const anchor = els.r.parentElement;
+    const hasGhost = anchor.classList.contains('has-ghost');
+    if (hasGhost !== Boolean(row.ghostNote) && !changedRowIds.includes(row.id)) rerenderRowInPlace(row);
+  }
+  decorateReviewedRows();
   return true;
 }
 
 // Rows are kept height-aligned between the left and right panes by a ResizeObserver that also
 // notices width changes (see 06b-row-layout.js), so there is nothing left to do here. Kept for
-// existing callers (resize, sidebar toggle, view mode switch).
+// existing callers (resize, list toggle, view mode switch).
 function equalizeRowHeights() {}
 
 function truncateClean(str, maxLen = 40) {
@@ -562,46 +552,42 @@ function extractDeltaPairs(wordDiffs) {
   return pairs;
 }
 
-function renderSidebarDeltaHtml(row, query) {
-  if (row.type === 'deleted') {
-    return `<span class="nav-item-snippet"><del class="tok-del">${escapeAndHighlightText(
-      truncateClean(row.leftBlock.text, 92),
-      query
-    )}</del></span>`;
+// Word diffs of a list item: the row's own, or (rejected change) recomputed from what was rejected.
+const ghostDiffCache = new WeakMap();
+function getItemWordDiffs(item) {
+  if (!item.ghost) return item.row.wordDiffs || [];
+  if (!ghostDiffCache.has(item.ghost)) {
+    ghostDiffCache.set(item.ghost, computeCleanWordDiff(item.ghost.leftText || '', item.ghost.rightText || ''));
   }
-  if (row.type === 'inserted') {
-    return `<span class="nav-item-snippet"><ins class="tok-ins">${escapeAndHighlightText(
-      truncateClean(row.rightBlock.text, 92),
-      query
-    )}</ins></span>`;
+  return ghostDiffCache.get(item.ghost);
+}
+
+function getItemTexts(item) {
+  if (item.ghost) return { left: item.ghost.leftText || '', right: item.ghost.rightText || '' };
+  return { left: item.row.leftBlock ? item.row.leftBlock.text : '', right: item.row.rightBlock ? item.row.rightBlock.text : '' };
+}
+
+function renderSidebarDeltaHtml(item) {
+  const { left, right } = getItemTexts(item);
+  if (item.type === 'deleted') {
+    return `<span class="nav-item-snippet"><del class="tok-del">${escapeHtml(truncateClean(left, 92))}</del></span>`;
   }
-  const pairs = extractDeltaPairs(row.wordDiffs || []);
+  if (item.type === 'inserted') {
+    return `<span class="nav-item-snippet"><ins class="tok-ins">${escapeHtml(truncateClean(right, 92))}</ins></span>`;
+  }
+  const pairs = extractDeltaPairs(getItemWordDiffs(item));
   if (pairs.length === 0) {
-    return `<span class="nav-item-snippet">${renderUnifiedBlockHtml(row, query)}</span>`;
+    return `<span class="nav-item-snippet">${item.ghost ? escapeHtml(truncateClean(right, 92)) : renderUnifiedBlockHtml(item.row, '')}</span>`;
   }
   const maxPairs = 3;
   const visible = pairs.slice(0, maxPairs);
   const rowsHtml = visible
     .map(pair => {
       if (pair.del && pair.ins) {
-        return `<span class="nav-delta-row"><del class="tok-del">${escapeAndHighlightText(
-          truncateClean(pair.del, 34),
-          query
-        )}</del><span class="nav-delta-arrow" aria-hidden="true">→</span><ins class="tok-ins">${escapeAndHighlightText(
-          truncateClean(pair.ins, 34),
-          query
-        )}</ins></span>`;
+        return `<span class="nav-delta-row"><del class="tok-del">${escapeHtml(truncateClean(pair.del, 34))}</del><span class="nav-delta-arrow" aria-hidden="true">→</span><ins class="tok-ins">${escapeHtml(truncateClean(pair.ins, 34))}</ins></span>`;
       }
-      if (pair.ins) {
-        return `<span class="nav-delta-row"><ins class="tok-ins">+ ${escapeAndHighlightText(
-          truncateClean(pair.ins, 46),
-          query
-        )}</ins></span>`;
-      }
-      return `<span class="nav-delta-row"><del class="tok-del">− ${escapeAndHighlightText(
-        truncateClean(pair.del, 46),
-        query
-      )}</del></span>`;
+      if (pair.ins) return `<span class="nav-delta-row"><ins class="tok-ins">${escapeHtml(truncateClean(pair.ins, 46))}</ins></span>`;
+      return `<span class="nav-delta-row"><del class="tok-del">${escapeHtml(truncateClean(pair.del, 46))}</del></span>`;
     })
     .join('');
   const moreHtml =
@@ -611,9 +597,15 @@ function renderSidebarDeltaHtml(row, query) {
   return `<span class="nav-item-deltas">${rowsHtml}${moreHtml}</span>`;
 }
 
-function getChangeTypeLabel(row) {
-  if (row.moved) return t('typeMoved');
-  return row.type === 'modified' ? t('statMod') : row.type === 'inserted' ? t('statIns') : t('statDel');
+// "geändert" / "hinzugefügt" / "entfernt" / "Verschoben"
+function getChangeTypeLabel(rowOrItem) {
+  if (rowOrItem.moved || (rowOrItem.row && !rowOrItem.ghost && rowOrItem.row.moved)) return t('typeMoved');
+  const type = rowOrItem.type;
+  return type === 'modified' ? t('statMod') : type === 'inserted' ? t('statIns') : t('statDel');
+}
+
+function getStatusLabel(status) {
+  return status === 'accepted' ? t('statusAccepted') : status === 'rejected' ? t('statusRejected') : t('statusOpen');
 }
 
 // Clause reference for display, without the bullet glyph used internally for list items.
@@ -623,128 +615,101 @@ function getDisplayRef(row) {
   return ref.replace(/\s*[•‣▪◦]\s*$/, '').trim();
 }
 
-function getFilteredChangeRows() {
-  return state.changeRows.filter(row => {
-    if (state.sidebarFilter !== 'all' && row.type !== state.sidebarFilter) {
-      return false;
-    }
-    if (state.searchQuery.trim().length >= 2) {
-      const q = state.searchQuery.toLowerCase();
-      const lText = row.leftBlock ? row.leftBlock.text.toLowerCase() : '';
-      const rText = row.rightBlock ? row.rightBlock.text.toLowerCase() : '';
-      return lText.includes(q) || rText.includes(q);
-    }
-    return true;
-  });
+function getItemRef(item) {
+  if (item.ghost) return item.ghost.refCode || '';
+  return getDisplayRef(item.row);
 }
 
+function getItemPage(item) {
+  return item.ghost ? item.ghost.pageNum || 1 : item.row.pageNum || 1;
+}
+
+// List items under the active list filter (search never filters the list).
+function getFilteredListItems() {
+  const f = state.sidebarFilter;
+  return state.listItems.filter(item => {
+    if (f === 'all') return true;
+    if (f === 'open') return item.status === 'open';
+    return item.type === f;
+  });
+}
+// Kept for callers and QA scripts written against the earlier name.
+const getFilteredChangeRows = getFilteredListItems;
+
 function updateSidebarHeaderState() {
-  const total = state.changeRows.length;
-  const activeIdx = state.changeRows.findIndex(r => r.id === state.activeRowId);
-  const badge = document.getElementById('sidebar-count-badge');
-  if (badge) {
-    if (total > 0 && activeIdx >= 0) {
-      badge.textContent = `${activeIdx + 1} / ${total}`;
-      badge.classList.add('has-active');
-    } else {
-      badge.textContent = String(total);
-      badge.classList.remove('has-active');
-    }
-  }
+  const total = state.listItems.length;
+  const counts = getChangeCounts();
+  const review = getReviewCounts();
+  document.getElementById('list-title').textContent = changesTitle(total);
+  document.getElementById('list-progress').textContent = total ? formatMsg('listProgress', { k: review.reviewed, n: total }) : '';
+  document.getElementById('progress-fill').style.width = total ? `${(review.reviewed / total) * 100}%` : '0';
+  document.querySelector('.list-progress').hidden = total === 0;
+  const set = (id, n) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(n);
+  };
+  set('filter-count-open', review.open);
+  set('filter-count-mod', counts.mod);
+  set('filter-count-ins', counts.ins);
+  set('filter-count-del', counts.del);
+  const btnListCount = document.getElementById('btn-list-count');
+  if (btnListCount) btnListCount.textContent = String(total);
+  const btnList = document.getElementById('btn-list');
+  if (btnList) btnList.setAttribute('aria-label', formatMsg('listBtnLabel', { n: total }));
 
-  const { mod: modCount, ins: insCount, del: delCount } = getChangeCounts();
-
-  const cAll = document.getElementById('filter-count-all');
-  const cMod = document.getElementById('filter-count-mod');
-  const cIns = document.getElementById('filter-count-ins');
-  const cDel = document.getElementById('filter-count-del');
-  if (cAll) cAll.textContent = String(total);
-  if (cMod) cMod.textContent = String(modCount);
-  if (cIns) cIns.textContent = String(insCount);
-  if (cDel) cDel.textContent = String(delCount);
-
+  const countFor = f =>
+    f === 'all' ? total : f === 'open' ? review.open : f === 'modified' ? counts.mod : f === 'inserted' ? counts.ins : counts.del;
   document.querySelectorAll('[data-sidebar-filter]').forEach(btn => {
     const f = btn.getAttribute('data-sidebar-filter');
     const isActive = f === state.sidebarFilter;
-    btn.classList.toggle('is-active', isActive);
-    btn.setAttribute('aria-pressed', String(isActive));
-    const countForTab =
-      f === 'all' ? total : f === 'modified' ? modCount : f === 'inserted' ? insCount : delCount;
-    btn.classList.toggle('is-zero', countForTab === 0);
+    btn.setAttribute('aria-selected', String(isActive));
+    btn.tabIndex = isActive ? 0 : -1;
+    btn.classList.toggle('is-zero', countFor(f) === 0);
+    if (isActive) sidebarList.setAttribute('aria-labelledby', btn.id);
   });
 }
 
 function renderSidebarList(bothLoaded) {
   updateSidebarHeaderState();
   if (!bothLoaded) {
-    setSafeContainerHtml(
-      sidebarList,
-      `
-      <div class="empty-state empty-state-sm" data-empty-state>
-        <svg class="empty-glyph" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/>
-        </svg>
-        <p class="empty-title">${escapeHtml(t('sidebarEmptyTitle'))}</p>
-        <div class="empty-desc">${escapeHtml(t('sidebarEmptyDesc'))}</div>
-      </div>
-    `
-    );
+    setSafeContainerHtml(sidebarList, '');
     return;
   }
 
-  const filtered = getFilteredChangeRows();
-
+  const filtered = getFilteredListItems();
   if (filtered.length === 0) {
-    const isSearchOrFilter = state.searchQuery.trim().length >= 2 || state.sidebarFilter !== 'all';
+    const isFilter = state.sidebarFilter !== 'all';
     setSafeContainerHtml(
       sidebarList,
-      `
-      <div class="empty-state empty-state-sm" data-empty-state>
-        <svg class="empty-glyph" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-        <p class="empty-title">${escapeHtml(isSearchOrFilter ? t('noMatchesTitle') : t('identicalTitle'))}</p>
-        <div class="empty-desc">${escapeHtml(isSearchOrFilter ? t('noMatchesDesc') : t('identicalDesc'))}</div>
-      </div>
-    `
+      `<div class="empty-state empty-state-sm" data-empty-state><p class="empty-title">${escapeHtml(
+        isFilter ? t('noMatchesTitle') : t('identicalTitle')
+      )}</p><div class="empty-desc">${escapeHtml(isFilter ? t('noMatchesDesc') : t('identicalDesc'))}</div></div>`
     );
     return;
   }
 
-  const editSvg = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
-  const revertSvg = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
-
+  const activeItem = getActiveItem();
+  const activeVisible = activeItem && filtered.includes(activeItem);
+  const focusId = activeVisible ? activeItem.id : filtered[0].id;
   setSafeContainerHtml(
     sidebarList,
     filtered
-      .map(row => {
-        const globalIdx = state.changeRows.indexOf(row) + 1;
-        const cls =
-          (row.type === 'modified' ? 'mod' : row.type === 'inserted' ? 'ins' : 'del') + (row.moved ? ' moved' : '');
-        const isActive = row.id === state.activeRowId;
-        const typeLabel = getChangeTypeLabel(row);
-        const refCode = getDisplayRef(row);
-        const pageNum = row.pageNum || 1;
-        const deltaHtml = renderSidebarDeltaHtml(row, state.searchQuery);
-        const editLabel = row.rightBlock ? t('editBtn') : t('editInsertBtn');
-
-        return `
-          <div class="nav-item ${cls}${isActive ? ' is-active' : ''}" data-row-id="${row.id}">
-            <button type="button" class="nav-item-main">
-              <span class="nav-item-head">
-                <span class="nav-item-idx">${globalIdx}</span>
-                <span class="nav-item-page">${escapeHtml(t('pageShort'))} ${pageNum}</span>
-                ${refCode ? `<span class="nav-item-ref">${escapeHtml(refCode)}</span>` : ''}
-                <span class="sr-only">– ${escapeHtml(typeLabel)}:</span>
-              </span>
-              ${deltaHtml}
-            </button>
-            <span class="nav-item-actions">
-              <button type="button" class="nav-item-act-btn" data-edit-row="${row.id}" aria-label="${escapeHtml(`${editLabel} (${globalIdx})`)}" data-tooltip="${escapeHtml(editLabel)}">${editSvg}</button>
-              <button type="button" class="nav-item-act-btn is-revert" data-revert-row="${row.id}" aria-label="${escapeHtml(`${t('revertBtn')} (${globalIdx})`)}" data-tooltip="${escapeHtml(t('revertBtn'))}">${revertSvg}</button>
-            </span>
-          </div>
-        `;
+      .map(item => {
+        const cls = (item.type === 'modified' ? 'mod' : item.type === 'inserted' ? 'ins' : 'del') + (item.row && item.row.moved && !item.ghost ? ' moved' : '');
+        const isActive = activeItem === item;
+        const ref = getItemRef(item);
+        const page = getItemPage(item);
+        const statusIcon =
+          item.status === 'accepted'
+            ? `<span class="nav-status is-accepted" aria-hidden="true">${ICON_CHECK}</span>`
+            : item.status === 'rejected'
+            ? `<span class="nav-status is-rejected" aria-hidden="true">${ICON_X}</span>`
+            : '';
+        const head = [ref, `${t('pageShort')} ${page}`].filter(Boolean).join(' · ');
+        const actions = isActive
+          ? `<div class="nav-item-actions" role="group" aria-label="${escapeHtml(formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }))}">${reviewActionsHtml(item, item.row, 'list')}</div>`
+          : '';
+        return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}</span></span>${renderSidebarDeltaHtml(item)}</button>${actions}</div>`;
       })
       .join('')
   );

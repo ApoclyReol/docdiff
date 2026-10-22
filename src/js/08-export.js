@@ -79,15 +79,56 @@ function getExportTitle() {
   return tf('exportTitleFmt', { left: getDisplayDocName('left'), right: getDisplayDocName('right') });
 }
 
-function getExportCounts(rows = state.changeRows) {
-  const counts = { modified: 0, inserted: 0, deleted: 0, total: 0 };
-  for (const row of rows) {
-    if (row.type in counts) {
-      counts[row.type]++;
+/**
+ * The changes of the comparison with their review status, in document order: the list items
+ * (including rejected changes) when the review index is current, otherwise the change rows.
+ */
+function getExportItems() {
+  if (
+    Array.isArray(state.listItems) &&
+    state.listItems.length &&
+    state.listItems.every(i => state.alignedRows.includes(i.row))
+  ) {
+    return state.listItems;
+  }
+  return state.changeRows.map((row, i) => ({
+    id: row.id,
+    rowId: row.id,
+    row,
+    type: row.type,
+    status: row.reviewStatus === 'accepted' ? 'accepted' : 'open',
+    ghost: null,
+    index: i + 1,
+  }));
+}
+
+function getExportCounts(items = getExportItems()) {
+  const counts = { modified: 0, inserted: 0, deleted: 0, total: 0, accepted: 0, rejected: 0 };
+  for (const item of items) {
+    if (item.type in counts) {
+      counts[item.type]++;
       counts.total++;
     }
+    if (item.status === 'accepted') counts.accepted++;
+    if (item.status === 'rejected') counts.rejected++;
   }
   return counts;
+}
+
+/** "3 von 22 geprüft (2 angenommen, 1 abgelehnt)", or '' while nothing has been reviewed. */
+function getExportReviewLine(counts = getExportCounts()) {
+  const k = counts.accepted + counts.rejected;
+  if (!k) return '';
+  return tf('exportReviewFmt', { k, n: counts.total, a: counts.accepted, r: counts.rejected });
+}
+
+function getExportStatusLabel(status) {
+  return status === 'accepted' ? t('statusAccepted') : status === 'rejected' ? t('statusRejected') : t('statusOpen');
+}
+
+function getExportItemRef(item) {
+  if (item.ghost) return item.ghost.refCode || '';
+  return getRowRefCode(item.row);
 }
 
 function formatExportCountsLine(c) {
@@ -118,6 +159,16 @@ function getRowTypeLabel(row) {
     : row.type === 'deleted'
     ? t('typeDel')
     : '';
+}
+
+/** Tag of a row in the report body: "Geändert · § 1 (1) · angenommen". */
+function getRowReportTag(row) {
+  if (row.type === 'equal') {
+    return row.ghostNote ? `${t('statusRejected')} · ${t('exportRejectedNote')}` : '';
+  }
+  const parts = [getRowTypeLabel(row), getRowRefCode(row)].filter(Boolean);
+  if (row.reviewStatus === 'accepted') parts.push(t('statusAccepted'));
+  return parts.join(' · ');
 }
 
 /** Rows that go into a report body: honours the "changes only" filter. */
@@ -208,11 +259,16 @@ function getExportDiffTokens(row) {
   return out;
 }
 
-/** Short "old → new" summary of a change, used by the change lists. */
-function getRowChangeSummary(row, maxLen = 70) {
-  if (row.type === 'inserted') return { pairs: [{ del: '', ins: truncateClean(row.rightBlock.text, maxLen * 2) }], more: 0 };
-  if (row.type === 'deleted') return { pairs: [{ del: truncateClean(row.leftBlock.text, maxLen * 2), ins: '' }], more: 0 };
-  const pairs = extractDeltaPairs(row.wordDiffs || []);
+/** Short "old → new" summary of a change (a row or a list item), used by the change lists. */
+function getRowChangeSummary(rowOrItem, maxLen = 70) {
+  const item = rowOrItem.row ? rowOrItem : { row: rowOrItem, type: rowOrItem.type, ghost: null };
+  const texts = item.ghost
+    ? { left: item.ghost.leftText || '', right: item.ghost.rightText || '' }
+    : { left: item.row.leftBlock ? item.row.leftBlock.text : '', right: item.row.rightBlock ? item.row.rightBlock.text : '' };
+  if (item.type === 'inserted') return { pairs: [{ del: '', ins: truncateClean(texts.right, maxLen * 2) }], more: 0 };
+  if (item.type === 'deleted') return { pairs: [{ del: truncateClean(texts.left, maxLen * 2), ins: '' }], more: 0 };
+  const diffs = item.ghost ? computeCleanWordDiff(texts.left, texts.right) : item.row.wordDiffs || [];
+  const pairs = extractDeltaPairs(diffs);
   const visible = pairs.slice(0, 3).map(p => ({ del: truncateClean(p.del, maxLen), ins: truncateClean(p.ins, maxLen) }));
   return { pairs: visible, more: Math.max(0, pairs.length - visible.length) };
 }
@@ -266,10 +322,10 @@ function renderReportSummaryPairsHtml(row) {
 
 const REPORT_CSS = `
 :root { color-scheme: light dark; --bg:#fff; --fg:#1f2937; --muted:#6b7280; --line:#e5e7eb; --card:#f9fafb;
-  --del-fg:#9f1239; --del-bg:#ffe4e6; --ins-fg:#14532d; --ins-bg:#dcfce7; --mod:#1d4ed8; --link:#1d4ed8; }
+  --del-fg:#881337; --del-bg:#ffe4e6; --ins-fg:#14532d; --ins-bg:#dcfce7; --mod:#92400e; --link:#1d4ed8; }
 @media (prefers-color-scheme: dark) {
   :root { --bg:#111418; --fg:#e5e7eb; --muted:#9ca3af; --line:#2d333b; --card:#181c21;
-    --del-fg:#fda4af; --del-bg:#4c0519; --ins-fg:#86efac; --ins-bg:#052e16; --mod:#93c5fd; --link:#93c5fd; }
+    --del-fg:#fda4af; --del-bg:#4c0519; --ins-fg:#86efac; --ins-bg:#052e16; --mod:#fcd34d; --link:#93c5fd; }
 }
 * { box-sizing: border-box; }
 html { background: var(--bg); color: var(--fg); }
@@ -297,6 +353,8 @@ td.num { white-space: nowrap; color: var(--muted); }
 td.ref { white-space: nowrap; }
 .badge { display: inline-block; font-size: .75rem; font-weight: 600; border: 1px solid currentColor; border-radius: 999px; padding: 0 8px; white-space: nowrap; }
 .badge.modified { color: var(--mod); } .badge.inserted { color: var(--ins-fg); } .badge.deleted { color: var(--del-fg); }
+.status { white-space: nowrap; }
+.status.accepted, .status.rejected { font-weight: 600; }
 .more { color: var(--muted); font-size: .8rem; }
 .empty { padding: 16px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
 .doc { margin-top: 8px; }
@@ -312,7 +370,7 @@ td.ref { white-space: nowrap; }
 .row:target { outline: 2px solid var(--link); outline-offset: 4px; border-radius: 2px; }
 footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
 @media print {
-  :root { --bg:#fff; --fg:#000; --muted:#444; --line:#bbb; --card:#fff; --del-fg:#7f1d1d; --del-bg:transparent; --ins-fg:#14532d; --ins-bg:transparent; --mod:#1e3a8a; --link:#000; }
+  :root { --bg:#fff; --fg:#000; --muted:#444; --line:#bbb; --card:#fff; --del-fg:#7f1d1d; --del-bg:transparent; --ins-fg:#14532d; --ins-bg:transparent; --mod:#78350f; --link:#000; }
   @page { size: A4; margin: 16mm 15mm 18mm; }
   body { max-width: none; padding: 0; font-size: 10.5pt; }
   a { text-decoration: none; }
@@ -324,21 +382,31 @@ footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid var(--line);
 `;
 
 function buildExportHtmlReport(date = new Date()) {
-  const counts = getExportCounts();
+  const items = getExportItems();
+  const counts = getExportCounts(items);
   const title = getExportTitle();
-  const changeIndex = new Map(state.changeRows.map((row, i) => [row.id, i + 1]));
-  const anchorFor = row => `c${changeIndex.get(row.id)}`;
+  // Anchors: every changed row, and the row a rejected change was restored to.
+  const anchorIndex = new Map();
+  items.forEach((item, i) => {
+    if (item.ghost && item.type === 'inserted') return;
+    if (!anchorIndex.has(item.rowId)) anchorIndex.set(item.rowId, i + 1);
+  });
+  const anchorFor = row => `c${anchorIndex.get(row.id)}`;
+  const reviewLine = getExportReviewLine(counts);
 
-  const changeListHtml = state.changeRows.length
+  const changeListHtml = items.length
     ? `<table>
 <caption>${escapeHtml(t('exportChangeListCaption'))}</caption>
-<thead><tr><th scope="col">#</th><th scope="col">${escapeHtml(t('exportColRef'))}</th><th scope="col">${escapeHtml(t('exportColType'))}</th><th scope="col">${escapeHtml(t('exportColChange'))}</th></tr></thead>
+<thead><tr><th scope="col">#</th><th scope="col">${escapeHtml(t('exportColRef'))}</th><th scope="col">${escapeHtml(t('exportColType'))}</th><th scope="col">${escapeHtml(t('exportColStatus'))}</th><th scope="col">${escapeHtml(t('exportColChange'))}</th></tr></thead>
 <tbody>
-${state.changeRows
-  .map(row => {
-    const n = changeIndex.get(row.id);
-    const ref = getRowRefCode(row) || `#${n}`;
-    return `<tr><td class="num">${n}</td><td class="ref"><a href="#${anchorFor(row)}">${escapeHtml(ref)}</a><div class="more">${escapeHtml(t('pageShort'))} ${row.pageNum || 1}</div></td><td><span class="badge ${row.type}">${escapeHtml(getRowTypeLabel(row))}</span></td><td>${renderReportSummaryPairsHtml(row)}</td></tr>`;
+${items
+  .map((item, i) => {
+    const n = i + 1;
+    const ref = getExportItemRef(item) || `#${n}`;
+    const page = item.ghost ? item.ghost.pageNum || 1 : item.row.pageNum || 1;
+    const target = item.ghost && item.type === 'inserted' ? 0 : anchorIndex.get(item.rowId);
+    const refHtml = target ? `<a href="#c${target}">${escapeHtml(ref)}</a>` : escapeHtml(ref);
+    return `<tr><td class="num">${n}</td><td class="ref">${refHtml}<div class="more">${escapeHtml(t('pageShort'))} ${page}</div></td><td><span class="badge ${item.type}">${escapeHtml(getRowTypeLabel(item))}</span></td><td class="status ${item.status}">${escapeHtml(getExportStatusLabel(item.status))}</td><td>${renderReportSummaryPairsHtml(item)}</td></tr>`;
   })
   .join('\n')}
 </tbody>
@@ -353,11 +421,9 @@ ${state.changeRows
           const kind = (block && block.kind) || 'p';
           const inner = renderReportTokensHtml(getExportDiffTokens(row));
           const tag = kind === 'h1' ? 'h3' : kind === 'h2' ? 'h4' : kind === 'h3' ? 'h5' : 'p';
-          const isChange = row.type !== 'equal';
-          const idAttr = isChange ? ` id="${anchorFor(row)}"` : '';
-          const tagHtml = isChange
-            ? `<span class="row-tag"><a href="#changes">${escapeHtml(getRowTypeLabel(row))} · ${escapeHtml(getRowRefCode(row))}</a></span>`
-            : '';
+          const tagText = getRowReportTag(row);
+          const idAttr = anchorIndex.has(row.id) ? ` id="${anchorFor(row)}"` : '';
+          const tagHtml = tagText ? `<span class="row-tag"><a href="#changes">${escapeHtml(tagText)}</a></span>` : '';
           return `<div class="row ${row.type} kind-${kind}"${idAttr}>${tagHtml}<${tag}>${inner}</${tag}></div>`;
         })
         .join('\n')
@@ -385,7 +451,7 @@ ${state.changeRows
 <dt>${escapeHtml(t('exportLabelOriginal'))}</dt><dd>${escapeHtml(getDisplayDocName('left'))}</dd>
 <dt>${escapeHtml(t('exportLabelRevised'))}</dt><dd>${escapeHtml(getDisplayDocName('right'))}</dd>
 <dt>${escapeHtml(t('exportLabelCreated'))}</dt><dd><time datetime="${date.toISOString()}">${escapeHtml(formatExportDate(date))}</time></dd>
-<dt>${escapeHtml(t('exportLabelScope'))}</dt><dd>${escapeHtml(getExportScopeText())}</dd>
+${reviewLine ? `<dt>${escapeHtml(t('exportLabelReview'))}</dt><dd>${escapeHtml(reviewLine)}</dd>\n` : ''}<dt>${escapeHtml(t('exportLabelScope'))}</dt><dd>${escapeHtml(getExportScopeText())}</dd>
 <dt>${escapeHtml(t('exportLabelHf'))}</dt><dd>${escapeHtml(getExportHfText())}</dd>
 </dl>
 </header>
@@ -493,8 +559,13 @@ function escapeMarkdownTableCell(text) {
 }
 
 function buildExportMarkdown(date = new Date()) {
-  const counts = getExportCounts();
-  const changeIndex = new Map(state.changeRows.map((row, i) => [row.id, i + 1]));
+  const items = getExportItems();
+  const counts = getExportCounts(items);
+  const changeIndex = new Map();
+  items.forEach((item, i) => {
+    if (!item.ghost && !changeIndex.has(item.rowId)) changeIndex.set(item.rowId, i + 1);
+  });
+  const reviewLine = getExportReviewLine(counts);
   const lines = [
     `# ${escapeMarkdownInline(getExportTitle())}`,
     '',
@@ -504,6 +575,7 @@ function buildExportMarkdown(date = new Date()) {
     `| ${escapeMarkdownInline(t('exportLabelRevised'))} | ${escapeMarkdownInline(getDisplayDocName('right'))} |`,
     `| ${escapeMarkdownInline(t('exportLabelCreated'))} | ${escapeMarkdownInline(formatExportDate(date))} |`,
     `| ${escapeMarkdownInline(t('exportLabelChanges'))} | ${escapeMarkdownInline(formatExportCountsLine(counts))} |`,
+    ...(reviewLine ? [`| ${escapeMarkdownInline(t('exportLabelReview'))} | ${escapeMarkdownInline(reviewLine)} |`] : []),
     `| ${escapeMarkdownInline(t('exportLabelScope'))} | ${escapeMarkdownInline(getExportScopeText())} |`,
     `| ${escapeMarkdownInline(t('exportLabelHf'))} | ${escapeMarkdownInline(getExportHfText())} |`,
     '',
@@ -511,14 +583,14 @@ function buildExportMarkdown(date = new Date()) {
     '',
   ];
 
-  if (state.changeRows.length) {
+  if (items.length) {
     lines.push(
-      `| # | ${escapeMarkdownInline(t('exportColRef'))} | ${escapeMarkdownInline(t('pageShort'))} | ${escapeMarkdownInline(t('exportColType'))} | ${escapeMarkdownInline(t('exportColChange'))} |`,
-      '| ---: | --- | ---: | --- | --- |'
+      `| # | ${escapeMarkdownInline(t('exportColRef'))} | ${escapeMarkdownInline(t('pageShort'))} | ${escapeMarkdownInline(t('exportColType'))} | ${escapeMarkdownInline(t('exportColStatus'))} | ${escapeMarkdownInline(t('exportColChange'))} |`,
+      '| ---: | --- | ---: | --- | --- | --- |'
     );
-    for (const row of state.changeRows) {
-      const n = changeIndex.get(row.id);
-      const { pairs, more } = getRowChangeSummary(row, 60);
+    for (const [i, item] of items.entries()) {
+      const n = i + 1;
+      const { pairs, more } = getRowChangeSummary(item, 60);
       const summary = pairs
         .map(p => {
           if (p.del && p.ins) return `${renderMarkdownTokens([{ value: p.del, removed: true }])} → ${renderMarkdownTokens([{ value: p.ins, added: true }])}`;
@@ -527,8 +599,9 @@ function buildExportMarkdown(date = new Date()) {
         })
         .concat(more ? [`+${more} ${escapeMarkdownInline(t('moreDeltas'))}`] : [])
         .join('<br>');
+      const page = item.ghost ? item.ghost.pageNum || 1 : item.row.pageNum || 1;
       lines.push(
-        `| ${n} | ${escapeMarkdownInline(getRowRefCode(row) || `#${n}`)} | ${row.pageNum || 1} | ${escapeMarkdownInline(getRowTypeLabel(row))} | ${escapeMarkdownTableCell(summary)} |`
+        `| ${n} | ${escapeMarkdownInline(getExportItemRef(item) || `#${n}`)} | ${page} | ${escapeMarkdownInline(getRowTypeLabel(item))} | ${escapeMarkdownInline(getExportStatusLabel(item.status))} | ${escapeMarkdownTableCell(summary)} |`
       );
     }
   } else {
@@ -550,9 +623,10 @@ function buildExportMarkdown(date = new Date()) {
     if (!body.trim()) continue;
     const prefix = kind === 'h1' ? '### ' : kind === 'h2' ? '#### ' : kind === 'h3' ? '##### ' : '';
     const line = prefix ? prefix + body : escapeMarkdownLineStart(body);
-    if (row.type !== 'equal') {
+    const tagText = getRowReportTag(row);
+    if (tagText) {
       const n = changeIndex.get(row.id);
-      lines.push(`<sub>[${n}] ${escapeMarkdownInline(getRowTypeLabel(row))} · ${escapeMarkdownInline(getRowRefCode(row))}</sub>`, '');
+      lines.push(`<sub>${n ? `[${n}] ` : ''}${escapeMarkdownInline(tagText)}</sub>`, '');
     }
     lines.push(kind === 'hf' ? `<small>${line}</small>` : line, '');
   }
@@ -588,20 +662,21 @@ function buildPrintViewHtml(date = new Date()) {
       </div>
       <div class="pv-meta">
         <span>${escapeHtml(formatExportCountsLine(counts))}</span>
+        ${getExportReviewLine(counts) ? `<span>${escapeHtml(getExportReviewLine(counts))}</span>` : ''}
         <span>${escapeHtml(getExportScopeText())}</span>
         <span>${escapeHtml(t('exportLabelHf'))}: ${escapeHtml(getExportHfText())}</span>
       </div>
       <div class="pv-legend">${escapeHtml(t('exportLegendLabel'))}: <ins class="tok-ins">${escapeHtml(t('exportLegendIns'))}</ins> <del class="tok-del">${escapeHtml(t('exportLegendDel'))}</del></div>
     </header>`;
 
-  const rowClass = row => `pv-row pv-${row.type}`;
+  const rowClass = row => `pv-row pv-${row.type}${row.reviewStatus === 'accepted' ? ' pv-accepted' : ''}`;
   const tagHtml = row =>
-    row.type === 'equal'
+    !getRowReportTag(row)
       ? ''
-      : `<span class="pv-tag">${escapeHtml(getRowTypeLabel(row))} · ${escapeHtml(getRowRefCode(row))}</span>`;
+      : `<span class="pv-tag">${escapeHtml(getRowReportTag(row))}</span>`;
 
   const groups = [];
-  if (mode === 'pages') {
+  if (typeof pageBreaksShown === 'function' ? pageBreaksShown() : mode === 'pages') {
     const byPage = new Map();
     for (const row of rows) {
       const p = row.pageNum || 1;
@@ -697,20 +772,11 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 
 /* ── Copy to clipboard ────────────────────────────────────────────────────── */
 
-let copyLabelTimer = null;
 function copyFinalTextToClipboard() {
   const finalText = buildFinalText();
 
   const flashCopied = () => {
-    const labelEl = document.getElementById('i18n-btn-export');
-    const mobLabelEl = document.getElementById('i18n-mob-export');
-    if (labelEl) labelEl.textContent = t('copiedLabel');
-    if (mobLabelEl) mobLabelEl.textContent = t('copiedLabel');
-    clearTimeout(copyLabelTimer);
-    copyLabelTimer = setTimeout(() => {
-      if (labelEl) labelEl.textContent = t('exportBtn');
-      if (mobLabelEl) mobLabelEl.textContent = t('mobExport');
-    }, 1800);
+    if (typeof showToast === 'function') showToast(t('toastCopied'));
   };
 
   const legacyCopy = () => {
@@ -743,6 +809,12 @@ function copyFinalTextToClipboard() {
 
 /* ── Dispatcher ───────────────────────────────────────────────────────────── */
 
+// Downloads a file and confirms it with a short toast ("Word-Datei gespeichert: …").
+function downloadWithToast(content, mimeType, filename, toastKey) {
+  downloadBlob(content, mimeType, filename);
+  if (typeof showToast === 'function') showToast(tf(toastKey, { name: filename }));
+}
+
 function handleExportAction(type) {
   // Commit an inline edit that is still open so the export reflects it.
   const openEditor = document.querySelector('.clause-inline-editor');
@@ -765,21 +837,22 @@ function handleExportAction(type) {
   if (type === 'copy') {
     copyFinalTextToClipboard();
   } else if (type === 'txt') {
-    downloadBlob(`${buildFinalText()}\n`, 'text/plain;charset=utf-8', buildExportFileName('exportFileFinal', 'txt'));
+    downloadWithToast(`${buildFinalText()}\n`, 'text/plain;charset=utf-8', buildExportFileName('exportFileFinal', 'txt'), 'toastTxt');
   } else if (type === 'word') {
-    downloadBlob(
+    downloadWithToast(
       buildDocxRedline(),
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      buildExportFileName('exportFileRedline', 'docx')
+      buildExportFileName('exportFileRedline', 'docx'),
+      'toastWord'
     );
   } else if (type === 'html') {
-    downloadBlob(buildExportHtmlReport(), 'text/html;charset=utf-8', buildExportFileName('exportFileReport', 'html'));
+    downloadWithToast(buildExportHtmlReport(), 'text/html;charset=utf-8', buildExportFileName('exportFileReport', 'html'), 'toastHtml');
   } else if (type === 'md') {
-    downloadBlob(buildExportMarkdown(), 'text/markdown;charset=utf-8', buildExportFileName('exportFileReport', 'md'));
+    downloadWithToast(buildExportMarkdown(), 'text/markdown;charset=utf-8', buildExportFileName('exportFileReport', 'md'), 'toastMd');
   }
 }
 
-/* ── Export menu: availability and keyboard support ──────────────────────── */
+/* ── Export availability ─────────────────────────────────────────────────── */
 
 /** Really disables the export triggers (not just visually) while no comparison is available. */
 function syncExportAvailability() {
@@ -790,88 +863,10 @@ function syncExportAvailability() {
     btn.disabled = !available;
     btn.setAttribute('aria-disabled', String(!available));
   }
-  if (!available) closeExportMenu(false);
-}
-
-function getExportMenuTrigger() {
-  const mob = document.getElementById('mob-btn-export');
-  if (mob && mob.getAttribute('aria-expanded') === 'true') return mob;
-  return document.getElementById('btn-export-menu');
-}
-
-function closeExportMenu(returnFocus) {
-  const menu = document.getElementById('export-menu');
-  if (!menu || !menu.classList.contains('is-open')) return;
-  const trigger = getExportMenuTrigger();
-  menu.classList.remove('is-open');
-  for (const id of ['btn-export-menu', 'mob-btn-export']) {
-    const btn = document.getElementById(id);
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-  }
-  document.body.classList.remove('mobile-sheet-open');
-  if (returnFocus && trigger) trigger.focus();
-}
-
-function initExportMenuKeyboard() {
-  const menu = document.getElementById('export-menu');
-  if (!menu) return;
-  const items = () => Array.from(menu.querySelectorAll('[role="menuitem"]:not([disabled])'));
-  items().forEach(item => item.setAttribute('tabindex', '-1'));
-
-  // Menu-button pattern: opening the menu moves focus to the first item.
-  for (const id of ['btn-export-menu', 'mob-btn-export']) {
-    const trigger = document.getElementById(id);
-    if (!trigger) continue;
-    trigger.setAttribute('aria-haspopup', 'menu');
-    trigger.setAttribute('aria-controls', 'export-menu');
-    trigger.addEventListener('click', () => {
-      setTimeout(() => {
-        if (menu.classList.contains('is-open')) {
-          const first = items()[0];
-          if (first) first.focus();
-        }
-      }, 0);
-    });
-    trigger.addEventListener('keydown', e => {
-      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-      e.preventDefault();
-      if (!menu.classList.contains('is-open')) trigger.click();
-      setTimeout(() => {
-        const list = items();
-        const target = e.key === 'ArrowUp' ? list[list.length - 1] : list[0];
-        if (target) target.focus();
-      }, 0);
-    });
-  }
-
-  menu.addEventListener('keydown', e => {
-    const list = items();
-    if (!list.length) return;
-    const idx = list.indexOf(document.activeElement);
-    let next = null;
-    if (e.key === 'ArrowDown') next = list[(idx + 1) % list.length];
-    else if (e.key === 'ArrowUp') next = list[(idx - 1 + list.length) % list.length];
-    else if (e.key === 'Home') next = list[0];
-    else if (e.key === 'End') next = list[list.length - 1];
-    else if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      closeExportMenu(true);
-      return;
-    } else if (e.key === 'Tab') {
-      closeExportMenu(false);
-      return;
-    } else {
-      return;
-    }
-    e.preventDefault();
-    e.stopPropagation();
-    next.focus();
-  });
+  if (!available && typeof closeMenu === 'function') closeMenu('export-menu', false);
 }
 
 if (typeof document !== 'undefined' && document.body && typeof MutationObserver !== 'undefined') {
-  initExportMenuKeyboard();
   syncExportAvailability();
   new MutationObserver(syncExportAvailability).observe(document.body, {
     attributes: true,

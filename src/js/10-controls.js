@@ -1,97 +1,401 @@
-function stepChange(direction) {
-  const pool = getFilteredChangeRows();
-  const rows = pool.length > 0 ? pool : state.changeRows;
-  if (!rows.length) return;
-  const curIdx = rows.findIndex(r => r.id === state.activeRowId);
-  let nextIdx = 0;
-  if (curIdx === -1) {
-    nextIdx = direction > 0 ? 0 : rows.length - 1;
-  } else {
-    nextIdx = (curIdx + direction + rows.length) % rows.length;
+/* ── Stepper: "‹ 2 von 22 ›" follows the active list filter ─────────────── */
+
+function updateStepper() {
+  const items = getFilteredListItems();
+  const total = items.length;
+  const active = getActiveItem();
+  const idx = active ? items.indexOf(active) : -1;
+  const text = formatMsg('stepPos', { i: total ? (idx >= 0 ? idx + 1 : '–') : 0, n: total });
+  document.getElementById('step-pos').textContent = text;
+  document.getElementById('mob-step-count').textContent = text;
+  document.getElementById('mob-step').setAttribute('aria-label', formatMsg('mobStepLabel', { i: idx >= 0 ? idx + 1 : '–', n: total }));
+  for (const id of ['btn-prev', 'btn-next', 'mob-btn-prev', 'mob-btn-next']) {
+    document.getElementById(id).disabled = total === 0;
   }
-  selectAndScrollToRow(rows[nextIdx].id, true, true);
+}
+
+// J / K and the arrows: next / previous OPEN change while there is one, otherwise every change.
+function stepChange(direction) {
+  const pool = getFilteredListItems();
+  if (!pool.length) return;
+  const open = pool.filter(item => item.status === 'open');
+  const rows = open.length ? open : pool;
+  const active = getActiveItem();
+  const curPos = active ? pool.indexOf(active) : -1;
+  let next = null;
+  if (curPos < 0) {
+    next = direction > 0 ? rows[0] : rows[rows.length - 1];
+  } else if (direction > 0) {
+    next = rows.find(item => pool.indexOf(item) > curPos) || rows[0];
+  } else {
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (pool.indexOf(rows[i]) < curPos) {
+        next = rows[i];
+        break;
+      }
+    }
+    if (!next) next = rows[rows.length - 1];
+  }
+  selectAndScrollToRow(next.rowId, true, true, { itemId: next.id });
   announceActiveChange();
 }
 
-// "Change 3 of 19: p. 1, § 1 (2), modified" – read out after J / K or the step buttons.
+// "Änderung 3 von 22: S. 1, § 1 (2), geändert, angenommen" – read out after J / K or the arrows.
 function announceActiveChange() {
-  const idx = state.changeRows.findIndex(r => r.id === state.activeRowId);
-  if (idx < 0) return;
-  const row = state.changeRows[idx];
-  const ref = [`${t('pageShort')} ${row.pageNum || 1}`, getDisplayRef(row)].filter(Boolean).join(', ');
+  const item = getActiveItem();
+  if (!item) return;
+  const ref = [`${t('pageShort')} ${getItemPage(item)}`, getItemRef(item)].filter(Boolean).join(', ');
   announce(
     formatMsg('announceStep', {
-      i: idx + 1,
-      n: state.changeRows.length,
+      i: item.index,
+      n: state.listItems.length,
       ref,
-      type: getChangeTypeLabel(row),
+      type: getChangeTypeLabel(item),
+      status: item.status === 'open' ? '' : `, ${getStatusLabel(item.status)}`,
     })
   );
 }
 
 document.getElementById('btn-prev').addEventListener('click', () => stepChange(-1));
 document.getElementById('btn-next').addEventListener('click', () => stepChange(1));
-document.getElementById('dock-step-count').addEventListener('click', () => {
-  if (state.activeRowId) {
-    selectAndScrollToRow(state.activeRowId, true, true);
-  } else {
-    stepChange(1);
-  }
-});
 document.getElementById('mob-btn-prev').addEventListener('click', () => stepChange(-1));
 document.getElementById('mob-btn-next').addEventListener('click', () => stepChange(1));
 
-const btnModePages = document.getElementById('btn-mode-pages');
-if (btnModePages) btnModePages.addEventListener('click', () => setViewMode('pages'));
-document.getElementById('btn-mode-split').addEventListener('click', () => setViewMode('split'));
-document.getElementById('btn-mode-inline').addEventListener('click', () => setViewMode('inline'));
+/* ── Menus (menu button pattern) and the documents popover ──────────────── */
 
-const btnFilterHf = document.getElementById('btn-filter-hf');
-if (btnFilterHf) {
-  btnFilterHf.addEventListener('click', () => {
-    state.ignoreHeadersFooters = !state.ignoreHeadersFooters;
-    btnFilterHf.setAttribute('aria-pressed', String(state.ignoreHeadersFooters));
-    runComparison();
+const MENU_TRIGGERS = { 'view-menu': 'btn-view-menu', 'export-menu': 'btn-export-menu', 'more-menu': 'btn-more' };
+// `var`: also read by 08-export.js while the scripts are still loading.
+var openMenuState = null; // { id, trigger }
+
+function menuItems(menu) {
+  return Array.from(menu.querySelectorAll('[role^="menuitem"]')).filter(el => !el.disabled && el.getClientRects().length);
+}
+
+function openMenu(id, trigger, focus = 'first') {
+  const menu = document.getElementById(id);
+  if (!menu || (trigger && trigger.disabled)) return;
+  closeAllMenus(false);
+  closeFilesPop(false);
+  hideTooltip();
+  menu.hidden = false;
+  menu.classList.add('is-open');
+  trigger = trigger || document.getElementById(MENU_TRIGGERS[id]);
+  trigger.setAttribute('aria-expanded', 'true');
+  openMenuState = { id, trigger };
+  document.body.classList.toggle('menu-sheet-open', isPhoneWidth());
+  menuItems(menu).forEach(item => (item.tabIndex = -1));
+  if (focus) {
+    const items = menuItems(menu);
+    const target = focus === 'last' ? items[items.length - 1] : items[0];
+    if (target) target.focus();
+  }
+}
+
+function closeMenu(id, returnFocus) {
+  if (!openMenuState || openMenuState.id !== id) {
+    const menu = document.getElementById(id);
+    if (menu) {
+      menu.hidden = true;
+      menu.classList.remove('is-open');
+    }
+    return;
+  }
+  const { trigger } = openMenuState;
+  const menu = document.getElementById(id);
+  menu.hidden = true;
+  menu.classList.remove('is-open');
+  for (const t of [trigger, document.getElementById(MENU_TRIGGERS[id])]) if (t) t.setAttribute('aria-expanded', 'false');
+  openMenuState = null;
+  document.body.classList.remove('menu-sheet-open');
+  if (returnFocus && trigger && trigger.getClientRects().length) trigger.focus();
+}
+
+function closeAllMenus(returnFocus) {
+  if (openMenuState) closeMenu(openMenuState.id, returnFocus);
+}
+
+// Where focus should go back to after an action started from a closed menu.
+function menuReturnTarget() {
+  return openMenuState ? openMenuState.trigger : null;
+}
+
+for (const [id, triggerId] of Object.entries(MENU_TRIGGERS)) {
+  const trigger = document.getElementById(triggerId);
+  const menu = document.getElementById(id);
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    if (openMenuState && openMenuState.id === id) closeMenu(id, false);
+    else openMenu(id, trigger, e.detail === 0 ? 'first' : 'first');
+  });
+  trigger.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    openMenu(id, trigger, e.key === 'ArrowUp' ? 'last' : 'first');
+  });
+  menu.addEventListener('keydown', e => {
+    const items = menuItems(menu);
+    if (!items.length) return;
+    const idx = items.indexOf(document.activeElement);
+    let next = null;
+    if (e.key === 'ArrowDown') next = items[(idx + 1) % items.length];
+    else if (e.key === 'ArrowUp') next = items[(idx - 1 + items.length) % items.length];
+    else if (e.key === 'Home') next = items[0];
+    else if (e.key === 'End') next = items[items.length - 1];
+    else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeMenu(id, true);
+      return;
+    } else if (e.key === 'Tab') {
+      closeMenu(id, false);
+      return;
+    } else return;
+    e.preventDefault();
+    e.stopPropagation();
+    next.focus();
+  });
+}
+document.getElementById('mob-btn-export').addEventListener('click', e => {
+  e.stopPropagation();
+  if (openMenuState && openMenuState.id === 'export-menu') closeMenu('export-menu', false);
+  else {
+    closeListSheet(false);
+    openMenu('export-menu', e.currentTarget);
+  }
+});
+
+// A click on a menu item runs it and closes the menu (focus back to the menu button).
+document.getElementById('export-menu').addEventListener('click', e => {
+  const item = e.target.closest('[data-export]');
+  if (!item) return;
+  const returnFocus = document.getElementById('export-menu').contains(document.activeElement);
+  closeMenu('export-menu', returnFocus);
+  handleExportAction(item.getAttribute('data-export'));
+});
+
+document.getElementById('view-menu').addEventListener('click', e => {
+  const item = e.target.closest('[role^="menuitem"]');
+  if (!item) return;
+  const returnFocus = document.getElementById('view-menu').contains(document.activeElement);
+  const id = item.id;
+  closeMenu('view-menu', returnFocus);
+  if (id === 'btn-mode-split') setViewMode('split', { user: true });
+  else if (id === 'btn-mode-inline') setViewMode('inline', { user: true });
+  else if (id === 'btn-page-breaks') togglePageBreaks();
+  else if (id === 'btn-only-changes') toggleOnlyChanges();
+  else if (id === 'btn-filter-hf') toggleHeaderFooterFilter();
+  else if (id === 'btn-toggle-sidebar') toggleSidebar();
+  else if (item.hasAttribute('data-theme-pref')) setThemePref(item.getAttribute('data-theme-pref'));
+});
+
+document.getElementById('more-menu').addEventListener('click', e => {
+  const item = e.target.closest('[role="menuitem"]');
+  if (!item || item.disabled) return;
+  const returnFocus = document.getElementById('more-menu').contains(document.activeElement);
+  const trigger = openMenuState ? openMenuState.trigger : document.getElementById('btn-more');
+  if (item.id === 'menu-view') {
+    e.stopPropagation();
+    closeMenu('more-menu', false);
+    openMenu('view-menu', trigger);
+    return;
+  }
+  closeMenu('more-menu', returnFocus);
+  switch (item.id) {
+    case 'btn-clear':
+      clearComparison();
+      break;
+    case 'btn-paste-modal':
+      openPasteModal();
+      break;
+    case 'btn-undo':
+      performUndo();
+      announceHistory('toastUndone');
+      break;
+    case 'btn-redo':
+      performRedo();
+      announceHistory('toastRedone');
+      break;
+    case 'menu-help':
+      openHelp();
+      break;
+    case 'menu-lang':
+      toggleLanguage();
+      break;
+    case 'btn-privacy-info':
+      privacyModal.showModal();
+      break;
+    default:
+      break;
+  }
+});
+
+function announceHistory(key) {
+  announce(t(key));
+}
+
+window.addEventListener('click', e => {
+  if (openMenuState) {
+    const menu = document.getElementById(openMenuState.id);
+    if (!menu.contains(e.target) && !openMenuState.trigger.contains(e.target)) closeMenu(openMenuState.id, false);
+  }
+  const wrap = document.getElementById('files-wrap');
+  if (!filesPop.hidden && !wrap.contains(e.target)) closeFilesPop(false);
+});
+
+const filesPop = document.getElementById('files-pop');
+const btnFiles = document.getElementById('btn-files');
+function openFilesPop() {
+  closeAllMenus(false);
+  hideTooltip();
+  filesPop.hidden = false;
+  btnFiles.setAttribute('aria-expanded', 'true');
+  const first = filesPop.querySelector('button:not([hidden])');
+  if (first) first.focus();
+}
+function closeFilesPop(returnFocus) {
+  if (filesPop.hidden) return;
+  filesPop.hidden = true;
+  btnFiles.setAttribute('aria-expanded', 'false');
+  if (returnFocus) btnFiles.focus();
+}
+btnFiles.addEventListener('click', e => {
+  e.stopPropagation();
+  if (filesPop.hidden) openFilesPop();
+  else closeFilesPop(false);
+});
+filesPop.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation();
+    closeFilesPop(true);
+  }
+});
+document.getElementById('files-wrap').addEventListener('focusout', e => {
+  if (!filesPop.hidden && e.relatedTarget && !document.getElementById('files-wrap').contains(e.relatedTarget)) closeFilesPop(false);
+});
+// Choosing a file or swapping closes the popover first.
+filesPop.addEventListener('click', e => {
+  if (e.target.closest('button')) closeFilesPop(false);
+});
+
+/* ── View options ───────────────────────────────────────────────────────── */
+
+function togglePageBreaks() {
+  state.pageBreaks = !pageBreaksShown();
+  applyPageBreaks();
+  scheduleRulerDraw();
+}
+
+function toggleOnlyChanges() {
+  state.onlyChanges = !state.onlyChanges;
+  document.body.classList.toggle('only-changes', state.onlyChanges);
+  setMenuChecked('btn-only-changes', state.onlyChanges);
+  requestAnimationFrame(() => {
+    scheduleRulerDraw();
+    const el = state.activeRowId && getRowElements(state.activeRowId)[state.viewMode === 'inline' ? 'u' : 'r'];
+    if (el && el.getClientRects().length) selectAndScrollToRow(state.activeRowId, false, true, { flash: false, keepIfVisible: true });
   });
 }
 
-const btnExportMenu = document.getElementById('btn-export-menu');
-const mobBtnExport = document.getElementById('mob-btn-export');
-const exportMenu = document.getElementById('export-menu');
-btnExportMenu.addEventListener('click', e => {
-  e.stopPropagation();
-  const open = exportMenu.classList.toggle('is-open');
-  btnExportMenu.setAttribute('aria-expanded', String(open));
-});
-mobBtnExport.addEventListener('click', e => {
-  e.stopPropagation();
-  if (!document.body.classList.contains('sidebar-collapsed')) {
-    document.body.classList.add('sidebar-collapsed');
-    document.getElementById('mob-btn-changes').setAttribute('aria-pressed', 'false');
+function toggleHeaderFooterFilter() {
+  state.ignoreHeadersFooters = !state.ignoreHeadersFooters;
+  setMenuChecked('btn-filter-hf', state.ignoreHeadersFooters);
+  runComparison();
+}
+
+/* ── Layout tiers: docked list (desktop), drawer (tablet), sheet (phone) ── */
+
+let currentTier = null;
+function layoutTier() {
+  return isPhoneWidth() ? 'phone' : isTabletOrSmaller() ? 'tablet' : 'desktop';
+}
+
+function applyLayoutTier(initial) {
+  const tier = layoutTier();
+  if (tier === currentTier) return;
+  const prev = currentTier;
+  currentTier = tier;
+  document.body.classList.toggle('tier-phone', tier === 'phone');
+  document.body.classList.toggle('tier-tablet', tier === 'tablet');
+  document.body.classList.toggle('tier-desktop', tier === 'desktop');
+  closeListSheet(false);
+  const sidebar = document.getElementById('sidebar');
+  if (tier === 'desktop') {
+    sidebar.removeAttribute('role');
+    sidebar.removeAttribute('aria-modal');
+  } else {
+    sidebar.setAttribute('role', 'dialog');
+    sidebar.setAttribute('aria-modal', 'true');
   }
-  const open = exportMenu.classList.toggle('is-open');
-  mobBtnExport.setAttribute('aria-expanded', String(open));
-  document.body.classList.toggle('mobile-sheet-open', open);
-});
-exportMenu.addEventListener('click', e => {
-  const item = e.target.closest('[data-export]');
-  if (!item) return;
-  // The menu closes: keyboard focus goes back to the button that opened it.
-  const returnFocus = exportMenu.contains(document.activeElement);
-  closeExportMenu(returnFocus);
-  closeMobileSheets();
-  handleExportAction(item.getAttribute('data-export'));
-});
-window.addEventListener('click', () => {
-  exportMenu.classList.remove('is-open');
-  btnExportMenu.setAttribute('aria-expanded', 'false');
-  mobBtnExport.setAttribute('aria-expanded', 'false');
-  if (document.body.classList.contains('sidebar-collapsed')) {
-    document.body.classList.remove('mobile-sheet-open');
+  // Phones show one column only.
+  if (tier === 'phone' && state.viewMode !== 'inline') setViewMode('inline');
+  else if (!initial && prev === 'phone' && !state.viewModeChosen) setViewMode(initialInline && tier !== 'desktop' ? 'inline' : 'split');
+  applySidebarState();
+}
+
+function applySidebarState() {
+  const docked = currentTier === 'desktop';
+  document.body.classList.toggle('sidebar-collapsed', docked && !state.sidebarOpen);
+  setMenuChecked('btn-toggle-sidebar', state.sidebarOpen);
+  scheduleRulerDraw();
+}
+
+function toggleSidebar() {
+  if (currentTier !== 'desktop') {
+    openListSheet();
+    return;
   }
+  state.sidebarOpen = !state.sidebarOpen;
+  applySidebarState();
+}
+
+const LIST_SHEET_INERT = ['topbar', 'pane-left', 'pane-right', 'pane-unified', 'mobile-bottom-bar', 'ruler'];
+let listSheetReturn = null;
+function openListSheet() {
+  if (currentTier === 'desktop' || document.body.classList.contains('list-open')) return;
+  closeAllMenus(false);
+  listSheetReturn = document.activeElement;
+  document.body.classList.add('list-open');
+  document.getElementById('btn-list').setAttribute('aria-expanded', 'true');
+  document.getElementById('mob-step').setAttribute('aria-expanded', 'true');
+  for (const id of LIST_SHEET_INERT) document.getElementById(id).inert = true;
+  const target = sidebarList.querySelector('.nav-item.is-active .nav-item-main') || sidebarList.querySelector('.nav-item-main');
+  requestAnimationFrame(() => {
+    (target || document.getElementById('btn-close-sidebar-sheet')).focus({ preventScroll: false });
+    const active = sidebarList.querySelector('.nav-item.is-active');
+    if (active) active.scrollIntoView({ block: 'nearest' });
+  });
+}
+function closeListSheet(returnFocus = true) {
+  if (!document.body.classList.contains('list-open')) return;
+  document.body.classList.remove('list-open');
+  document.getElementById('btn-list').setAttribute('aria-expanded', 'false');
+  document.getElementById('mob-step').setAttribute('aria-expanded', 'false');
+  for (const id of LIST_SHEET_INERT) document.getElementById(id).inert = false;
+  if (returnFocus) {
+    const target = listSheetReturn && listSheetReturn.isConnected && listSheetReturn.getClientRects().length ? listSheetReturn : activeDocPane();
+    target.focus({ preventScroll: true });
+  } else if (sidebarList.contains(document.activeElement)) {
+    activeDocPane().focus({ preventScroll: true });
+  }
+  listSheetReturn = null;
+}
+document.getElementById('btn-list').addEventListener('click', e => {
+  e.stopPropagation();
+  if (document.body.classList.contains('list-open')) closeListSheet();
+  else openListSheet();
+});
+document.getElementById('mob-step').addEventListener('click', e => {
+  e.stopPropagation();
+  openListSheet();
+});
+document.getElementById('btn-close-sidebar-sheet').addEventListener('click', () => closeListSheet());
+document.getElementById('mobile-sheet-backdrop').addEventListener('click', () => {
+  closeListSheet();
+  closeAllMenus(false);
 });
 
-const searchInput = document.getElementById('search-input');
+/* ── Keyboard ───────────────────────────────────────────────────────────── */
 
 function isTextEntryElement(el) {
   if (!el) return false;
@@ -101,87 +405,85 @@ function isTextEntryElement(el) {
   return !nonText.includes((el.type || '').toLowerCase());
 }
 
+// Single-letter shortcuts act only while reading: focus on the page itself, in a document
+// pane or in the change list – never on a toolbar control, in a dialog or anything editable.
 function isShortcutFocusContext(el) {
   if (!el || el === document.body || el === document.documentElement) return true;
   if (isTextEntryElement(el) || (el.closest && el.closest('[contenteditable], .clause-inline-editor, dialog'))) {
     return false;
   }
-  return Boolean(el.closest && el.closest('#pane-left, #pane-right, #pane-unified, #sidebar-list, #minimap-track'));
+  return Boolean(el.closest && el.closest('#pane-left, #pane-right, #pane-unified, #sidebar-list'));
 }
 
 window.addEventListener('keydown', e => {
   if (e.defaultPrevented || e.isComposing) return;
   const activeEl = document.activeElement;
-  if (isTextEntryElement(activeEl)) {
-    if (e.key === 'Escape' && activeEl === searchInput) activeEl.blur();
+  const key = (e.key || '').toLowerCase();
+  const comparing = document.body.classList.contains('is-comparing');
+  const dialogOpen = Boolean(document.querySelector('dialog[open]'));
+
+  // Ctrl/Cmd+F opens the find-in-document bar instead of the browser's.
+  if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && key === 'f' && comparing && !dialogOpen) {
+    e.preventDefault();
+    openSearch();
     return;
   }
+  if (isTextEntryElement(activeEl)) return;
   // Never act behind an open dialog.
-  if (document.querySelector('dialog[open]')) return;
+  if (dialogOpen) return;
 
-  const key = (e.key || '').toLowerCase();
   if ((e.metaKey || e.ctrlKey) && !e.altKey) {
     // Only the explicit undo / redo combos are ours; Ctrl/Cmd+C, +K, +J, +H … stay with the browser.
     if (key === 'z' && !e.shiftKey) {
       if (state.undoStack.length > 0) {
         e.preventDefault();
         performUndo();
+        announceHistory('toastUndone');
       }
     } else if ((key === 'z' && e.shiftKey) || (key === 'y' && !e.shiftKey)) {
       if (state.redoStack.length > 0) {
         e.preventDefault();
         performRedo();
+        announceHistory('toastRedone');
       }
     }
     return;
   }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === 'Escape') {
-    closeMobileSheets();
+    if (openMenuState) closeAllMenus(true);
+    else if (!filesPop.hidden) closeFilesPop(true);
+    else if (document.body.classList.contains('list-open')) closeListSheet();
+    else if (!searchPanel.hidden) closeSearch(true);
     return;
   }
   // Single-character shortcuts (WCAG 2.1.4): can be switched off in the help dialog and
-  // only apply while a comparison is shown.
-  if (!state.singleKeyShortcuts || !document.body.classList.contains('is-comparing')) return;
-  // Only while reading: focus on the page itself, in a document pane or in the change list.
-  // Letters typed with focus on a toolbar control, a dialog or anything editable never toggle
-  // filters (typing "durch" must not switch the header/footer filter).
+  // only apply while a comparison is shown and the document or the list has focus.
+  if (!state.singleKeyShortcuts || !comparing) return;
   if (!isShortcutFocusContext(activeEl)) return;
-  if (e.key === 'j' || e.key === 'J') {
+  if (key === 'j') {
     e.preventDefault();
     stepChange(1);
-  } else if (e.key === 'k' || e.key === 'K') {
+  } else if (key === 'k') {
     e.preventDefault();
     stepChange(-1);
+  } else if (key === 'a') {
+    e.preventDefault();
+    runReviewAction('accept', Boolean(activeEl && activeEl.closest && activeEl.closest('#sidebar-list')));
+  } else if (key === 'r') {
+    e.preventDefault();
+    runReviewAction('reject', Boolean(activeEl && activeEl.closest && activeEl.closest('#sidebar-list')));
   } else if (e.key === '/') {
     e.preventDefault();
-    searchInput.focus();
-  } else if (e.key === 'c' || e.key === 'C') {
-    e.preventDefault();
-    document.getElementById('btn-only-changes').click();
-  } else if (e.key === 'h' || e.key === 'H') {
-    e.preventDefault();
-    if (btnFilterHf) btnFilterHf.click();
+    openSearch();
   }
 });
 
-const btnOnlyChanges = document.getElementById('btn-only-changes');
-const mobBtnOnlyChanges = document.getElementById('mob-btn-only-changes');
-function toggleOnlyChanges() {
-  state.onlyChanges = !state.onlyChanges;
-  document.body.classList.toggle('only-changes', state.onlyChanges);
-  btnOnlyChanges.setAttribute('aria-pressed', String(state.onlyChanges));
-  mobBtnOnlyChanges.setAttribute('aria-pressed', String(state.onlyChanges));
-  requestAnimationFrame(() => {
-    equalizeRowHeights();
-    scheduleGutterDraw();
-  });
-}
-btnOnlyChanges.addEventListener('click', toggleOnlyChanges);
-mobBtnOnlyChanges.addEventListener('click', toggleOnlyChanges);
+/* ── Starting over, languages, theme ───────────────────────────────────── */
 
-document.getElementById('btn-clear').addEventListener('click', () => {
+function clearComparison() {
   cancelPendingUploads();
+  closeSearch(false);
   state.leftText = '';
   state.rightText = '';
   state.leftName = '';
@@ -192,12 +494,13 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
   state.searchQuery = '';
+  state.pageBreaks = null;
   resetEditHistory();
   searchInput.value = '';
   fileInputLeft.value = '';
   fileInputRight.value = '';
   runComparison();
-});
+}
 
 // A hosted page pinned to one language points browsers set to the other language to their page.
 (function showOtherLanguagePageHint() {
@@ -212,7 +515,7 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   hint.hidden = false;
 })();
 
-document.getElementById('btn-lang').addEventListener('click', () => {
+function toggleLanguage() {
   const langHint = document.getElementById('lang-hint');
   if (langHint) langHint.hidden = true;
   state.lang = state.lang === 'de' ? 'en' : 'de';
@@ -226,62 +529,34 @@ document.getElementById('btn-lang').addEventListener('click', () => {
   }
   applyTranslationsToStaticDom();
   runComparison();
-});
+}
+document.getElementById('btn-lang').addEventListener('click', toggleLanguage);
 
 function applyTheme() {
+  const systemDark = Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  state.dark = state.themePref === 'dark' || (state.themePref === 'system' && systemDark);
   document.documentElement.classList.toggle('dark', state.dark);
   const icon = document.getElementById('theme-icon');
   if (icon) {
-    if (state.dark) {
-      icon.innerHTML =
-        '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>';
-    } else {
-      icon.innerHTML = '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
-    }
+    icon.innerHTML = state.dark
+      ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>'
+      : '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
   }
-  scheduleGutterDraw();
+  document.querySelectorAll('[data-theme-pref]').forEach(el => setMenuChecked(el, el.getAttribute('data-theme-pref') === state.themePref));
 }
 
-document.getElementById('btn-theme').addEventListener('click', () => {
-  state.themeOverridden = true;
-  state.dark = !state.dark;
+function setThemePref(pref) {
+  state.themePref = pref;
   applyTheme();
-});
+}
+
+document.getElementById('btn-theme').addEventListener('click', () => setThemePref(state.dark ? 'light' : 'dark'));
 
 if (window.matchMedia) {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (!state.themeOverridden) {
-      state.dark = e.matches;
-      applyTheme();
-    }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (state.themePref === 'system') applyTheme();
   });
 }
-
-const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
-const mobBtnChanges = document.getElementById('mob-btn-changes');
-btnToggleSidebar.addEventListener('click', () => {
-  const collapsed = document.body.classList.toggle('sidebar-collapsed');
-  btnToggleSidebar.setAttribute('aria-pressed', String(!collapsed));
-  mobBtnChanges.setAttribute('aria-pressed', String(!collapsed));
-  requestAnimationFrame(() => {
-    equalizeRowHeights();
-    scheduleGutterDraw();
-  });
-});
-
-mobBtnChanges.addEventListener('click', e => {
-  e.stopPropagation();
-  exportMenu.classList.remove('is-open');
-  mobBtnExport.setAttribute('aria-expanded', 'false');
-  const collapsed = document.body.classList.toggle('sidebar-collapsed');
-  const isOpen = !collapsed;
-  btnToggleSidebar.setAttribute('aria-pressed', String(isOpen));
-  mobBtnChanges.setAttribute('aria-pressed', String(isOpen));
-  document.body.classList.toggle('mobile-sheet-open', isOpen);
-});
-
-document.getElementById('btn-close-sidebar-sheet').addEventListener('click', closeMobileSheets);
-document.getElementById('mobile-sheet-backdrop').addEventListener('click', closeMobileSheets);
 
 document.getElementById('btn-swap-docs').addEventListener('click', () => {
   [state.leftText, state.rightText] = [state.rightText, state.leftText];
@@ -289,16 +564,10 @@ document.getElementById('btn-swap-docs').addEventListener('click', () => {
   [state.leftFormat, state.rightFormat] = [state.rightFormat, state.leftFormat];
   resetEditHistory();
   runComparison();
+  btnFiles.focus();
 });
 
-// Search never re-aligns: after a short debounce only rows whose highlighting changes are
-// re-rendered in place (see applySearchQuery in 06c-search.js).
-let searchDebounceTimer = null;
-searchInput.addEventListener('input', e => {
-  const value = e.target.value;
-  clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(() => applySearchQuery(value), SEARCH_DEBOUNCE_MS);
-});
+/* ── Dialogs: paste text, help, legal ──────────────────────────────────── */
 
 const pasteModal = document.getElementById('paste-modal');
 const textareaLeft = document.getElementById('textarea-left');
@@ -318,7 +587,6 @@ function openPasteModal() {
   pasteModal.showModal();
 }
 
-document.getElementById('btn-paste-modal').addEventListener('click', openPasteModal);
 document.getElementById('btn-close-modal').addEventListener('click', () => pasteModal.close());
 document.getElementById('btn-cancel-modal').addEventListener('click', () => pasteModal.close());
 document.getElementById('btn-apply-modal').addEventListener('click', () => {
@@ -349,10 +617,11 @@ document.getElementById('btn-apply-modal').addEventListener('click', () => {
 
 const helpModal = document.getElementById('help-modal');
 const chkSingleKeyShortcuts = document.getElementById('chk-single-key-shortcuts');
-document.getElementById('btn-help').addEventListener('click', () => {
+function openHelp() {
   chkSingleKeyShortcuts.checked = state.singleKeyShortcuts;
   helpModal.showModal();
-});
+}
+document.getElementById('btn-help').addEventListener('click', openHelp);
 chkSingleKeyShortcuts.addEventListener('change', () => {
   state.singleKeyShortcuts = chkSingleKeyShortcuts.checked;
 });
@@ -363,28 +632,15 @@ document.getElementById('btn-help-sample').addEventListener('click', () => {
   loadSampleComparison();
 });
 
-// First-run legend: dismissible for this session only (nothing is stored).
+// First-visit hint in the list header: dismissible for this session only (nothing is stored).
 document.getElementById('btn-legend-close').addEventListener('click', () => {
   state.legendDismissed = true;
   document.body.classList.add('legend-dismissed');
-  (state.viewMode === 'inline' ? paneUnified : paneRight).focus({ preventScroll: true });
-  requestAnimationFrame(() => {
-    equalizeRowHeights();
-    scheduleGutterDraw();
-  });
-});
-
-document.getElementById('badge-editable').addEventListener('click', () => {
-  if (state.viewMode === 'inline') setViewMode('pages');
-  const firstRow = state.changeRows[0] || state.alignedRows[0];
-  if (firstRow) {
-    const clauseEl = sheetRight.querySelector(`.clause[data-row-id="${firstRow.id}"]`);
-    if (clauseEl) startInlineClauseEdit(clauseEl, firstRow.id);
-  }
+  const tab = document.querySelector('#sidebar-filter-bar [aria-selected="true"]');
+  if (tab) tab.focus();
 });
 
 const privacyModal = document.getElementById('privacy-modal');
-document.getElementById('btn-privacy-info').addEventListener('click', () => privacyModal.showModal());
 document.getElementById('btn-close-privacy').addEventListener('click', () => privacyModal.close());
 document.getElementById('btn-ok-privacy').addEventListener('click', () => privacyModal.close());
 
@@ -404,7 +660,83 @@ if (!('closedBy' in HTMLDialogElement.prototype)) {
   });
 }
 
-/* ── Instant UI Tooltip Controller ────────────────────────────────────── */
+// An action started from a menu item that opens a dialog: focus returns to the menu button
+// (the item itself is hidden once the menu closes).
+[pasteModal, helpModal, privacyModal].forEach(dlg => {
+  dlg.addEventListener('close', () => {
+    const active = document.activeElement;
+    if (!active || active === document.body || !active.getClientRects().length) {
+      const fallback = document.body.classList.contains('is-comparing') ? document.getElementById('btn-more') : null;
+      if (fallback && fallback.getClientRects().length) fallback.focus();
+    }
+  });
+});
+
+/* ── Toast: a short confirmation, with "Rückgängig" for reviews and edits ─ */
+
+const toastEl = document.getElementById('toast');
+const toastMsg = document.getElementById('toast-msg');
+const toastAction = document.getElementById('toast-action');
+let toastTimer = null;
+let toastRun = null;
+const TOAST_MS = 6000;
+
+// Screen readers hear the message through the shared live region; the toast itself is visual.
+function showToast(message, action) {
+  clearTimeout(toastTimer);
+  toastMsg.textContent = message;
+  toastRun = action ? action.run : null;
+  toastAction.hidden = !action;
+  toastAction.textContent = action ? action.label : '';
+  toastEl.hidden = false;
+  requestAnimationFrame(() => toastEl.classList.add('is-visible'));
+  if (!action) announce(message);
+  toastTimer = setTimeout(hideToast, TOAST_MS);
+}
+
+function hideToast() {
+  clearTimeout(toastTimer);
+  const hadFocus = toastEl.contains(document.activeElement);
+  toastEl.classList.remove('is-visible');
+  toastEl.hidden = true;
+  toastRun = null;
+  if (hadFocus) activeDocPane().focus({ preventScroll: true });
+}
+
+function showUndoToast(key) {
+  showToast(t(key), {
+    label: t('toastUndo'),
+    run: () => {
+      performUndo();
+      announceHistory('toastUndone');
+    },
+  });
+}
+
+toastAction.addEventListener('click', () => {
+  const run = toastRun;
+  hideToast();
+  if (run) run();
+});
+// Hovering or focusing the toast keeps it.
+toastEl.addEventListener('pointerenter', () => clearTimeout(toastTimer));
+toastEl.addEventListener('pointerleave', () => (toastTimer = setTimeout(hideToast, 2500)));
+toastEl.addEventListener('focusin', () => clearTimeout(toastTimer));
+
+/* ── Scan error wording: "„scan.pdf“ ist ein Scan ohne Text. …" ─────────── */
+
+(function wrapImportNotice() {
+  const original = window.showImportNotice;
+  if (typeof original !== 'function') return;
+  window.showImportNotice = function showImportNoticeWithScanWording(message, kind) {
+    const m = typeof message === 'string' && message.match(/^.*?[„“"]([^“”"]+)[“”"]: (.*)$/);
+    if (m && m[2] === t('errScannedPdf')) message = formatMsg('errScannedPdfFile', { name: m[1] });
+    return original.call(this, message, kind);
+  };
+})();
+
+/* ── Tooltip (mouse hover and keyboard focus only; never after a tap) ──── */
+
 const uiTooltip = document.getElementById('ui-tooltip');
 let tooltipTimer = null;
 let activeTooltipTarget = null;
@@ -418,26 +750,14 @@ function showTooltipFor(target) {
 
   const rect = target.getBoundingClientRect();
   const ttRect = uiTooltip.getBoundingClientRect();
-  const scopeEl = target.closest('.col-bar, .doc-pane, .sidebar-panel');
-  const minX = scopeEl ? Math.max(8, scopeEl.getBoundingClientRect().left + 6) : 8;
-  const maxX = scopeEl
-    ? Math.min(window.innerWidth - ttRect.width - 8, scopeEl.getBoundingClientRect().right - ttRect.width - 6)
-    : window.innerWidth - ttRect.width - 8;
-
-  const floatingBarEl = target.closest('.floating-action-bar');
-  let top = floatingBarEl
-    ? floatingBarEl.getBoundingClientRect().top - ttRect.height - 8
-    : rect.bottom + 7;
-  if (top + ttRect.height > window.innerHeight - 8) {
-    top = Math.max(8, rect.top - ttRect.height - 7);
-  }
+  let top = rect.bottom + 8;
+  if (top + ttRect.height > window.innerHeight - 8) top = Math.max(8, rect.top - ttRect.height - 8);
   let left = rect.left + rect.width / 2 - ttRect.width / 2;
-  if (maxX >= minX) {
-    left = Math.max(minX, Math.min(maxX, left));
-  } else {
-    left = Math.max(8, Math.min(window.innerWidth - ttRect.width - 8, left));
+  if (target.closest('#ruler')) {
+    left = rect.left - ttRect.width - 10;
+    top = rect.top + rect.height / 2 - ttRect.height / 2;
   }
-
+  left = Math.max(8, Math.min(window.innerWidth - ttRect.width - 8, left));
   uiTooltip.style.top = `${Math.round(top)}px`;
   uiTooltip.style.left = `${Math.round(left)}px`;
 }
@@ -447,35 +767,32 @@ function hideTooltip() {
   activeTooltipTarget = null;
   if (!uiTooltip) return;
   uiTooltip.classList.remove('is-visible');
-  uiTooltip.setAttribute('aria-hidden', 'true');
 }
 
-document.addEventListener('mouseover', e => {
-  const target = e.target.closest('[data-tooltip]');
+document.addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse') return;
+  const target = e.target.closest && e.target.closest('[data-tooltip]');
   if (target === activeTooltipTarget) return;
   clearTimeout(tooltipTimer);
   if (!target) {
     hideTooltip();
     return;
   }
-  tooltipTimer = setTimeout(() => showTooltipFor(target), 220);
+  tooltipTimer = setTimeout(() => showTooltipFor(target), target.closest('#ruler') ? 60 : 350);
 });
 
 document.addEventListener('focusin', e => {
-  const target = e.target.closest('[data-tooltip]');
-  if (target) showTooltipFor(target);
+  const target = e.target.closest && e.target.closest('[data-tooltip]');
+  if (target && target.matches(':focus-visible')) showTooltipFor(target);
 });
 
 document.addEventListener('focusout', () => hideTooltip());
-document.addEventListener('mousedown', () => hideTooltip());
+document.addEventListener('pointerdown', () => hideTooltip());
 window.addEventListener('scroll', () => hideTooltip(), { capture: true, passive: true });
 
 window.addEventListener('DOMContentLoaded', () => {
-  if (isTabletOrSmaller) {
-    document.body.classList.add('sidebar-collapsed');
-    btnToggleSidebar.setAttribute('aria-pressed', 'false');
-  }
   applyTheme();
+  applyLayoutTier(true);
   setViewMode(state.viewMode);
   applyTranslationsToStaticDom();
   runComparison();

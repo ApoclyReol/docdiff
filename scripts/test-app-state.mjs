@@ -86,10 +86,15 @@ let groups = 0;
   groups++;
 }
 
-// 4. Undo/Redo buttons are updated right away (not only after a long comparison) and keep focus.
+// 4. Undo/Redo menu items are updated right away (not only after a long comparison); a step that
+//    only changes the review status refreshes it without a re-comparison.
 {
-  assert.match(extractFunction(interactions, 'performUndo'), /updateUndoRedoButtons\(\);\s*runComparison\(\);/);
-  assert.match(extractFunction(interactions, 'performRedo'), /updateUndoRedoButtons\(\);\s*runComparison\(\);/);
+  for (const fn of ['performUndo', 'performRedo']) {
+    assert.match(
+      extractFunction(interactions, fn),
+      /updateUndoRedoButtons\(\);\s*if \(changed\) runComparison\(\);\s*else refreshReviewState\(\);/
+    );
+  }
   assert.match(extractFunction(interactions, 'resetEditHistory'), /state\.activeRowId = null;/, 'stale selection reset');
   groups++;
 }

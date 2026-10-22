@@ -1,7 +1,7 @@
 // Entity-safe search highlighting: splits raw text BEFORE escaping so HTML entities are never corrupted
 function escapeAndHighlightText(rawText, query) {
   if (!rawText) return '';
-  if (!query || query.trim().length < 2) return escapeHtml(rawText);
+  if (!query || !query.trim()) return escapeHtml(rawText);
   const q = query.trim();
   const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`(${safeQ})`, 'gi');
@@ -16,6 +16,15 @@ function escapeAndHighlightText(rawText, query) {
         : escapeHtml(part)
     )
     .join('');
+}
+
+// A removed / added run with its surrounding spaces outside the mark, so the tint and the
+// underline cover the words only.
+function tokHtml(tag, value, query) {
+  const cls = tag === 'del' ? 'tok-del' : 'tok-ins';
+  const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(value);
+  if (!m[2]) return `<${tag} class="${cls}">${escapeAndHighlightText(value, query)}</${tag}>`;
+  return `${escapeHtml(m[1])}<${tag} class="${cls}">${escapeAndHighlightText(m[2], query)}</${tag}>${escapeHtml(m[3])}`;
 }
 
 function setSafeContainerHtml(container, trustedHtmlString) {
@@ -61,7 +70,7 @@ function renderLeftBlockHtml(row, query) {
       const bodyHtml = sideParts
         .map(part => {
           const content = escapeAndHighlightText(part.value, query);
-          return part.removed ? `<del class="tok-del">${content}</del>` : content;
+          return part.removed ? tokHtml('del', part.value, query) : content;
         })
         .join('');
       const markerHtml =
@@ -78,7 +87,7 @@ function renderLeftBlockHtml(row, query) {
     return sideParts
       .map(part => {
         const content = escapeAndHighlightText(part.value, query);
-        return part.removed ? `<del class="tok-del">${content}</del>` : content;
+        return part.removed ? tokHtml('del', part.value, query) : content;
       })
       .join('');
   }
@@ -120,7 +129,7 @@ function renderRightBlockHtml(row, query) {
       const bodyHtml = sideParts
         .map(part => {
           const content = escapeAndHighlightText(part.value, query);
-          return part.added ? `<ins class="tok-ins">${content}</ins>` : content;
+          return part.added ? tokHtml('ins', part.value, query) : content;
         })
         .join('');
       const markerHtml =
@@ -137,7 +146,7 @@ function renderRightBlockHtml(row, query) {
     return sideParts
       .map(part => {
         const content = escapeAndHighlightText(part.value, query);
-        return part.added ? `<ins class="tok-ins">${content}</ins>` : content;
+        return part.added ? tokHtml('ins', part.value, query) : content;
       })
       .join('');
   }
@@ -230,8 +239,8 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
       const bodyHtml = coalesceUnifiedTokens(bodyDiffs)
         .map(part => {
           const content = escapeAndHighlightText(part.value, query);
-          if (part.removed) return `<del class="tok-del">${content}</del>`;
-          if (part.added) return `<ins class="tok-ins">${content}</ins>`;
+          if (part.removed) return tokHtml('del', part.value, query);
+          if (part.added) return tokHtml('ins', part.value, query);
           return content;
         })
         .join('');
@@ -245,8 +254,8 @@ function renderUnifiedBlockHtml(row, query, allowMarkerGrid = false) {
     return coalesceUnifiedTokens(row.wordDiffs)
       .map(part => {
         const content = escapeAndHighlightText(part.value, query);
-        if (part.removed) return `<del class="tok-del">${content}</del>`;
-        if (part.added) return `<ins class="tok-ins">${content}</ins>`;
+        if (part.removed) return tokHtml('del', part.value, query);
+        if (part.added) return tokHtml('ins', part.value, query);
         return content;
       })
       .join('');
@@ -312,57 +321,24 @@ function updateLandingSlots(left, right) {
   });
 }
 
-function updateMobileBarState() {
-  const total = state.changeRows.length;
-  const curIdx = state.changeRows.findIndex(r => r.id === state.activeRowId);
-  const countEl = document.getElementById('mob-step-count');
-  if (countEl) {
-    countEl.textContent = total > 0 ? `${curIdx >= 0 ? curIdx + 1 : '–'}/${total}` : '0/0';
-  }
-  const dockCountEl = document.getElementById('dock-step-count');
-  if (dockCountEl) {
-    dockCountEl.textContent = total > 0 ? `${curIdx >= 0 ? curIdx + 1 : '–'} / ${total}` : '0 / 0';
-    dockCountEl.classList.toggle('has-active', total > 0 && curIdx >= 0);
-  }
-  const prevBtn = document.getElementById('mob-btn-prev');
-  const nextBtn = document.getElementById('mob-btn-next');
-  const dockPrevBtn = document.getElementById('btn-prev');
-  const dockNextBtn = document.getElementById('btn-next');
-  if (prevBtn) prevBtn.disabled = total === 0;
-  if (nextBtn) nextBtn.disabled = total === 0;
-  if (dockPrevBtn) dockPrevBtn.disabled = total === 0;
-  if (dockNextBtn) dockNextBtn.disabled = total === 0;
-  const badgeEl = document.getElementById('mob-changes-badge');
-  if (badgeEl) badgeEl.textContent = String(total);
-  const mobFilterBtn = document.getElementById('mob-btn-only-changes');
-  if (mobFilterBtn) mobFilterBtn.setAttribute('aria-pressed', String(state.onlyChanges));
-  const hfBtn = document.getElementById('btn-filter-hf');
-  if (hfBtn) hfBtn.setAttribute('aria-pressed', String(state.ignoreHeadersFooters));
-  const hfBadge = document.getElementById('hf-count-badge');
-  if (hfBadge) {
-    hfBadge.textContent = String(state.filteredHfCount);
-    hfBadge.style.display = state.filteredHfCount > 0 ? 'inline-flex' : 'none';
-  }
-}
-
-function updateColumnMeta(side, blocksCount, pagesCount = 0) {
+// File facts for the documents popover: "PDF · 3 Seiten · 31 Absätze".
+function updateColumnMeta(side) {
   const metaEl = document.getElementById(side === 'left' ? 'meta-left' : 'meta-right');
-  const clearBtn = document.getElementById(side === 'left' ? 'btn-clear-left' : 'btn-clear-right');
+  if (!metaEl) return;
+  const res = lastComparison && lastComparison.result;
+  const blocks = res ? (side === 'left' ? res.leftBlocks.length : res.rightBlocks.length) : 0;
+  const pages = res ? (side === 'left' ? res.leftPages : res.rightPages) : 0;
   const rawFmt = side === 'left' ? state.leftFormat : state.rightFormat;
   const fmt = rawFmt === 'DEMO' ? t('demoLabel') : rawFmt;
-
-  if (blocksCount > 0) {
-    const pageStr = pagesCount > 0 ? `${pagesCount} ${t('pageShort')} · ` : '';
-    metaEl.textContent = fmt
-      ? `${fmt} · ${pageStr}${blocksCount} ${t('unitPara')}`
-      : `${pageStr}${blocksCount} ${t('unitPara')}`;
-    metaEl.classList.add('is-visible');
-    clearBtn.style.display = 'inline-flex';
-  } else {
+  if (!blocks) {
     metaEl.textContent = '';
-    metaEl.classList.remove('is-visible');
-    clearBtn.style.display = 'none';
+    return;
   }
+  const parts = [];
+  if (fmt) parts.push(fmt);
+  if (pages > 0) parts.push(pages === 1 ? t('metaPagesOne') : formatMsg('metaPages', { n: pages }));
+  parts.push(blocks === 1 ? t('metaParasOne') : formatMsg('metaParas', { n: blocks }));
+  metaEl.textContent = parts.join(' · ');
 }
 
 function getClauseTypeClasses(block) {

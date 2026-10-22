@@ -1,5 +1,15 @@
-const isMobileViewport = typeof window !== 'undefined' && window.innerWidth <= 720;
-const isTabletOrSmaller = typeof window !== 'undefined' && window.innerWidth <= 960;
+// Layout tiers: phone < 768 px ≤ tablet < 1200 px ≤ desktop.
+const PHONE_MAX = 767;
+const TABLET_MAX = 1199;
+function isPhoneWidth() {
+  return typeof window !== 'undefined' && window.innerWidth <= PHONE_MAX;
+}
+function isTabletOrSmaller() {
+  return typeof window !== 'undefined' && window.innerWidth <= TABLET_MAX;
+}
+const isMacPlatform =
+  typeof navigator !== 'undefined' &&
+  /Mac|iPhone|iPad|iPod/i.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
 
 const initialDark =
   typeof window !== 'undefined' &&
@@ -9,11 +19,18 @@ if (typeof document !== 'undefined') {
   document.documentElement.classList.toggle('dark', initialDark);
 }
 
+// Phones and tablets in portrait start in one column.
+const initialInline =
+  typeof window !== 'undefined' && (isPhoneWidth() || (isTabletOrSmaller() && window.innerHeight > window.innerWidth));
+
 const state = {
   lang: initialLang,
   dark: initialDark,
-  themeOverridden: false,
-  viewMode: isMobileViewport ? 'inline' : 'pages',
+  themePref: 'system', // 'light' | 'dark' | 'system'
+  viewMode: initialInline ? 'inline' : 'split', // 'split' | 'inline'
+  viewModeChosen: false,
+  // null = automatic (on for documents with real pages: PDF / DOCX / the example)
+  pageBreaks: null,
   leftText: '',
   rightText: '',
   leftName: '',
@@ -22,6 +39,7 @@ const state = {
   rightFormat: '',
   alignedRows: [],
   changeRows: [],
+  listItems: [],
   hoveredRowId: null,
   activeRowId: null,
   onlyChanges: false,
@@ -29,8 +47,11 @@ const state = {
   filteredHfCount: 0,
   rightAllBlocks: [],
   sidebarFilter: 'all',
+  sidebarOpen: true,
   searchQuery: '',
   isProgrammaticScroll: false,
+  // Review status per change (see 06d-review.js), kept in undo / redo snapshots.
+  reviews: {},
   undoStack: [],
   redoStack: [],
   legendDismissed: false,
@@ -48,12 +69,9 @@ const sheetLeft = document.getElementById('sheet-left');
 const sheetRight = document.getElementById('sheet-right');
 const sheetUnified = document.getElementById('sheet-unified');
 const sidebarList = document.getElementById('sidebar-list');
-const connectorSvg = document.getElementById('connector-svg');
-const minimapTrack = document.getElementById('minimap-track');
 
-// Shows `text` in the custom tooltip. Buttons and links also get an accessible name:
-// `name` when given (e.g. a visible label that CSS may hide on narrow screens), otherwise
-// the tooltip text for icon-only controls, which would have no name at all.
+// Shows `text` in the custom tooltip (mouse hover and keyboard focus only). Icon-only buttons
+// also get it as their accessible name; `name` overrides the accessible name.
 function setTooltip(el, text, name) {
   if (!el) return;
   el.setAttribute('data-tooltip', text);
@@ -65,13 +83,24 @@ function setTooltip(el, text, name) {
   }
 }
 
-// "1 Änderung" / "19 Änderungen"
-function changesWord(n) {
-  return n === 1 ? t('changeLabelOne') : t('changesLabel');
+// Ctrl / ⌘ according to the platform.
+function modKeyLabel() {
+  return isMacPlatform ? '⌘' : t('kbdCtrl');
+}
+function redoKeyLabel() {
+  return isMacPlatform ? '⇧⌘Z' : `${t('kbdCtrl')}+Y`;
+}
+function undoKeyLabel() {
+  return isMacPlatform ? '⌘Z' : `${t('kbdCtrl')}+Z`;
 }
 
-function formatMsg(key, params) {
+function formatMsg(key, params = {}) {
   return t(key).replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? String(params[k]) : ''));
+}
+
+// "1 Änderung" / "19 Änderungen"
+function changesTitle(n) {
+  return n === 1 ? t('listTitleOne') : formatMsg('listTitle', { n });
 }
 
 // Polite announcements for screen readers (one shared live region, never chatty).
@@ -102,127 +131,107 @@ function applyTranslationsToStaticDom() {
   document.documentElement.lang = state.lang;
   document.title = t('metaTitle');
   applyDataI18n();
-  document.getElementById('btn-lang').textContent = state.lang.toUpperCase();
-  setTooltip(
-    document.getElementById('btn-lang'),
-    t('langTitle'),
-    `${state.lang.toUpperCase()} – ${t('langTitle')}`
-  );
-  document.getElementById('i18n-changes-label').textContent = t('changesLabel');
-  setTooltip(document.getElementById('stat-summary'), t('statTooltip'));
-  document.getElementById('seg-view-mode').setAttribute('aria-label', t('viewModeLabel'));
-  document.getElementById('col-bars').setAttribute('aria-label', t('docsLabel'));
-  document.getElementById('legend-bar').setAttribute('aria-label', t('legendLabel'));
-  paneLeft.setAttribute('aria-label', t('colLeft'));
-  paneRight.setAttribute('aria-label', t('colRight'));
-  paneUnified.setAttribute('aria-label', t('paneUnifiedLabel'));
-
-  const modePagesEl = document.getElementById('i18n-mode-pages');
-  if (modePagesEl) modePagesEl.textContent = t('modePages');
-  setTooltip(document.getElementById('btn-mode-pages'), t('modePagesTitle'));
-  document.getElementById('i18n-mode-split').textContent = t('modeSplit');
-  setTooltip(document.getElementById('btn-mode-split'), t('modeSplitTitle'));
-  document.getElementById('i18n-mode-inline').textContent = t('modeInline');
-  setTooltip(document.getElementById('btn-mode-inline'), t('modeInlineTitle'));
-
-  document.getElementById('search-input').placeholder = t('searchPlaceholder');
-  document.getElementById('search-input').setAttribute('aria-label', t('searchLabel'));
-  setTooltip(document.getElementById('search-box-wrap'), t('searchTitle'));
+  const btnLang = document.getElementById('btn-lang');
+  btnLang.textContent = state.lang.toUpperCase();
+  setTooltip(btnLang, t('langTitle'), `${state.lang.toUpperCase()} – ${t('langTitle')}`);
+  setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
   setTooltip(document.getElementById('btn-prev'), t('prevTitle'), t('prevLabel'));
   setTooltip(document.getElementById('btn-next'), t('nextTitle'), t('nextLabel'));
-
-  document.getElementById('i18n-btn-only-changes').textContent = t('onlyChanges');
-  setTooltip(document.getElementById('btn-only-changes'), t('onlyChangesTitle'));
-
-  const hfBtnLabel = document.getElementById('i18n-btn-filter-hf');
-  if (hfBtnLabel) hfBtnLabel.textContent = t('hfFilterBtn');
-  setTooltip(document.getElementById('btn-filter-hf'), t('hfFilterTitle'));
-
-  document.getElementById('i18n-btn-text').textContent = t('textBtn');
-  setTooltip(document.getElementById('btn-paste-modal'), t('textBtnTitle'), t('textBtn'));
-
-  document.getElementById('i18n-btn-export').textContent = t('exportBtn');
-  setTooltip(document.getElementById('btn-export-menu'), t('exportTitle'));
-  document.getElementById('i18n-exp-copy').textContent = t('expCopy');
-  document.getElementById('i18n-exp-txt').textContent = t('expTxt');
-  document.getElementById('i18n-exp-pdf').textContent = t('expPdf');
-  document.getElementById('i18n-exp-word').textContent = t('expWord');
-  document.getElementById('i18n-exp-html').textContent = t('expHtml');
-  document.getElementById('i18n-exp-md').textContent = t('expMd');
-
-  document.getElementById('i18n-btn-clear').textContent = t('clearBtn');
-  setTooltip(document.getElementById('btn-clear'), t('clearBtnTitle'), t('clearBtn'));
-
-  document.getElementById('i18n-btn-help').textContent = t('helpBtn');
-  setTooltip(document.getElementById('btn-help'), t('helpBtnTitle'), t('helpBtn'));
-
-  setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
-  setTooltip(document.getElementById('btn-toggle-sidebar'), t('sidebarToggleTitle'));
-
-  document.getElementById('i18n-mob-filter').textContent = t('mobFilter');
-  document.getElementById('i18n-mob-list').textContent = t('mobList');
-  document.getElementById('i18n-mob-export').textContent = t('mobExport');
-  document.getElementById('i18n-mob-sheet-title').textContent = t('sidebarTitle');
-  document.getElementById('btn-close-sidebar-sheet').textContent = t('mobDone');
-
-  document.getElementById('i18n-col-left').textContent = t('colLeft');
-  setTooltip(document.getElementById('i18n-col-left'), t('colLeftTitle'));
-  document.getElementById('i18n-col-right').textContent = t('colRight');
-  setTooltip(document.getElementById('i18n-col-right'), t('colRightTitle'));
-
-  document.getElementById('i18n-badge-editable').textContent = t('badgeEditable');
-  setTooltip(document.getElementById('badge-editable'), t('badgeEditableTitle'));
-
-  document.getElementById('i18n-upload-left').textContent = t('fileBtn');
-  setTooltip(document.getElementById('btn-upload-left'), t('fileLeftTitle'), `${t('fileBtn')}: ${t('colLeft')}`);
-  document.getElementById('i18n-upload-right').textContent = t('fileBtn');
-  setTooltip(document.getElementById('btn-upload-right'), t('fileRightTitle'), `${t('fileBtn')}: ${t('colRight')}`);
-
-  setTooltip(document.getElementById('btn-clear-left'), t('clearSideTitle'), t('slotClearLeft'));
-  setTooltip(document.getElementById('btn-clear-right'), t('clearSideTitle'), t('slotClearRight'));
-  setTooltip(document.getElementById('btn-swap-docs'), t('swapTitle'));
-  setTooltip(document.getElementById('btn-undo'), t('undoTitle'), t('undoLabel'));
-  setTooltip(document.getElementById('btn-redo'), t('redoTitle'), t('redoLabel'));
-  setTooltip(document.getElementById('dock-step-count'), t('stepCountTitle'));
-  setTooltip(document.getElementById('sidebar-kbd-hint'), t('sidebarKbdTitle'));
-
-  document.getElementById('i18n-sidebar-title').textContent = t('sidebarTitle');
-  document.getElementById('i18n-filter-all').textContent = t('filterAll');
-  document.getElementById('i18n-filter-mod').textContent = t('filterMod');
-  document.getElementById('i18n-filter-ins').textContent = t('filterIns');
-  document.getElementById('i18n-filter-del').textContent = t('filterDel');
-  document.getElementById('i18n-drop-left').textContent = t('dropLeft');
-  document.getElementById('i18n-drop-right').textContent = t('dropRight');
-
-  document.getElementById('i18n-modal-paste-title').textContent = t('modalPasteTitle');
-  document.getElementById('i18n-modal-left-label').textContent = t('modalLeftLabel');
-  document.getElementById('i18n-modal-right-label').textContent = t('modalRightLabel');
+  setTooltip(document.getElementById('btn-search'), formatMsg('searchTitle', { mod: modKeyLabel() }), t('searchLabel'));
+  setTooltip(document.getElementById('btn-search-prev'), t('searchPrev'));
+  setTooltip(document.getElementById('btn-search-next'), t('searchNext'));
+  setTooltip(document.getElementById('btn-search-close'), t('searchClose'));
+  setTooltip(document.getElementById('btn-more'), t('moreLabel'));
+  document.getElementById('search-input').placeholder = t('searchPlaceholder');
+  document.getElementById('kbd-undo').textContent = undoKeyLabel();
+  document.getElementById('kbd-redo').textContent = redoKeyLabel();
   document.getElementById('textarea-left').placeholder = t('modalLeftPh');
   document.getElementById('textarea-right').placeholder = t('modalRightPh');
-  document.getElementById('btn-cancel-modal').textContent = t('cancel');
-  document.getElementById('btn-apply-modal').textContent = t('compare');
-
-  document.getElementById('i18n-help-title').textContent = t('helpTitle');
-  document.getElementById('i18n-help-body').innerHTML = t('helpBodyHtml');
-  document.getElementById('btn-help-sample').textContent = t('helpSampleBtn');
-  document.getElementById('btn-ok-help').textContent = t('helpOkBtn');
-
-  document.getElementById('i18n-privacy-title').textContent = t('privacyTitle');
+  document.getElementById('i18n-help-body').innerHTML = formatMsg('helpBodyHtml', {
+    mod: modKeyLabel(),
+    redo: redoKeyLabel(),
+  });
   document.getElementById('i18n-privacy-body').innerHTML = t('privacyBodyHtml');
-  document.getElementById('i18n-footer-privacy').textContent = t('footerPrivacy');
+  updateFileLabels();
 }
 
-function setViewMode(mode) {
+// Middle truncation keeps both the start and the version suffix of a file name visible:
+// "Rahmenvertrag_IT_…_v2.docx".
+function truncateMiddle(name, max) {
+  const chars = Array.from(String(name || ''));
+  if (chars.length <= max) return chars.join('');
+  const keepEnd = Math.ceil((max - 1) * 0.45);
+  const keepStart = max - 1 - keepEnd;
+  return chars.slice(0, keepStart).join('') + '…' + chars.slice(chars.length - keepEnd).join('');
+}
+
+// Two names that share a long start ("Vertrag_v1_…", "Vertrag_v2_…") keep the part that
+// tells them apart: "…v1_Vorher.docx".
+function truncateFileName(name, other, max) {
+  const chars = Array.from(String(name || ''));
+  if (chars.length <= max) return chars.join('');
+  const o = Array.from(String(other || ''));
+  let d = 0;
+  while (d < chars.length && d < o.length && chars[d] === o[d]) d++;
+  if (d > 4 && d < chars.length && chars.length - d + 1 <= max) {
+    const tail = chars.slice(d);
+    const head = chars.slice(0, max - 1 - tail.length);
+    return head.join('') + '…' + tail.join('');
+  }
+  return truncateMiddle(name, max);
+}
+
+// File names in the top bar button, its popover and the pane captions.
+function updateFileLabels() {
+  const left = state.leftName || t('noFileLeft');
+  const right = state.rightName || t('noFileRight');
+  const max = window.innerWidth >= 1440 ? 30 : window.innerWidth >= 1200 ? 22 : window.innerWidth > PHONE_MAX ? 16 : 15;
+  const filesLeft = document.getElementById('files-left');
+  const filesRight = document.getElementById('files-right');
+  filesLeft.textContent = truncateFileName(left, right, max);
+  filesRight.textContent = truncateFileName(right, left, max);
+  document.getElementById('files-label').textContent = formatMsg('filesBtnLabel', { left, right });
+  document.getElementById('fp-name-left').textContent = left;
+  document.getElementById('fp-name-right').textContent = right;
+  const unified = document.getElementById('filename-unified');
+  if (unified) unified.textContent = `${left} → ${right}`;
+  updateColumnMeta('left');
+  updateColumnMeta('right');
+}
+
+function setViewMode(mode, opts = {}) {
+  if (mode !== 'split' && mode !== 'inline') mode = 'split';
+  const changed = state.viewMode !== mode;
+  // The change in view before switching stays in view afterwards.
+  const keepRowId = changed && document.body.classList.contains('is-comparing') ? state.activeRowId : null;
   state.viewMode = mode;
+  if (opts.user) state.viewModeChosen = true;
   document.body.classList.toggle('view-inline', mode === 'inline');
-  document.body.classList.toggle('view-stream', mode === 'split');
-  document.body.classList.toggle('view-pages', mode === 'pages');
-  const btnPages = document.getElementById('btn-mode-pages');
-  if (btnPages) btnPages.setAttribute('aria-pressed', String(mode === 'pages'));
-  document.getElementById('btn-mode-split').setAttribute('aria-pressed', String(mode === 'split'));
-  document.getElementById('btn-mode-inline').setAttribute('aria-pressed', String(mode === 'inline'));
+  document.body.classList.toggle('view-split', mode === 'split');
+  setMenuChecked('btn-mode-split', mode === 'split');
+  setMenuChecked('btn-mode-inline', mode === 'inline');
+  if (typeof placeReviewBar === 'function') placeReviewBar();
   requestAnimationFrame(() => {
-    if (mode !== 'inline') equalizeRowHeights();
-    scheduleGutterDraw();
+    if (keepRowId && state.activeRowId === keepRowId) selectAndScrollToRow(keepRowId, false, true, { flash: false });
+    if (typeof scheduleRulerDraw === 'function') scheduleRulerDraw();
   });
+}
+
+function setMenuChecked(id, on) {
+  const el = typeof id === 'string' ? document.getElementById(id) : id;
+  if (el) el.setAttribute('aria-checked', String(Boolean(on)));
+}
+
+// Page breaks are shown by default for documents that have real pages (PDF, DOCX, the example).
+function documentsHavePages() {
+  return Boolean(lastComparison && lastComparison.result && (lastComparison.result.leftPages > 1 || lastComparison.result.rightPages > 1)) &&
+    (state.rightAllBlocks || []).some(b => b.hasExplicitPage);
+}
+function pageBreaksShown() {
+  return state.pageBreaks === null ? documentsHavePages() : state.pageBreaks;
+}
+function applyPageBreaks() {
+  const on = pageBreaksShown();
+  document.body.classList.toggle('no-page-breaks', !on);
+  setMenuChecked('btn-page-breaks', on);
 }
