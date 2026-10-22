@@ -13,14 +13,13 @@ const root = path.resolve(__dirname, '..');
 
 const siteHtmlPath = path.join(root, 'site', 'index.html');
 const rootHtmlPath = path.join(root, 'DocDiff.html');
-const templatePath = path.join(root, 'src', 'template.html');
+const jsDir = path.join(root, 'src', 'js');
 
 assert.ok(fs.existsSync(siteHtmlPath), 'site/index.html must exist');
 assert.ok(fs.existsSync(rootHtmlPath), 'DocDiff.html must exist');
 
 const siteHtml = fs.readFileSync(siteHtmlPath, 'utf8');
 const rootHtml = fs.readFileSync(rootHtmlPath, 'utf8');
-const templateHtml = fs.readFileSync(templatePath, 'utf8');
 
 // 1. Both output files must be identical
 assert.equal(siteHtml, rootHtml, 'site/index.html and DocDiff.html must be identical');
@@ -60,14 +59,13 @@ assert.ok(
   'Must not reference any external CDNs or font servers'
 );
 
-// Extract only our application script (last <script> block) to audit app code
-const lastScriptIdx = templateHtml.lastIndexOf('<script>');
-const lastScriptEndIdx = templateHtml.lastIndexOf('</script>');
-const appScript = templateHtml.slice(lastScriptIdx);
-const appJsCode = templateHtml.slice(lastScriptIdx + '<script>'.length, lastScriptEndIdx);
+// Audit our own application code (src/js/*.js, concatenated in build order)
+const appJsFiles = fs.readdirSync(jsDir).filter(f => f.endsWith('.js')).sort();
+const appJsCode = appJsFiles.map(f => fs.readFileSync(path.join(jsDir, f), 'utf8')).join('\n');
+const appScript = appJsCode;
 
 // Compile JS syntax check via node:vm
-new vm.Script(appJsCode, { filename: 'src/template.html' });
+new vm.Script(appJsCode, { filename: 'src/js/*.js' });
 
 for (const requiredFn of [
   'function revertRowToOriginal(',
@@ -86,15 +84,21 @@ for (const forbiddenStorage of ['localStorage.', 'sessionStorage.', 'indexedDB.'
 }
 
 // 4. Verify bilingual i18n parity (de vs en)
-const deMatch = appScript.match(/de:\s*\{([\s\S]*?)\n      \},/);
-const enMatch = appScript.match(/en:\s*\{([\s\S]*?)\n      \},/);
-assert.ok(deMatch && enMatch, 'Both de and en i18n dictionaries must exist');
+const i18nSandbox = {};
+vm.runInNewContext(
+  fs.readFileSync(path.join(jsDir, '01-i18n.js'), 'utf8') + '\nthis.I18N = I18N;',
+  i18nSandbox
+);
+const { I18N } = i18nSandbox;
+assert.ok(I18N && I18N.de && I18N.en, 'Both de and en i18n dictionaries must exist');
 
-const extractKeys = block =>
-  [...block.matchAll(/^\s*([a-zA-Z0-9_]+):/gm)].map(m => m[1]).sort();
-
-const deKeys = extractKeys(deMatch[1]);
-const enKeys = extractKeys(enMatch[1]);
+const deKeys = Object.keys(I18N.de).sort();
+const enKeys = Object.keys(I18N.en).sort();
+for (const lang of ['de', 'en']) {
+  for (const [key, value] of Object.entries(I18N[lang])) {
+    assert.ok(typeof value === 'string' && value.trim(), `i18n ${lang}.${key} must be a non-empty string`);
+  }
+}
 assert.deepEqual(deKeys, enKeys, 'German and English i18n keys must match 1:1');
 
 // 5. Verify site legal and domain files for docdiff.app

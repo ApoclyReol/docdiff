@@ -103,14 +103,15 @@ Download **[`DocDiff.html`](https://github.com/tschnorpfeil/docdiff/raw/main/Doc
 
 ## Building from Source
 
-Edit [`src/template.html`](src/template.html) and run the build and verification scripts:
+Edit the sources in [`src/`](src) and run the build and verification scripts:
 
 ```sh
 python3 scripts/build.py
 node scripts/check.mjs
 ```
 
-- `scripts/build.py` bundles `src/template.html` with the pinned libraries and fonts in `vendor/` to produce `site/index.html` and `DocDiff.html`.
+- `src/template.html` holds the page shell and markup, `src/styles.css` the styles, and `src/js/*.js` the app code (concatenated in file-name order).
+- `scripts/build.py` bundles them with the pinned libraries and fonts in `vendor/` to produce `site/index.html` and `DocDiff.html`.
 - `scripts/check.mjs` verifies CSP headers, zero external URLs, zero storage APIs, and 1:1 `de`/`en` translation key parity.
 
 ---
