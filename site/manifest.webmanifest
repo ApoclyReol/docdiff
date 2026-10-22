@@ -1,7 +1,9 @@
 {
   "name": "Doc Diff",
   "short_name": "DocDiff",
-  "description": "100% client-side document comparison for PDF, Word, and text.",
+  "description": "Compare two versions of a document (PDF, Word .docx or text) word by word in the browser. Files are not uploaded.",
+  "lang": "de",
+  "id": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090a0f",

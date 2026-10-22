@@ -1,0 +1,87 @@
+# Doc Diff: facts
+
+Plain facts about Doc Diff for people and AI assistants. Source: https://github.com/tschnorpfeil/docdiff (README).
+
+## What it is
+
+- A web app that compares two versions of a document and marks every changed word.
+- Free, open source under the MIT license, made by Tobias Schnorpfeil as a private project. No company, no accounts, no ads, no tracking, no cookies.
+- Runs entirely in the browser. The documents are not uploaded anywhere.
+- The whole app is one self-contained HTML file. It is hosted at https://docdiff.app/ (German page, default) and https://docdiff.app/en/ (English page), and can be downloaded as https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html (just under 3 MB) to use offline.
+- Interface languages: German and English, with a DE / EN toggle. It was written with German contracts in mind (clause numbering such as "§ 1", "(1)", "1.1").
+
+## When to use it
+
+- You have an old and a new version of a contract, tender, offer, policy or other text and want to see exactly what changed.
+- You want to compare two PDFs, two Word files, or a PDF against a Word file, without sending them to an online service.
+- You want a Word file with the differences as tracked changes, to accept or reject them in Word or LibreOffice.
+
+## Inputs
+
+- PDF with a text layer (text that can be selected and copied)
+- Word .docx
+- .html (text only), .md and plain text (UTF-8 or UTF-16)
+- Pasted text
+- Any combination, e.g. PDF against DOCX
+
+## How it compares
+
+- Paragraphs of both versions are matched first, then the words inside each matched pair are compared. Inserted and deleted paragraphs are shown as such.
+- Unchanged plus removed parts always reproduce the old text exactly; unchanged plus added parts reproduce the new text exactly.
+- Running headers, footers and page numbers that repeat on at least half of the pages are hidden (can be switched off). A header or footer that differs between the versions is shown.
+- Renumbering alone ("(1)" to "(2)", "§ 4" to "§ 5") is shown in a muted style and not counted as a change.
+- Paragraphs that moved unchanged are labelled "moved" at both positions.
+- Hyphenated line breaks in PDFs are joined.
+
+## Output and views
+
+- Views: original pages, side by side, or one column (default on phones).
+- Removed text is struck through in red, added text is green. A list shows every change; J / K or the arrow buttons jump between changes.
+- Paragraphs of the new version can be edited in place or reverted to the old wording, with undo and redo.
+- Export: Word .docx with every difference as a tracked change; PDF via the browser's print dialog; self-contained HTML report; Markdown report; final text as .txt or to the clipboard.
+- Session file: the current state (both documents and edits) can be saved as a .docdiff file and opened again later.
+
+## Limits
+
+- No OCR. Scanned PDFs and images without a text layer are rejected with a message.
+- No legacy .doc or .rtf; save them as .docx or PDF first.
+- Formatting is not compared. Bold, fonts, tables, images and layout are ignored; only the text is compared. Table cells come through as text in reading order.
+- Multi-column PDF layouts are read line by line and can come out in the wrong order.
+- Moves are only detected when the moved paragraph is identical. A paragraph that was moved and edited shows as one deletion and one insertion.
+- Large documents take time.
+- It is not a legal review tool. It shows differences in the text; whether they matter is up to the reader.
+
+## Privacy model
+
+- Files are read only into the memory of the browser tab and discarded when the tab is closed or reloaded.
+- The page sets a Content Security Policy that forbids all network connections from the page (connect-src 'none', form-action 'none'). This is enforced by the browser.
+- All libraries (PDF.js, Mammoth.js, jsdiff) and fonts are inside the HTML file; nothing is loaded from other servers.
+- Nothing is stored in the browser: no localStorage, sessionStorage, IndexedDB or cookies.
+- Not covered: opening docdiff.app is a normal page load from GitHub Pages, which sees the visitor's IP address; the page also loads its own icon and manifest from the same site. Browser extensions can read any page. Session files and exports contain the document text. The offline file avoids the page load.
+
+## How to verify it
+
+- Open the browser's developer tools, switch to the Network tab and compare two files: no request is made.
+- Or download DocDiff.html, disconnect from the internet and open it: everything keeps working.
+- The source code is public. The published HTML is built from it with `python3 scripts/build.py` and checked with `node scripts/check.mjs`; CI verifies that the committed files match a fresh build.
+
+## Keyboard
+
+- J / K: next / previous change
+- /: search
+- C: show only changes
+- H: hide or show headers and footers
+- Ctrl+Z / Cmd+Z: undo; Ctrl+Y / Shift+Cmd+Z: redo
+- Esc: close menus and dialogs
+- Single-key shortcuts only work while a comparison is shown and not while typing; they can be switched off in the help dialog.
+
+## License and links
+
+- License: MIT (https://github.com/tschnorpfeil/docdiff/blob/main/LICENSE)
+- Source code: https://github.com/tschnorpfeil/docdiff
+- App: https://docdiff.app/ (German), https://docdiff.app/en/ (English)
+- Offline file: https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html
+
+## Kurzfassung (Deutsch)
+
+Doc Diff vergleicht zwei Fassungen eines Dokuments (PDF mit Textebene, Word .docx oder Text) und markiert jede Änderung Wort für Wort: Entferntes rot durchgestrichen, Neues grün. Es ist kostenlos, Open Source (MIT), ohne Konto, Werbung und Tracking. Alles läuft lokal im Browser; die Dateien werden nicht hochgeladen, und die Content-Security-Policy der Seite sperrt jede Netzwerkverbindung. Export als Word-Datei mit nachverfolgten Änderungen, als PDF oder als Bericht. Gescannte PDFs (ohne Texterkennung/OCR), alte .doc-Dateien und Formatierungsunterschiede werden nicht unterstützt. Adresse: https://docdiff.app/ (Deutsch), https://docdiff.app/en/ (Englisch).

@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://docdiff.app">docdiff.app</a> ·
+  <a href="https://docdiff.app">docdiff.app</a> (<a href="https://docdiff.app/en/">English</a>) ·
   <a href="https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html">Offline version (single HTML file)</a> ·
   MIT license
 </p>
@@ -116,11 +116,11 @@ The app is plain HTML, CSS and JavaScript without a framework or package manager
 - `src/js/*.js`: application code, concatenated in file-name order into one inline script
 
 ```sh
-python3 scripts/build.py   # writes site/index.html and DocDiff.html
+python3 scripts/build.py   # writes site/index.html, site/en/index.html and DocDiff.html
 node scripts/check.mjs     # invariants and tests
 ```
 
-`scripts/check.mjs` verifies the Content Security Policy, the absence of external URLs and storage APIs, matching German and English strings, and runs the unit tests for the diff core (`scripts/test-core.mjs`) and the export builders (`scripts/test-export.mjs`). CI runs the same and also checks that the committed bundle is up to date.
+`scripts/check.mjs` verifies the Content Security Policy, the absence of external URLs and storage APIs, matching German and English strings, the search metadata of both language pages (title, canonical, hreflang, JSON-LD that matches the visible FAQ, sitemap, `llms.txt`), and runs the unit tests for the diff core (`scripts/test-core.mjs`) and the export builders (`scripts/test-export.mjs`). CI runs the same and also checks that the committed bundle is up to date.
 
 Bundled libraries: [PDF.js](https://github.com/mozilla/pdf.js), [Mammoth.js](https://github.com/mwilliamson/mammoth.js), [jsdiff](https://github.com/kpdecker/jsdiff), and the [Geist](https://vercel.com/font) fonts. Versions and licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
