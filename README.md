@@ -27,6 +27,15 @@
   </picture>
 </p>
 
+## Your documents stay on your device
+
+- **No upload.** Files are read and compared inside the browser tab. The page's Content Security Policy (`connect-src 'none'`) makes the browser block every network connection from the page.
+- **Works offline.** The whole app is one HTML file. Download it, disconnect, keep working.
+- **Nothing stored, nothing shared.** No account, no cookies, no tracking, no browser storage. Close the tab and everything is gone.
+- **Verifiable.** The code is open (MIT), and the browser's Network tab shows no request while you compare.
+
+This makes it suitable for confidential contracts and documents with personal data (GDPR): the documents reach no server, neither ours nor anyone else's. Details and limits are under [Privacy](#privacy).
+
 ## What it is
 
 Doc Diff is a small tool for one job: you have an old and a new version of a document, typically a contract or a tender, and you want to know exactly what changed. It is free, has no accounts, no ads and no tracking, and the whole app is a single HTML file you can also run offline.
