@@ -50,8 +50,8 @@ It was written with German contracts in mind (`§ 1`, `(1)`, `1.1` clause number
   - Renumbering alone (`(1)` → `(2)`, `§ 4` → `§ 5`) is shown in a muted style and not counted as a change.
   - Paragraphs that moved unchanged are labelled "Moved" at both positions.
   - Hyphenated line breaks in PDFs are joined.
-- **Views:** side by side or one column (default on phones), with or without the original page breaks. An overview bar next to the text shows where the changes are.
-- **Review:** accept a change (keep the new wording) or reject it (restore the old wording of that paragraph) with the small ✓ / ✗ buttons next to the current paragraph or `A` / `R`; both mark it as reviewed, move on to the next open change and can be undone. The same header or footer change on several pages is one decision. The list of changes can be filtered by review status and by kind of change. Paragraphs of the new version can also be edited in place.
+- **Views:** side by side or one column (default on phones), with or without the original page breaks. An overview bar between the two versions (next to the text in one column) shows where the changes are; click it to jump.
+- **Review:** accept a change (keep the new wording) or reject it (restore the old wording of that paragraph) with the small ✓ / ✗ buttons next to the current paragraph or `A` / `R`; both mark it as reviewed, move on to the next open change and leave a quiet ✓ or ✗ in the margin, with an undo arrow below it. The same header or footer change on several pages is one decision. The list of changes can be filtered by review status or by kind of change. Paragraphs of the new version can also be edited in place.
 - **Export:**
   - Word `.docx` in which open changes are tracked changes (accept or reject them in Word or LibreOffice) and changes accepted in Doc Diff are already applied
   - PDF via the browser's print dialog
