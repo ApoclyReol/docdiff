@@ -267,6 +267,20 @@ function bindEmptyStateButtons() {
   document.querySelectorAll('.btn-load-sample').forEach(btn => {
     btn.addEventListener('click', loadSampleComparison);
   });
+
+  // Start page: from the first screen on to what Doc Diff can and cannot do.
+  const more = document.getElementById('landing-more');
+  if (more) {
+    more.addEventListener('click', () => {
+      const next = document.getElementById('landing-scope');
+      const pad = document.getElementById('empty-launchpad');
+      const heading = next.querySelector('h2');
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+      const top = next.getBoundingClientRect().top - pad.getBoundingClientRect().top + pad.scrollTop - 16;
+      pad.scrollTo({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    });
+  }
 }
 
 // Moved blocks keep type 'deleted' (old position) / 'inserted' (new position); this note

@@ -98,8 +98,8 @@
 
   --changed: 34 90% 46%;          /* amber edge of a changed paragraph */
   --changed-ink: 28 90% 25%;
-  --current: 215 25% 13%;         /* edge of the current change */
-  --current-tint: 215 30% 50% / 0.07;  /* background of the current change */
+  --current: 212.8 100% 42%;      /* edge of the current change: the selection blue */
+  --current-tint: 212.8 100% 50% / 0.07;  /* background of the current change */
   --hover-tint: 215 20% 50% / 0.05;
 
   --warning-ton-2: 45 100% 88%;
@@ -150,8 +150,8 @@
 
   --changed: 38 70% 48%;
   --changed-ink: 40 95% 72%;
-  --current: 0 0% 93%;
-  --current-tint: 0 0% 100% / 0.06;
+  --current: 210 100% 66%;
+  --current-tint: 210 100% 66% / 0.1;
   --hover-tint: 0 0% 100% / 0.04;
 
   --warning-ton-2: 42 70% 24%;
@@ -840,6 +840,72 @@ body.is-comparing .empty-launchpad {
   max-width: 880px;
   margin: 0 auto;
   padding: 44px 0 40px;
+}
+/* The first screen: the hero centred in the space above "How it works", which sits at the
+   bottom edge, with a quiet way on to the rest. */
+.landing-more {
+  display: none;
+}
+@media (min-width: 768px) and (min-height: 640px) {
+  .landing-inner {
+    padding-top: 0;
+  }
+  .landing-first {
+    min-height: calc(100dvh - var(--topbar-h));
+    display: flex;
+    flex-direction: column;
+  }
+  .landing-first > .landing-hero {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px 0;
+  }
+  .landing-first > .landing-section {
+    margin-top: 0;
+  }
+  .landing-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    margin: 12px 0 8px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+  }
+  .landing-more:hover {
+    color: hsl(var(--foreground));
+    background: hsl(var(--ton-2));
+  }
+  .landing-more .icon {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2;
+  }
+}
+/* Laptop screens (768–860px high): a tighter first screen so the arrow stays visible */
+@media (min-width: 768px) and (min-height: 640px) and (max-height: 860px) {
+  .landing-first > .landing-hero {
+    padding: 20px 0;
+  }
+  .landing-first > .landing-section {
+    padding-top: 20px;
+  }
+  .landing-first .how-steps {
+    margin-top: 12px;
+  }
+  .landing-first .landing-trust {
+    margin-top: 18px;
+  }
+  .landing-more {
+    margin: 4px 0;
+  }
 }
 
 .landing-title {
@@ -2016,6 +2082,17 @@ body.tier-phone .bottom-bar .review-bar {
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-2);
+}
+/* Collapses the docked list (desktop); the list button in the top bar brings it back */
+.rail-close {
+  margin-right: -8px;
+  color: hsl(var(--muted-foreground));
+}
+body:not(.tier-desktop) .rail-close {
+  display: none;
+}
+#btn-list[aria-expanded="true"] {
+  background: hsl(var(--ton-2));
 }
 .list-title {
   font-size: var(--text-title);

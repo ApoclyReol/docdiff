@@ -273,8 +273,8 @@
 
   --changed: 34 90% 46%;          /* amber edge of a changed paragraph */
   --changed-ink: 28 90% 25%;
-  --current: 215 25% 13%;         /* edge of the current change */
-  --current-tint: 215 30% 50% / 0.07;  /* background of the current change */
+  --current: 212.8 100% 42%;      /* edge of the current change: the selection blue */
+  --current-tint: 212.8 100% 50% / 0.07;  /* background of the current change */
   --hover-tint: 215 20% 50% / 0.05;
 
   --warning-ton-2: 45 100% 88%;
@@ -325,8 +325,8 @@
 
   --changed: 38 70% 48%;
   --changed-ink: 40 95% 72%;
-  --current: 0 0% 93%;
-  --current-tint: 0 0% 100% / 0.06;
+  --current: 210 100% 66%;
+  --current-tint: 210 100% 66% / 0.1;
   --hover-tint: 0 0% 100% / 0.04;
 
   --warning-ton-2: 42 70% 24%;
@@ -1015,6 +1015,72 @@ body.is-comparing .empty-launchpad {
   max-width: 880px;
   margin: 0 auto;
   padding: 44px 0 40px;
+}
+/* The first screen: the hero centred in the space above "How it works", which sits at the
+   bottom edge, with a quiet way on to the rest. */
+.landing-more {
+  display: none;
+}
+@media (min-width: 768px) and (min-height: 640px) {
+  .landing-inner {
+    padding-top: 0;
+  }
+  .landing-first {
+    min-height: calc(100dvh - var(--topbar-h));
+    display: flex;
+    flex-direction: column;
+  }
+  .landing-first > .landing-hero {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px 0;
+  }
+  .landing-first > .landing-section {
+    margin-top: 0;
+  }
+  .landing-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    margin: 12px 0 8px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+  }
+  .landing-more:hover {
+    color: hsl(var(--foreground));
+    background: hsl(var(--ton-2));
+  }
+  .landing-more .icon {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2;
+  }
+}
+/* Laptop screens (768–860px high): a tighter first screen so the arrow stays visible */
+@media (min-width: 768px) and (min-height: 640px) and (max-height: 860px) {
+  .landing-first > .landing-hero {
+    padding: 20px 0;
+  }
+  .landing-first > .landing-section {
+    padding-top: 20px;
+  }
+  .landing-first .how-steps {
+    margin-top: 12px;
+  }
+  .landing-first .landing-trust {
+    margin-top: 18px;
+  }
+  .landing-more {
+    margin: 4px 0;
+  }
 }
 
 .landing-title {
@@ -2191,6 +2257,17 @@ body.tier-phone .bottom-bar .review-bar {
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-2);
+}
+/* Collapses the docked list (desktop); the list button in the top bar brings it back */
+.rail-close {
+  margin-right: -8px;
+  color: hsl(var(--muted-foreground));
+}
+body:not(.tier-desktop) .rail-close {
+  display: none;
+}
+#btn-list[aria-expanded="true"] {
+  background: hsl(var(--ton-2));
 }
 .list-title {
   font-size: var(--text-title);
@@ -3679,7 +3756,7 @@ body.list-open .toast-region {
         </div>
       </div>
 
-      <button type="button" class="btn btn-ghost tb-btn compare-only tablet-only" id="btn-list" aria-expanded="false" aria-controls="sidebar">
+      <button type="button" class="btn btn-ghost tb-btn compare-only hide-phone" id="btn-list" aria-expanded="false" aria-controls="sidebar">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         <span class="tb-label" data-i18n="mobList">Liste</span>
         <span class="tb-count" id="btn-list-count">0</span>
@@ -3770,6 +3847,7 @@ body.list-open .toast-region {
          and the app re-translates it at runtime. The German text below is only a readable placeholder. -->
     <div class="empty-launchpad landing" id="empty-launchpad">
       <div class="landing-inner">
+        <div class="landing-first">
         <p class="lang-hint" id="lang-hint" hidden><a id="lang-hint-link" href="./"></a></p>
         <section class="landing-hero" aria-labelledby="landing-title">
           <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n-html="heroTitle">Dokumente <del class="hero-del" aria-hidden="true" data-word="mühsam"></del> <ins class="hero-ins">einfach</ins> vergleichen.</h1>
@@ -3824,8 +3902,10 @@ body.list-open .toast-region {
             <li><span class="how-num" aria-hidden="true">3</span><span><strong data-i18n="how3Title">Ergebnis sichern, wenn Sie es brauchen</strong> <span data-i18n="how3Text">Als saubere Endfassung (Word im Originalformat oder PDF) oder als Vergleich mit Änderungsverfolgung.</span></span></li>
           </ol>
         </section>
+        <button type="button" class="landing-more" id="landing-more" aria-label="Mehr erfahren" data-i18n-label="landingMore"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
 
-        <section class="landing-section" aria-labelledby="scope-title">
+        <section class="landing-section" id="landing-scope" aria-labelledby="scope-title">
           <h2 id="scope-title" data-i18n="scopeTitle">Was es kann – und was nicht</h2>
           <div class="scope-grid">
             <div class="scope-col scope-can">
@@ -3899,6 +3979,7 @@ body.list-open .toast-region {
         <div class="sheet-grabber" aria-hidden="true"></div>
         <div class="list-title-row">
           <h2 class="list-title" id="list-title">0 Änderungen</h2>
+          <button type="button" class="tb-icon-btn rail-close" id="btn-close-rail" aria-label="Liste ausblenden" data-i18n-label="listHide"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/><path d="m8 9 3 3-3 3"/></svg></button>
           <button type="button" class="btn btn-ghost sheet-done" id="btn-close-sidebar-sheet"><span data-i18n="mobDone">Fertig</span></button>
         </div>
         <div class="list-sub">
@@ -4149,6 +4230,7 @@ const I18N = {
     hfFilterBtn: 'Kopf-/Fußzeilen ausblenden',
     hfHiddenCount: '{n} ausgeblendet',
     sidebarToggle: 'Änderungsliste',
+    listHide: 'Liste ausblenden',
     themeLabel: 'Farbschema',
     themeLight: 'Hell',
     themeDark: 'Dunkel',
@@ -4456,6 +4538,7 @@ const I18N = {
     slotClearLeft: 'Alte Fassung entfernen',
     slotClearRight: 'Neue Fassung entfernen',
     howTitle: 'So funktioniert’s',
+    landingMore: 'Mehr erfahren',
     how1Title: 'Zwei Fassungen wählen',
     how1Text: 'Als PDF, Word-Datei oder eingefügten Text. Die Dateien werden nur in diesem Browser-Tab gelesen.',
     how2Title: 'Änderungen durchgehen',
@@ -4546,6 +4629,7 @@ const I18N = {
     hfFilterBtn: 'Hide headers & footers',
     hfHiddenCount: '{n} hidden',
     sidebarToggle: 'List of changes',
+    listHide: 'Hide list',
     themeLabel: 'Colour scheme',
     themeLight: 'Light',
     themeDark: 'Dark',
@@ -4853,6 +4937,7 @@ const I18N = {
     slotClearLeft: 'Remove old version',
     slotClearRight: 'Remove new version',
     howTitle: 'How it works',
+    landingMore: 'Learn more',
     how1Title: 'Choose two versions',
     how1Text: 'As PDF, Word file or pasted text. The files are only read inside this browser tab.',
     how2Title: 'Go through the changes',
@@ -7756,6 +7841,20 @@ function bindEmptyStateButtons() {
   document.querySelectorAll('.btn-load-sample').forEach(btn => {
     btn.addEventListener('click', loadSampleComparison);
   });
+
+  // Start page: from the first screen on to what Doc Diff can and cannot do.
+  const more = document.getElementById('landing-more');
+  if (more) {
+    more.addEventListener('click', () => {
+      const next = document.getElementById('landing-scope');
+      const pad = document.getElementById('empty-launchpad');
+      const heading = next.querySelector('h2');
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+      const top = next.getBoundingClientRect().top - pad.getBoundingClientRect().top + pad.scrollTop - 16;
+      pad.scrollTo({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    });
+  }
 }
 
 // Moved blocks keep type 'deleted' (old position) / 'inserted' (new position); this note
@@ -13991,6 +14090,9 @@ function applySidebarState() {
   const docked = currentTier === 'desktop';
   document.body.classList.toggle('sidebar-collapsed', docked && !state.sidebarOpen);
   setMenuChecked('btn-toggle-sidebar', state.sidebarOpen);
+  // On the desktop the list button in the top bar shows and hides the docked list.
+  if (docked) document.getElementById('btn-list').setAttribute('aria-expanded', String(state.sidebarOpen));
+  else if (!document.body.classList.contains('list-open')) document.getElementById('btn-list').setAttribute('aria-expanded', 'false');
   scheduleRulerDraw();
 }
 
@@ -14036,7 +14138,8 @@ function closeListSheet(returnFocus = true) {
 }
 document.getElementById('btn-list').addEventListener('click', e => {
   e.stopPropagation();
-  if (document.body.classList.contains('list-open')) closeListSheet();
+  if (currentTier === 'desktop') toggleSidebar();
+  else if (document.body.classList.contains('list-open')) closeListSheet();
   else openListSheet();
 });
 document.getElementById('mob-step').addEventListener('click', e => {
@@ -14044,6 +14147,11 @@ document.getElementById('mob-step').addEventListener('click', e => {
   openListSheet();
 });
 document.getElementById('btn-close-sidebar-sheet').addEventListener('click', () => closeListSheet());
+document.getElementById('btn-close-rail').addEventListener('click', () => {
+  if (currentTier !== 'desktop' || !state.sidebarOpen) return;
+  toggleSidebar();
+  document.getElementById('btn-list').focus({ preventScroll: true });
+});
 document.getElementById('mobile-sheet-backdrop').addEventListener('click', () => {
   if (openMenuState) closeMenu(openMenuState.id, true);
   else closeListSheet();
