@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!-- Launch gallery image 0 (cover): the English link preview image in the gallery format. Render: see README.md. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @font-face { font-family: Geist; src: url('../../vendor/fonts/Geist-Variable.woff2') format('woff2'); font-weight: 100 900; }
+  @font-face { font-family: 'Geist Mono'; src: url('../../vendor/fonts/GeistMono-Variable.woff2') format('woff2'); font-weight: 100 900; }
+  :root {
+    --bg: hsl(0 0% 97.5%); --fg: hsl(215 20% 16%); --muted: hsl(215 20% 30.2%); --border: hsl(0 0% 87.4%);
+    --primary: hsl(212.8 100% 36%);
+    --del-bg: hsl(347.4 100% 93.5%); --del-ink: hsl(351 100% 34%); --del-ring: hsl(347.4 100% 35% / .22);
+    --ins-bg: hsl(134.9 61.7% 93.5%); --ins-ink: hsl(138.7 77.3% 22%); --ins-ring: hsl(134.9 61.7% 43.3% / .25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1270px; height: 760px; }
+  body {
+    font-family: Geist, system-ui, sans-serif; color: var(--fg); background: var(--bg);
+    background-image: radial-gradient(hsl(215 20% 16% / .09) 1px, transparent 1px); background-size: 24px 24px;
+    display: grid; grid-template-columns: 540px 1fr; gap: 48px; padding: 56px 64px 56px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  body > div:first-child { display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand .logo { width: 44px; height: 44px; }
+  .brand b { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+  .brand .url { font: 500 17px 'Geist Mono', monospace; color: var(--primary); padding: 4px 10px; border: 1px solid hsl(212.8 100% 36% / .25); background: hsl(212.8 100% 36% / .06); border-radius: 8px; margin-left: 4px; }
+  h1 { margin-top: 64px; font-size: 66px; line-height: 1.2; font-weight: 720; letter-spacing: -0.035em; }
+  h1 del, h1 ins { padding: 0 .12em; border-radius: .12em; }
+  h1 del { background: var(--del-bg); color: var(--del-ink); box-shadow: inset 0 0 0 2px var(--del-ring); text-decoration: line-through; text-decoration-thickness: .07em; font-weight: 520; }
+  h1 ins { background: var(--ins-bg); color: var(--ins-ink); box-shadow: inset 0 0 0 2px var(--ins-ring); text-decoration: none; }
+  .sub { margin-top: 22px; font-size: 21px; line-height: 1.45; color: var(--muted); max-width: 30em; }
+  .chips { margin-top: auto; display: flex; gap: 10px; }
+  .chips span { white-space: nowrap; font-size: 15px; font-weight: 500; padding: 7px 13px; border: 1px solid var(--border); background: #fff; border-radius: 999px; }
+  .chips span::before { content: '✓'; color: var(--ins-ink); margin-right: 7px; font-weight: 700; }
+
+  .win { background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 60px -24px hsl(215 30% 20% / .28); overflow: hidden; display: flex; flex-direction: column; align-self: center; }
+  .bar { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .dots { display: flex; gap: 6px; } .dots i { width: 10px; height: 10px; border-radius: 50%; background: hsl(0 0% 85%); display: block; }
+  .counts { font-weight: 600; } .counts .m { color: var(--primary); } .counts .i { color: var(--ins-ink); } .counts .d { color: var(--del-ink); } .counts span { font-weight: 500; color: var(--muted); }
+  .seg { margin-left: auto; display: flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; font-size: 13px; color: var(--muted); }
+  .seg span { padding: 4px 9px; border-radius: 6px; } .seg .on { background: hsl(0 0% 96%); color: var(--fg); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); background: hsl(0 0% 98.5%); }
+  .cols div { display: flex; align-items: center; gap: 10px; padding: 9px 16px; font-size: 14px; font-weight: 600; }
+  .cols div + div { border-left: 1px solid var(--border); }
+  .pill { font-size: 12.5px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: hsl(0 0% 93%); color: var(--muted); }
+  .pill.new { background: hsl(212.8 100% 36% / .1); color: var(--primary); }
+  .panes { display: grid; grid-template-columns: 1fr 1fr; flex: 1; font-size: 15px; line-height: 1.5; }
+  .pane { padding: 18px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+  .pane + .pane { border-left: 1px solid var(--border); }
+  .cl { padding: 8px 10px; border-left: 3px solid transparent; border-radius: 3px; }
+  .cl h3 { font-size: 14px; font-weight: 650; margin-bottom: 4px; }
+  .cl.mod { border-left-color: var(--primary); }
+  .cl.del { border-left-color: var(--del-ink); background: hsl(347.4 100% 97.5%); }
+  .cl.ins { border-left-color: var(--ins-ink); background: hsl(134.9 61.7% 97%); }
+  .cl.ghost { border: 1px dashed var(--border); color: transparent; min-height: 56px; }
+  del { background: var(--del-bg); color: var(--del-ink); box-shadow: inset 0 0 0 1px var(--del-ring); padding: 0 3px; border-radius: 3px; text-decoration: line-through; }
+  ins { background: var(--ins-bg); color: var(--ins-ink); box-shadow: inset 0 0 0 1px var(--ins-ring); padding: 0 3px; border-radius: 3px; text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="brand">      <svg class="logo" width="64" height="64" viewBox="0 0 512 512" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="blg-prism" x1="135" y1="115" x2="395" y2="395" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ff3b30"/>
+            <stop offset="24%" stop-color="#ef4444"/>
+            <stop offset="50%" stop-color="#2563eb"/>
+            <stop offset="68%" stop-color="#0284c7"/>
+            <stop offset="88%" stop-color="#10b981"/>
+            <stop offset="100%" stop-color="#34c759"/>
+          </linearGradient>
+          <radialGradient id="blg-bot" cx="24%" cy="80%" r="55%">
+            <stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#2563eb" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="blg-top" cx="22%" cy="18%" r="50%">
+            <stop offset="0%" stop-color="#ff3b30"/>
+            <stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="blg-right" cx="84%" cy="68%" r="58%">
+            <stop offset="0%" stop-color="#30d158"/>
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="blg-chip">
+            <path d="M 122 170 L 194 98 H 262 C 358 98 420 162 420 256 C 420 350 358 414 262 414 H 170 C 143.5 414 122 392.5 122 366 Z"/>
+          </clipPath>
+        </defs>
+        <g clip-path="url(#blg-chip)">
+          <rect x="100" y="80" width="340" height="360" fill="url(#blg-prism)"/>
+          <rect x="100" y="80" width="340" height="360" fill="url(#blg-bot)"/>
+          <rect x="100" y="80" width="340" height="360" fill="url(#blg-top)"/>
+          <rect x="100" y="80" width="340" height="360" fill="url(#blg-right)"/>
+        </g>
+      </svg><b>Doc Diff</b><span class="url">docdiff.app</span></div>
+    <h1>Compare<br>documents<br><del>by hand</del> <ins>easily</ins>.</h1>
+    <p class="sub">PDF, Word or text: every change is marked word by word. Everything runs locally in your browser.</p>
+    <div class="chips"><span>Free &amp; open source</span><span>No uploads</span><span>No tracking</span></div>
+  </div>
+  <div class="win">
+    <div class="bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="counts">4 changes</div>
+      <div class="seg"><span class="on">Side by side</span><span>Stacked</span></div>
+    </div>
+    <div class="cols">
+      <div><span class="pill">Old version</span>Contract_v1.pdf</div>
+      <div><span class="pill new">New version</span>Contract_v2.docx</div>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="cl mod"><h3>1. Scope of Services</h3>(1) Delivery and documentation as per the specification dated <del>March 12, 2026</del>. Change requests must be made <del>in writing</del>.</div>
+        <div class="cl mod"><h3>2. Fees</h3>(1) Fixed price of <del>EUR 145,000.00</del> net, payable within <del>14</del> days.</div>
+        <div class="cl del"><h3>4. (3) Liability</h3><del>Liability for consequential damages is excluded.</del></div>
+        <div class="cl ghost">.</div>
+      </div>
+      <div class="pane">
+        <div class="cl mod"><h3>1. Scope of Services</h3>(1) Delivery<ins>, training</ins> and documentation as per the specification dated <ins>April 18, 2026</ins>. Change requests must be made <ins>by email</ins>.</div>
+        <div class="cl mod"><h3>2. Fees</h3>(1) Fixed price of <ins>EUR 168,500.00</ins> net, payable within <ins>30</ins> days.</div>
+        <div class="cl ghost">.</div>
+        <div class="cl ins"><h3>2. (4) Price Adjustment</h3><ins>Adjusted to the CPI from month 13 on.</ins></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
