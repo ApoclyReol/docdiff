@@ -1694,13 +1694,19 @@ ins.tok-ins.tok-marker {
   text-decoration-style: dotted;
 }
 
-/* Reviewed: accepted changes are muted; the mark sits in the margin of the new version */
+/* Reviewed: a decided change reads as finished text. Accepted: the new wording is plain text
+   with a green edge; the removed words stay quietly struck through, so the change is still
+   visible. Only colours change, so reviewing never moves any text. */
 .clause.is-accepted {
-  border-left-color: hsl(var(--muted-foreground) / 0.3);
+  border-left-color: hsl(var(--success));
   background: transparent;
 }
-.clause.is-accepted del.tok-del,
 .clause.is-accepted ins.tok-ins {
+  background: transparent;
+  color: inherit;
+  text-decoration-color: transparent;
+}
+.clause.is-accepted del.tok-del {
   background: transparent;
   color: hsl(var(--muted-foreground));
 }
@@ -1713,8 +1719,9 @@ ins.tok-ins.tok-marker {
   font-weight: 600;
   color: hsl(var(--muted-foreground));
 }
+/* Rejected: the old wording is back as plain text, with a solid neutral edge */
 .diff-row-anchor.has-ghost .clause {
-  border-left: 2px dotted hsl(var(--muted-foreground) / 0.6);
+  border-left: 2px solid hsl(var(--muted-foreground) / 0.7);
 }
 .diff-row-anchor.has-ghost .clause.is-active {
   border-left-style: solid;
@@ -1886,7 +1893,7 @@ ins.tok-ins.tok-marker {
   stroke-width: 2.2;
 }
 .review-status.is-accepted .rs-mark { color: hsl(var(--success-ink)); }
-.review-status.is-rejected .rs-mark { color: hsl(var(--muted-foreground)); }
+.review-status.is-rejected .rs-mark { color: hsl(var(--foreground)); }
 .ra-undo {
   display: inline-flex;
   align-items: center;
@@ -2083,16 +2090,9 @@ body.tier-phone .bottom-bar .review-bar {
   justify-content: space-between;
   gap: var(--sp-2);
 }
-/* Collapses the docked list (desktop); the list button in the top bar brings it back */
-.rail-close {
-  margin-right: -8px;
-  color: hsl(var(--muted-foreground));
-}
-body:not(.tier-desktop) .rail-close {
+/* Shows and hides the docked list of changes (desktop only; tablets and phones use a sheet) */
+body:not(.tier-desktop) #btn-rail {
   display: none;
-}
-#btn-list[aria-expanded="true"] {
-  background: hsl(var(--ton-2));
 }
 .list-title {
   font-size: var(--text-title);
@@ -2178,9 +2178,11 @@ body:not(.tier-desktop) .rail-close {
 .nav-item.ins { border-left-color: hsl(var(--success)); }
 .nav-item.del { border-left-color: hsl(var(--destructive)); }
 .nav-item.moved { border-left-style: dashed; border-left-color: hsl(var(--muted-foreground) / 0.6); }
-.nav-item.is-accepted,
+.nav-item.is-accepted {
+  border-left-color: hsl(var(--success));
+}
 .nav-item.is-rejected {
-  border-left-color: hsl(var(--muted-foreground) / 0.35);
+  border-left-color: hsl(var(--muted-foreground) / 0.7);
 }
 .nav-item.is-active {
   background: hsl(var(--current-tint));
@@ -2246,7 +2248,7 @@ body:not(.tier-desktop) .rail-close {
   stroke-width: 2.4;
 }
 .nav-status.is-accepted { color: hsl(var(--success-ink)); }
-.nav-status.is-rejected { color: hsl(var(--muted-foreground)); }
+.nav-status.is-rejected { color: hsl(var(--foreground)); }
 .nav-item.is-accepted .nav-item-ref,
 .nav-item.is-rejected .nav-item-ref,
 .nav-item.is-accepted .nav-item-snippet,

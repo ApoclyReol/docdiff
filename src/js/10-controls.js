@@ -375,9 +375,8 @@ function applySidebarState() {
   const docked = currentTier === 'desktop';
   document.body.classList.toggle('sidebar-collapsed', docked && !state.sidebarOpen);
   setMenuChecked('btn-toggle-sidebar', state.sidebarOpen);
-  // On the desktop the list button in the top bar shows and hides the docked list.
-  if (docked) document.getElementById('btn-list').setAttribute('aria-expanded', String(state.sidebarOpen));
-  else if (!document.body.classList.contains('list-open')) document.getElementById('btn-list').setAttribute('aria-expanded', 'false');
+  // On the desktop the sidebar button at the right end of the top bar shows and hides the list.
+  document.getElementById('btn-rail').setAttribute('aria-expanded', String(docked && state.sidebarOpen));
   scheduleRulerDraw();
 }
 
@@ -423,8 +422,7 @@ function closeListSheet(returnFocus = true) {
 }
 document.getElementById('btn-list').addEventListener('click', e => {
   e.stopPropagation();
-  if (currentTier === 'desktop') toggleSidebar();
-  else if (document.body.classList.contains('list-open')) closeListSheet();
+  if (document.body.classList.contains('list-open')) closeListSheet();
   else openListSheet();
 });
 document.getElementById('mob-step').addEventListener('click', e => {
@@ -432,11 +430,7 @@ document.getElementById('mob-step').addEventListener('click', e => {
   openListSheet();
 });
 document.getElementById('btn-close-sidebar-sheet').addEventListener('click', () => closeListSheet());
-document.getElementById('btn-close-rail').addEventListener('click', () => {
-  if (currentTier !== 'desktop' || !state.sidebarOpen) return;
-  toggleSidebar();
-  document.getElementById('btn-list').focus({ preventScroll: true });
-});
+document.getElementById('btn-rail').addEventListener('click', () => toggleSidebar());
 document.getElementById('mobile-sheet-backdrop').addEventListener('click', () => {
   if (openMenuState) closeMenu(openMenuState.id, true);
   else closeListSheet();

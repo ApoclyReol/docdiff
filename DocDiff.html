@@ -1869,13 +1869,19 @@ ins.tok-ins.tok-marker {
   text-decoration-style: dotted;
 }
 
-/* Reviewed: accepted changes are muted; the mark sits in the margin of the new version */
+/* Reviewed: a decided change reads as finished text. Accepted: the new wording is plain text
+   with a green edge; the removed words stay quietly struck through, so the change is still
+   visible. Only colours change, so reviewing never moves any text. */
 .clause.is-accepted {
-  border-left-color: hsl(var(--muted-foreground) / 0.3);
+  border-left-color: hsl(var(--success));
   background: transparent;
 }
-.clause.is-accepted del.tok-del,
 .clause.is-accepted ins.tok-ins {
+  background: transparent;
+  color: inherit;
+  text-decoration-color: transparent;
+}
+.clause.is-accepted del.tok-del {
   background: transparent;
   color: hsl(var(--muted-foreground));
 }
@@ -1888,8 +1894,9 @@ ins.tok-ins.tok-marker {
   font-weight: 600;
   color: hsl(var(--muted-foreground));
 }
+/* Rejected: the old wording is back as plain text, with a solid neutral edge */
 .diff-row-anchor.has-ghost .clause {
-  border-left: 2px dotted hsl(var(--muted-foreground) / 0.6);
+  border-left: 2px solid hsl(var(--muted-foreground) / 0.7);
 }
 .diff-row-anchor.has-ghost .clause.is-active {
   border-left-style: solid;
@@ -2061,7 +2068,7 @@ ins.tok-ins.tok-marker {
   stroke-width: 2.2;
 }
 .review-status.is-accepted .rs-mark { color: hsl(var(--success-ink)); }
-.review-status.is-rejected .rs-mark { color: hsl(var(--muted-foreground)); }
+.review-status.is-rejected .rs-mark { color: hsl(var(--foreground)); }
 .ra-undo {
   display: inline-flex;
   align-items: center;
@@ -2258,16 +2265,9 @@ body.tier-phone .bottom-bar .review-bar {
   justify-content: space-between;
   gap: var(--sp-2);
 }
-/* Collapses the docked list (desktop); the list button in the top bar brings it back */
-.rail-close {
-  margin-right: -8px;
-  color: hsl(var(--muted-foreground));
-}
-body:not(.tier-desktop) .rail-close {
+/* Shows and hides the docked list of changes (desktop only; tablets and phones use a sheet) */
+body:not(.tier-desktop) #btn-rail {
   display: none;
-}
-#btn-list[aria-expanded="true"] {
-  background: hsl(var(--ton-2));
 }
 .list-title {
   font-size: var(--text-title);
@@ -2353,9 +2353,11 @@ body:not(.tier-desktop) .rail-close {
 .nav-item.ins { border-left-color: hsl(var(--success)); }
 .nav-item.del { border-left-color: hsl(var(--destructive)); }
 .nav-item.moved { border-left-style: dashed; border-left-color: hsl(var(--muted-foreground) / 0.6); }
-.nav-item.is-accepted,
+.nav-item.is-accepted {
+  border-left-color: hsl(var(--success));
+}
 .nav-item.is-rejected {
-  border-left-color: hsl(var(--muted-foreground) / 0.35);
+  border-left-color: hsl(var(--muted-foreground) / 0.7);
 }
 .nav-item.is-active {
   background: hsl(var(--current-tint));
@@ -2421,7 +2423,7 @@ body:not(.tier-desktop) .rail-close {
   stroke-width: 2.4;
 }
 .nav-status.is-accepted { color: hsl(var(--success-ink)); }
-.nav-status.is-rejected { color: hsl(var(--muted-foreground)); }
+.nav-status.is-rejected { color: hsl(var(--foreground)); }
 .nav-item.is-accepted .nav-item-ref,
 .nav-item.is-rejected .nav-item-ref,
 .nav-item.is-accepted .nav-item-snippet,
@@ -3756,7 +3758,7 @@ body.list-open .toast-region {
         </div>
       </div>
 
-      <button type="button" class="btn btn-ghost tb-btn compare-only hide-phone" id="btn-list" aria-expanded="false" aria-controls="sidebar">
+      <button type="button" class="btn btn-ghost tb-btn compare-only tablet-only" id="btn-list" aria-expanded="false" aria-controls="sidebar">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         <span class="tb-label" data-i18n="mobList">Liste</span>
         <span class="tb-count" id="btn-list-count">0</span>
@@ -3810,6 +3812,7 @@ body.list-open .toast-region {
           <a class="menu-item" role="menuitem" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span data-i18n="githubMenu">Quellcode auf GitHub</span></a>
         </div>
       </div>
+      <button type="button" class="tb-icon-btn compare-only" id="btn-rail" aria-expanded="true" aria-controls="sidebar" aria-label="Änderungsliste" data-i18n-label="sidebarToggle"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg></button>
     </div>
   </header>
 
@@ -3979,7 +3982,6 @@ body.list-open .toast-region {
         <div class="sheet-grabber" aria-hidden="true"></div>
         <div class="list-title-row">
           <h2 class="list-title" id="list-title">0 Änderungen</h2>
-          <button type="button" class="tb-icon-btn rail-close" id="btn-close-rail" aria-label="Liste ausblenden" data-i18n-label="listHide"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/><path d="m8 9 3 3-3 3"/></svg></button>
           <button type="button" class="btn btn-ghost sheet-done" id="btn-close-sidebar-sheet"><span data-i18n="mobDone">Fertig</span></button>
         </div>
         <div class="list-sub">
@@ -4230,7 +4232,6 @@ const I18N = {
     hfFilterBtn: 'Kopf-/Fußzeilen ausblenden',
     hfHiddenCount: '{n} ausgeblendet',
     sidebarToggle: 'Änderungsliste',
-    listHide: 'Liste ausblenden',
     themeLabel: 'Farbschema',
     themeLight: 'Hell',
     themeDark: 'Dunkel',
@@ -4629,7 +4630,6 @@ const I18N = {
     hfFilterBtn: 'Hide headers & footers',
     hfHiddenCount: '{n} hidden',
     sidebarToggle: 'List of changes',
-    listHide: 'Hide list',
     themeLabel: 'Colour scheme',
     themeLight: 'Light',
     themeDark: 'Dark',
@@ -14090,9 +14090,8 @@ function applySidebarState() {
   const docked = currentTier === 'desktop';
   document.body.classList.toggle('sidebar-collapsed', docked && !state.sidebarOpen);
   setMenuChecked('btn-toggle-sidebar', state.sidebarOpen);
-  // On the desktop the list button in the top bar shows and hides the docked list.
-  if (docked) document.getElementById('btn-list').setAttribute('aria-expanded', String(state.sidebarOpen));
-  else if (!document.body.classList.contains('list-open')) document.getElementById('btn-list').setAttribute('aria-expanded', 'false');
+  // On the desktop the sidebar button at the right end of the top bar shows and hides the list.
+  document.getElementById('btn-rail').setAttribute('aria-expanded', String(docked && state.sidebarOpen));
   scheduleRulerDraw();
 }
 
@@ -14138,8 +14137,7 @@ function closeListSheet(returnFocus = true) {
 }
 document.getElementById('btn-list').addEventListener('click', e => {
   e.stopPropagation();
-  if (currentTier === 'desktop') toggleSidebar();
-  else if (document.body.classList.contains('list-open')) closeListSheet();
+  if (document.body.classList.contains('list-open')) closeListSheet();
   else openListSheet();
 });
 document.getElementById('mob-step').addEventListener('click', e => {
@@ -14147,11 +14145,7 @@ document.getElementById('mob-step').addEventListener('click', e => {
   openListSheet();
 });
 document.getElementById('btn-close-sidebar-sheet').addEventListener('click', () => closeListSheet());
-document.getElementById('btn-close-rail').addEventListener('click', () => {
-  if (currentTier !== 'desktop' || !state.sidebarOpen) return;
-  toggleSidebar();
-  document.getElementById('btn-list').focus({ preventScroll: true });
-});
+document.getElementById('btn-rail').addEventListener('click', () => toggleSidebar());
 document.getElementById('mobile-sheet-backdrop').addEventListener('click', () => {
   if (openMenuState) closeMenu(openMenuState.id, true);
   else closeListSheet();
