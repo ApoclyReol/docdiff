@@ -24,6 +24,9 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: blob:; manifest-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
   <meta name="referrer" content="no-referrer" />
   <meta name="color-scheme" content="light dark" />
+  <!-- Dark theme before the first paint: the app script runs only at the end of the large body, so
+       without this the page paints light first and fades its buttons and drop slots to dark. -->
+  <script>if (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');</script>
   <title>__I18N:metaTitle__</title>
   <meta name="description" content="__I18N:metaDescription__" />
   <meta name="application-name" content="Doc Diff" />

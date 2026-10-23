@@ -24,6 +24,9 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: blob:; manifest-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
   <meta name="referrer" content="no-referrer" />
   <meta name="color-scheme" content="light dark" />
+  <!-- Dark theme before the first paint: the app script runs only at the end of the large body, so
+       without this the page paints light first and fades its buttons and drop slots to dark. -->
+  <script>if (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');</script>
   <title>Doc Diff – PDF und Word vergleichen, lokal und ohne Upload</title>
   <meta name="description" content="Zwei Vertragsfassungen vergleichen, Wort für Wort markiert: PDF, Word oder Text. Läuft lokal im Browser, ohne Upload, auch offline. Kostenlos, Open Source." />
   <meta name="application-name" content="Doc Diff" />
@@ -106,7 +109,7 @@
       "sameAs": [
         "https://github.com/tschnorpfeil/docdiff"
       ],
-      "softwareVersion": "1.6.3"
+      "softwareVersion": "1.6.4"
     },
     {
       "@type": "SoftwareSourceCode",
@@ -14732,7 +14735,7 @@ window.addEventListener('DOMContentLoaded', () => {
  * entry; version 1 files (no review status) still open.
  */
 
-const DOCDIFF_APP_VERSION = '1.6.3';
+const DOCDIFF_APP_VERSION = '1.6.4';
 const SESSION_FORMAT_ID = 'docdiff-session';
 const SESSION_FORMAT_VERSION = 2;
 const SESSION_FILE_EXT = '.docdiff';
