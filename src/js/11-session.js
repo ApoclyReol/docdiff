@@ -17,7 +17,7 @@
  * entry; version 1 files (no review status) still open.
  */
 
-const DOCDIFF_APP_VERSION = '1.6.1';
+const DOCDIFF_APP_VERSION = '1.6.2';
 const SESSION_FORMAT_ID = 'docdiff-session';
 const SESSION_FORMAT_VERSION = 2;
 const SESSION_FILE_EXT = '.docdiff';
