@@ -24,8 +24,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src 'self' data: blob:; manifest-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; child-src 'none'; worker-src blob:; frame-src 'none'; form-action 'none'; base-uri 'none';" />
   <meta name="referrer" content="no-referrer" />
   <meta name="color-scheme" content="light dark" />
-  <title>Doc Diff – Compare PDF and Word documents without uploading</title>
-  <meta name="description" content="Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads." />
+  <title>Doc Diff – Compare PDF and Word files locally, without uploading</title>
+  <meta name="description" content="Compare two versions of a contract, marked word by word: PDF, Word or text. Runs locally in your browser, no upload, works offline. Free and open source." />
   <meta name="application-name" content="Doc Diff" />
   <meta name="author" content="Tobias Schnorpfeil" />
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f9f9" />
@@ -43,16 +43,16 @@
   <meta property="og:site_name" content="Doc Diff" />
   <meta property="og:locale" content="en_US" />
   <meta property="og:locale:alternate" content="de_DE" />
-  <meta property="og:title" content="Doc Diff – Compare PDF and Word documents without uploading" />
-  <meta property="og:description" content="Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads." />
+  <meta property="og:title" content="Doc Diff – Compare PDF and Word files locally, without uploading" />
+  <meta property="og:description" content="Compare two versions of a contract, marked word by word: PDF, Word or text. Runs locally in your browser, no upload, works offline. Free and open source." />
   <meta property="og:image" content="https://docdiff.app/og-image-en.png?v=1" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="2400" />
   <meta property="og:image:height" content="1260" />
   <meta property="og:image:alt" content="Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green." />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Doc Diff – Compare PDF and Word documents without uploading" />
-  <meta name="twitter:description" content="Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads." />
+  <meta name="twitter:title" content="Doc Diff – Compare PDF and Word files locally, without uploading" />
+  <meta name="twitter:description" content="Compare two versions of a contract, marked word by word: PDF, Word or text. Runs locally in your browser, no upload, works offline. Free and open source." />
   <meta name="twitter:image" content="https://docdiff.app/og-image-en.png?v=1" />
   <meta name="twitter:image:alt" content="Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green." />
 
@@ -66,7 +66,7 @@
       "@id": "https://docdiff.app/#app",
       "name": "Doc Diff",
       "url": "https://docdiff.app/en/",
-      "description": "Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads.",
+      "description": "Compare two versions of a contract, marked word by word: PDF, Word or text. Runs locally in your browser, no upload, works offline. Free and open source.",
       "applicationCategory": "BusinessApplication",
       "applicationSubCategory": "Document comparison",
       "operatingSystem": "Any (web browser)",
@@ -82,6 +82,10 @@
         "en"
       ],
       "featureList": [
+        "No upload",
+        "Works offline",
+        "Nothing stored, nothing shared",
+        "Check it yourself",
         "Compare PDFs with a text layer, Word files (.docx) and plain text – also mixed, e.g. a PDF against a Word file",
         "Show changes word by word – including changed numbers, dates and amounts",
         "Show page breaks as in the original; repeating headers and footers are left out",
@@ -1384,6 +1388,42 @@ body.is-dragging-file .drop-slot-btn {
   font-family: var(--font-mono);
   font-size: var(--text-ui-sm);
   font-weight: 700;
+}
+.local-intro {
+  max-width: 46em;
+  margin-top: 10px;
+  font-size: var(--text-doc-lg);
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+.local-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+.local-card {
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px var(--kante-200);
+}
+.local-card .icon {
+  width: 20px;
+  height: 20px;
+  color: hsl(var(--success-ink));
+}
+.local-card h3 {
+  margin-top: 10px;
+  font-size: var(--text-title);
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.local-card p {
+  margin-top: 6px;
+  font-size: var(--text-doc-lg);
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
 }
 .scope-grid {
   display: grid;
@@ -3588,6 +3628,7 @@ body.list-open .toast-region {
     padding-top: 24px;
   }
   .how-steps,
+  .local-grid,
   .scope-grid {
     grid-template-columns: 1fr;
     gap: 14px;
@@ -3898,7 +3939,7 @@ body.list-open .toast-region {
             <button type="button" class="btn-quiet btn-open-paste" id="btn-lp-paste" data-i18n="pasteText">Paste text</button>
             <button type="button" class="btn-quiet btn-open-session" id="btn-lp-session" data-i18n="sessionOpen">Open saved work…</button>
           </div>
-          <p class="landing-trust" data-i18n="trustLine">Free and open source (MIT) · No ads, no tracking, no cookies</p>
+          <p class="landing-trust" data-i18n="trustLine">No upload · Works offline · Free and open source (MIT) · No tracking</p>
         </section>
 
         <section class="landing-section" aria-labelledby="how-title">
@@ -3911,6 +3952,17 @@ body.list-open .toast-region {
         </section>
         <button type="button" class="landing-more" id="landing-more" aria-label="Learn more" data-i18n-label="landingMore"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         </div>
+
+        <section class="landing-section" id="landing-local" aria-labelledby="local-title">
+          <h2 id="local-title" data-i18n="localTitle">Your documents stay with you</h2>
+          <p class="local-intro" data-i18n="localIntro">Online comparison services upload your files to their servers. Doc Diff doesn’t: everything is read and compared in your browser. Your documents reach no server, neither ours nor anyone else’s. That makes it suitable for confidential contracts and keeps data protection (GDPR) simple.</p>
+          <div class="local-grid">
+            <div class="local-card"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><h3 data-i18n="local1Title">No upload</h3><p data-i18n="local1Text">Your browser blocks every network connection from the page (Content Security Policy). The files only live in the memory of this tab.</p></div>
+            <div class="local-card"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><path d="m2 2 20 20"/></svg><h3 data-i18n="local2Title">Works offline</h3><p data-i18n="local2Text">The whole app is a single HTML file. Download it, disconnect, keep working.</p></div>
+            <div class="local-card"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><h3 data-i18n="local3Title">Nothing stored, nothing shared</h3><p data-i18n="local3Text">No account, no cookies, no tracking, no browser storage. Close the tab and everything is gone.</p></div>
+            <div class="local-card"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><h3 data-i18n="local4Title">Check it yourself</h3><p data-i18n="local4Text">The source code is open (MIT). The Network tab of your browser’s developer tools shows no request while you compare.</p></div>
+          </div>
+        </section>
 
         <section class="landing-section" id="landing-scope" aria-labelledby="scope-title">
           <h2 id="scope-title" data-i18n="scopeTitle">What it can do – and what it can’t</h2>
@@ -4536,7 +4588,7 @@ const I18N = {
     loadSample: 'Beispiel ansehen',
     heroTitle: 'Dokumente <del class="hero-del" aria-hidden="true" data-word="mühsam"></del> <ins class="hero-ins">einfach</ins> vergleichen.',
     heroSub: 'Jede Änderung Wort für Wort markiert. Ihre Dateien verlassen nie Ihr Gerät.',
-    trustLine: 'Kostenlos und Open Source (MIT) · Keine Werbung, kein Tracking, keine Cookies',
+    trustLine: 'Kein Upload · Auch offline nutzbar · Kostenlos und Open Source (MIT) · Kein Tracking',
     slotLeftTitle: 'Alte Fassung',
     slotRightTitle: 'Neue Fassung',
     slotHint: 'PDF, Word (.docx) oder Text',
@@ -4552,6 +4604,16 @@ const I18N = {
     how2Text: 'Entferntes ist rot durchgestrichen, Neues grün markiert. Jede Änderung können Sie annehmen oder ablehnen.',
     how3Title: 'Ergebnis sichern, wenn Sie es brauchen',
     how3Text: 'Als saubere Endfassung (Word im Originalformat oder PDF) oder als Vergleich mit Änderungsverfolgung.',
+    localTitle: 'Ihre Dokumente bleiben bei Ihnen',
+    localIntro: 'Online-Vergleichsdienste laden Ihre Dateien auf ihre Server. Doc Diff nicht: Gelesen und verglichen wird nur in Ihrem Browser. Ihre Dokumente erreichen keinen Server, weder unseren noch den eines Dritten. Das macht es geeignet für vertrauliche Verträge und erleichtert den Datenschutz (DSGVO).',
+    local1Title: 'Kein Upload',
+    local1Text: 'Ihr Browser sperrt jede Netzwerkverbindung aus der Seite heraus (Content-Security-Policy). Die Dateien liegen nur im Arbeitsspeicher dieses Tabs.',
+    local2Title: 'Funktioniert offline',
+    local2Text: 'Die ganze App ist eine einzige HTML-Datei. Herunterladen, Internet trennen, weiterarbeiten.',
+    local3Title: 'Nichts gespeichert, nichts geteilt',
+    local3Text: 'Kein Konto, keine Cookies, kein Tracking, kein Speicher im Browser. Schließen Sie den Tab, ist alles weg.',
+    local4Title: 'Selbst nachprüfbar',
+    local4Text: 'Der Quellcode ist offen (MIT). Im Reiter „Netzwerk“ der Entwicklerwerkzeuge sehen Sie: Beim Vergleichen geht keine Anfrage hinaus.',
     scopeTitle: 'Was es kann – und was nicht',
     scopeCanTitle: 'Kann',
     scopeCan1: 'PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen – auch gemischt, etwa PDF mit Word',
@@ -4585,9 +4647,9 @@ const I18N = {
     faqWordA: `
               <p>Ja. Der Export „Word mit Änderungsverfolgung“ erzeugt eine .docx-Datei, in der jeder noch offene Unterschied als nachverfolgte Änderung steht. In Word oder LibreOffice können Sie die Änderungen einzeln annehmen oder ablehnen. Ist die neue Fassung eine Word-Datei, behält der Export deren Formatierung: Formatvorlagen, Nummerierung, Tabellen und Bilder bleiben erhalten. Aus PDF oder Text wird ein neu gesetztes Word-Dokument. Die Endfassung ohne Markierungen gibt es ebenso als Word-Datei.</p>
             `,
-    metaTitle: 'Doc Diff – PDF- und Word-Dokumente vergleichen, ohne Upload',
+    metaTitle: 'Doc Diff – PDF und Word vergleichen, lokal und ohne Upload',
     otherPageHint: 'Diese Seite gibt es auch auf Deutsch →',
-    metaDescription: 'Zwei Fassungen eines Vertrags oder Dokuments vergleichen: PDF, Word oder Text, Wort für Wort markiert. Kostenlos, Open Source, ohne Upload.',
+    metaDescription: 'Zwei Vertragsfassungen vergleichen, Wort für Wort markiert: PDF, Word oder Text. Läuft lokal im Browser, ohne Upload, auch offline. Kostenlos, Open Source.',
     ogImageAlt: 'Doc Diff: Zwei Vertragsfassungen nebeneinander, entfernter Text rot durchgestrichen, neuer Text grün markiert.',
     footerSource: 'Quellcode auf GitHub',
     githubMenu: 'Quellcode auf GitHub',
@@ -4934,7 +4996,7 @@ const I18N = {
     loadSample: 'View example',
     heroTitle: 'Compare documents <del class="hero-del" aria-hidden="true" data-word="by hand"></del> <ins class="hero-ins">easily</ins>.',
     heroSub: 'Every change marked word by word. Your files never leave your device.',
-    trustLine: 'Free and open source (MIT) · No ads, no tracking, no cookies',
+    trustLine: 'No upload · Works offline · Free and open source (MIT) · No tracking',
     slotLeftTitle: 'Old version',
     slotRightTitle: 'New version',
     slotHint: 'PDF, Word (.docx) or text',
@@ -4950,6 +5012,16 @@ const I18N = {
     how2Text: 'Removed text is struck through in red, added text is marked green. You can accept or reject each change.',
     how3Title: 'Save the result if you need it',
     how3Text: 'As a clean final version (Word in the original format, or PDF) or as a comparison with tracked changes.',
+    localTitle: 'Your documents stay with you',
+    localIntro: 'Online comparison services upload your files to their servers. Doc Diff doesn’t: everything is read and compared in your browser. Your documents reach no server, neither ours nor anyone else’s. That makes it suitable for confidential contracts and keeps data protection (GDPR) simple.',
+    local1Title: 'No upload',
+    local1Text: 'Your browser blocks every network connection from the page (Content Security Policy). The files only live in the memory of this tab.',
+    local2Title: 'Works offline',
+    local2Text: 'The whole app is a single HTML file. Download it, disconnect, keep working.',
+    local3Title: 'Nothing stored, nothing shared',
+    local3Text: 'No account, no cookies, no tracking, no browser storage. Close the tab and everything is gone.',
+    local4Title: 'Check it yourself',
+    local4Text: 'The source code is open (MIT). The Network tab of your browser’s developer tools shows no request while you compare.',
     scopeTitle: 'What it can do – and what it can’t',
     scopeCanTitle: 'Can',
     scopeCan1: 'Compare PDFs with a text layer, Word files (.docx) and plain text – also mixed, e.g. a PDF against a Word file',
@@ -4983,9 +5055,9 @@ const I18N = {
     faqWordA: `
               <p>Yes. The “Word with tracked changes” export creates a .docx file in which every difference that is still open is a tracked change. In Word or LibreOffice you can accept or reject each change. When the new version is a Word file, the export keeps its formatting: styles, numbering, tables and images stay as they were. From a PDF or text, a newly typeset Word document is created. The final version without marks is available as a Word file, too.</p>
             `,
-    metaTitle: 'Doc Diff – Compare PDF and Word documents without uploading',
+    metaTitle: 'Doc Diff – Compare PDF and Word files locally, without uploading',
     otherPageHint: 'This page is also available in English →',
-    metaDescription: 'Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads.',
+    metaDescription: 'Compare two versions of a contract, marked word by word: PDF, Word or text. Runs locally in your browser, no upload, works offline. Free and open source.',
     ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green.',
     footerSource: 'Source code on GitHub',
     githubMenu: 'Source code on GitHub',
