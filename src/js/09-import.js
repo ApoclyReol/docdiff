@@ -395,7 +395,8 @@ function prefixFirstText(element, prefix) {
 }
 
 async function extractDocxText(arrayBuffer) {
-  if (!window.mammoth || typeof window.mammoth.convertToHtml !== 'function') {
+  const mammoth = startEmbeddedLibrary('lib-mammoth', 'mammoth');
+  if (!mammoth || typeof mammoth.convertToHtml !== 'function') {
     throw new ImportError('errUnsupportedType');
   }
 

@@ -375,6 +375,8 @@ function applySidebarState() {
   const docked = currentTier === 'desktop';
   document.body.classList.toggle('sidebar-collapsed', docked && !state.sidebarOpen);
   setMenuChecked('btn-toggle-sidebar', state.sidebarOpen);
+  // On the desktop the sidebar button at the right end of the top bar shows and hides the list.
+  document.getElementById('btn-rail').setAttribute('aria-expanded', String(docked && state.sidebarOpen));
   scheduleRulerDraw();
 }
 
@@ -428,6 +430,7 @@ document.getElementById('mob-step').addEventListener('click', e => {
   openListSheet();
 });
 document.getElementById('btn-close-sidebar-sheet').addEventListener('click', () => closeListSheet());
+document.getElementById('btn-rail').addEventListener('click', () => toggleSidebar());
 document.getElementById('mobile-sheet-backdrop').addEventListener('click', () => {
   if (openMenuState) closeMenu(openMenuState.id, true);
   else closeListSheet();

@@ -295,6 +295,23 @@ function hideCompareStatus() {
   compareStatus.el.classList.remove('is-visible', 'is-done');
 }
 
+/* ── Readers that start on first use ──────────────────────────────────────
+ * PDF.js and Mammoth (about 1 MB of JavaScript) ship as non-executed text and are started the
+ * first time a file of that type is read, so opening the page does not wait for them. An inserted
+ * inline script runs at once and is allowed by the page's script-src 'unsafe-inline'. */
+function startEmbeddedLibrary(id, globalName) {
+  if (!window[globalName]) {
+    const srcEl = document.getElementById(id);
+    if (srcEl && srcEl.textContent.trim()) {
+      const script = document.createElement('script');
+      script.textContent = srcEl.textContent;
+      document.head.appendChild(script);
+      srcEl.textContent = '';
+    }
+  }
+  return window[globalName] || null;
+}
+
 /* ── PDF.js in a real worker ────────────────────────────────────────────── */
 
 // The PDF.js worker source ships in a non-executed <script type="text/plain"> element. It is
@@ -305,7 +322,7 @@ let pdfJsWorkerSetup = null;
 function ensurePdfJsWorker() {
   if (pdfJsWorkerSetup) return pdfJsWorkerSetup;
   pdfJsWorkerSetup = new Promise(resolve => {
-    const lib = window.pdfjsLib;
+    const lib = startEmbeddedLibrary('lib-pdfjs', 'pdfjsLib');
     const srcEl = document.getElementById('pdfjs-worker-source');
     if (!lib || !srcEl) {
       resolve();

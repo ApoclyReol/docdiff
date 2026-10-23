@@ -216,6 +216,10 @@ for (const page of [
   assert.ok(!/<script>/.test(head), `${where}: executable scripts must not sit in <head>`);
   assert.ok(firstScript > html.indexOf('id="faq-title"'), `${where}: scripts must follow the landing content`);
   assert.ok(html.indexOf('id="pdfjs-worker-source"') > bodyStart, `${where}: PDF.js worker source must be present`);
+  // PDF.js and Mammoth are embedded but only started when a PDF or Word file is first read.
+  for (const id of ['lib-pdfjs', 'lib-mammoth']) {
+    assert.ok(new RegExp(`<script type="text/plain" id="${id}">`).test(html) && html.indexOf(`id="${id}"`) > bodyStart, `${where}: ${id} must be embedded as non-executed text`);
+  }
 
   // Static landing text is rendered in the page language from i18n (what crawlers and no-JS visitors see)
   let rendered = 0;

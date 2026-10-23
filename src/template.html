@@ -285,6 +285,7 @@ __APP_CSS__
           <a class="menu-item" role="menuitem" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span data-i18n="githubMenu">Quellcode auf GitHub</span></a>
         </div>
       </div>
+      <button type="button" class="tb-icon-btn compare-only" id="btn-rail" aria-expanded="true" aria-controls="sidebar" aria-label="Änderungsliste" data-i18n-label="sidebarToggle"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg></button>
     </div>
   </header>
 
@@ -322,6 +323,7 @@ __APP_CSS__
          and the app re-translates it at runtime. The German text below is only a readable placeholder. -->
     <div class="empty-launchpad landing" id="empty-launchpad">
       <div class="landing-inner">
+        <div class="landing-first">
         <p class="lang-hint" id="lang-hint" hidden><a id="lang-hint-link" href="./"></a></p>
         <section class="landing-hero" aria-labelledby="landing-title">
           <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n-html="heroTitle">Dokumente <del class="hero-del" aria-hidden="true" data-word="mühsam"></del> <ins class="hero-ins">einfach</ins> vergleichen.</h1>
@@ -376,8 +378,10 @@ __APP_CSS__
             <li><span class="how-num" aria-hidden="true">3</span><span><strong data-i18n="how3Title">Ergebnis sichern, wenn Sie es brauchen</strong> <span data-i18n="how3Text">Als Word-Datei mit markierten Änderungen, als PDF oder als Bericht speichern.</span></span></li>
           </ol>
         </section>
+        <button type="button" class="landing-more" id="landing-more" aria-label="Mehr erfahren" data-i18n-label="landingMore"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
 
-        <section class="landing-section" aria-labelledby="scope-title">
+        <section class="landing-section" id="landing-scope" aria-labelledby="scope-title">
           <h2 id="scope-title" data-i18n="scopeTitle">Was es kann – und was nicht</h2>
           <div class="scope-grid">
             <div class="scope-col scope-can">
@@ -572,15 +576,17 @@ __APP_CSS__
     </div>
   </dialog>
   <!-- Inlined libraries (PDF.js + PDF.js worker + Mammoth DOCX + jsdiff) and the app.
-       They sit at the end of <body> so the static landing page above renders first. -->
-  <script>
+       They sit at the end of <body> so the static landing page above renders first.
+       PDF.js and Mammoth are not executed here: they start the first time a PDF or Word file is
+       read (startEmbeddedLibrary), so opening the page does not wait for ~1 MB of JavaScript. -->
+  <script type="text/plain" id="lib-pdfjs">
 __PDF_JS__
   </script>
   <!-- Not executed here: started as a Blob Web Worker on first PDF import (ensurePdfJsWorker) -->
   <script type="text/plain" id="pdfjs-worker-source">
 __PDF_WORKER_JS__
   </script>
-  <script>
+  <script type="text/plain" id="lib-mammoth">
 __MAMMOTH_JS__
   </script>
   <script>
