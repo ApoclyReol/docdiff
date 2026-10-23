@@ -130,6 +130,16 @@ for (const doc of ['README.md', 'SECURITY.md']) {
 assert.ok(appJsCode.includes('isEvalSupported: false'), 'PDF.js getDocument() must pass isEvalSupported: false');
 
 // 5. Verify site legal and domain files for docdiff.app
+// Side by side, both versions must have exactly the same text width, or unchanged paragraphs
+// wrap differently: same right gutter for clauses, same scrollbar gutter, no space-taking divider.
+{
+  const css = fs.readFileSync(path.join(root, 'src', 'styles.css'), 'utf8');
+  const rule = sel => (css.match(new RegExp(`(^|\\n)${sel.replace(/[.#]/g, '\\$&')} \\{([^}]*)\\}`)) || [])[2] || '';
+  assert.match(css, /#sheet-left \.clause,\s*#sheet-right \.clause,\s*#sheet-unified \.clause \{\s*padding-right: var\(--rv-gutter\);/, 'left and right clauses share the review gutter');
+  assert.match(css, /\.doc-pane-left,\s*\.doc-pane-right \{\s*scrollbar-gutter: stable;/, 'both panes reserve the same scrollbar gutter');
+  assert.ok(!/scrollbar-width: none|border-(left|right)/.test(rule('.doc-pane-left') + rule('.doc-pane-right')), 'no hidden scrollbar or border that narrows one pane');
+}
+
 for (const siteFile of ['CNAME', 'og-image.png', 'og-image-en.png', 'impressum.html', 'datenschutz.html', 'legal.css', 'robots.txt', 'sitemap.xml', '.nojekyll']) {
   const p = path.join(root, 'site', siteFile);
   assert.ok(fs.existsSync(p), `Missing required site file: site/${siteFile}`);

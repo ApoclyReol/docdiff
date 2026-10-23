@@ -1321,16 +1321,23 @@ body:not(.view-inline) #pane-unified {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--input)) transparent;
 }
+/* Both versions get exactly the same text width, so unchanged paragraphs wrap identically:
+   the left pane keeps an invisible scrollbar of the same width (it scrolls in sync with the
+   right one), and the divider is drawn without taking up space. */
+.doc-pane-left,
+.doc-pane-right {
+  scrollbar-gutter: stable;
+}
 .doc-pane-left {
   padding-right: var(--sp-4);
-  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
 }
-.doc-pane-left::-webkit-scrollbar {
-  display: none;
+.doc-pane-left::-webkit-scrollbar-thumb {
+  background: transparent;
 }
 .doc-pane-right {
   padding-left: var(--sp-4);
-  border-left: 1px solid hsl(var(--border));
+  box-shadow: inset 1px 0 0 hsl(var(--border));
 }
 .doc-pane:focus-visible,
 .doc-pane-unified:focus-visible {
@@ -1727,6 +1734,7 @@ ins.tok-ins.tok-marker {
     --rv-gutter: 54px;
   }
 }
+#sheet-left .clause,
 #sheet-right .clause,
 #sheet-unified .clause {
   padding-right: var(--rv-gutter);
