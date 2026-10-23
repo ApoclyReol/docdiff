@@ -846,7 +846,7 @@ body.is-comparing .empty-launchpad {
 .landing-more {
   display: none;
 }
-@media (min-width: 768px) and (min-height: 640px) {
+@media (min-width: 768px) and (min-height: 760px) {
   .landing-inner {
     padding-top: 0;
   }
@@ -889,8 +889,9 @@ body.is-comparing .empty-launchpad {
     stroke-width: 2;
   }
 }
-/* Laptop screens (768–860px high): a tighter first screen so the arrow stays visible */
-@media (min-width: 768px) and (min-height: 640px) and (max-height: 860px) {
+/* Lower windows (760–860px): a tighter first screen so the arrow stays visible. Below 760px the
+   first screen cannot hold the hero and "How it works", so the page stays a plain flow. */
+@media (min-width: 768px) and (min-height: 760px) and (max-height: 860px) {
   .landing-first > .landing-hero {
     padding: 20px 0;
   }
