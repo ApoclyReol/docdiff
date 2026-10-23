@@ -325,12 +325,7 @@ __APP_CSS__
         <p class="lang-hint" id="lang-hint" hidden><a id="lang-hint-link" href="./"></a></p>
         <section class="landing-hero" aria-labelledby="landing-title">
           <h1 class="landing-title" id="landing-title" tabindex="-1" data-i18n-html="heroTitle">Dokumente <del class="hero-del" aria-hidden="true" data-word="mühsam"></del> <ins class="hero-ins">einfach</ins> vergleichen.</h1>
-          <p class="landing-sub" data-i18n="heroSub">PDF, Word oder Text: Jede Änderung wird Wort für Wort markiert. Ihre Dateien verlassen dabei nie Ihren Computer.</p>
-          <ul class="trust-list">
-            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustFree">Kostenlos &amp; Open Source (MIT)</span></li>
-            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustLocal">Keine Uploads – alles läuft lokal im Browser</span></li>
-            <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="trustNoTracking">Keine Werbung, kein Tracking, keine Cookies</span></li>
-          </ul>
+          <p class="landing-sub" data-i18n="heroSub">Jede Änderung Wort für Wort markiert. Ihre Dateien verlassen nie Ihr Gerät.</p>
 
           <div class="drop-slots">
           <div class="drop-slot" id="lp-slot-left" data-side="left">
@@ -339,10 +334,9 @@ __APP_CSS__
                 <span class="drop-slot-num" aria-hidden="true">1</span>
                 <span class="drop-slot-title" id="lp-left-title" data-i18n="slotLeftTitle">Alte Fassung</span>
               </span>
-              <span class="drop-slot-hint" id="lp-left-hint" data-i18n="slotHint">PDF (mit Text), Word (.docx), Text</span>
+              <span class="drop-slot-hint" id="lp-left-hint"></span>
               <span class="drop-slot-cta">
                 <span class="drop-slot-cta-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span id="lp-left-cta" data-i18n="slotChoose">Datei wählen</span></span>
-                <span class="drop-slot-drag fine-pointer-only" data-i18n="slotDrag">oder hierher ziehen</span>
               </span>
             </button>
             <button type="button" class="drop-slot-clear" id="lp-clear-left" hidden aria-label="Alte Fassung entfernen" data-i18n-label="slotClearLeft"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
@@ -353,31 +347,25 @@ __APP_CSS__
                 <span class="drop-slot-num" aria-hidden="true">2</span>
                 <span class="drop-slot-title" id="lp-right-title" data-i18n="slotRightTitle">Neue Fassung</span>
               </span>
-              <span class="drop-slot-hint" id="lp-right-hint" data-i18n="slotHint">PDF (mit Text), Word (.docx), Text</span>
+              <span class="drop-slot-hint" id="lp-right-hint"></span>
               <span class="drop-slot-cta">
                 <span class="drop-slot-cta-btn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span id="lp-right-cta" data-i18n="slotChoose">Datei wählen</span></span>
-                <span class="drop-slot-drag fine-pointer-only" data-i18n="slotDrag">oder hierher ziehen</span>
               </span>
             </button>
             <button type="button" class="drop-slot-clear" id="lp-clear-right" hidden aria-label="Neue Fassung entfernen" data-i18n-label="slotClearRight"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
           </div>
           </div>
-          <p class="drop-both-hint fine-pointer-only" data-i18n="dropBothHint">Sie können auch beide Dateien auf einmal hierher ziehen – die erste gilt als alte Fassung.</p>
+          <p class="landing-formats"><span data-i18n="slotHint">PDF, Word (.docx) oder Text</span><span class="fine-pointer-only" data-i18n="slotDrag"> · Dateien auch hierher ziehen</span></p>
 
           <div class="landing-secondary">
             <button type="button" class="btn btn-load-sample" id="btn-lp-sample">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
               <span data-i18n="loadSample">Beispiel ansehen</span>
             </button>
-            <button type="button" class="btn btn-open-paste" id="btn-lp-paste">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <span data-i18n="pasteText">Text einfügen</span>
-            </button>
-            <button type="button" class="btn btn-open-session" id="btn-lp-session">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
-              <span data-i18n="sessionOpen">Arbeitsstand öffnen…</span>
-            </button>
+            <button type="button" class="btn-quiet btn-open-paste" id="btn-lp-paste" data-i18n="pasteText">Text einfügen</button>
+            <button type="button" class="btn-quiet btn-open-session" id="btn-lp-session" data-i18n="sessionOpen">Arbeitsstand öffnen…</button>
           </div>
+          <p class="landing-trust" data-i18n="trustLine">Kostenlos und Open Source (MIT) · Keine Werbung, kein Tracking, keine Cookies</p>
         </section>
 
         <section class="landing-section" aria-labelledby="how-title">

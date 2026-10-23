@@ -312,8 +312,8 @@ function updateLandingSlots(left, right) {
     } else {
       titleEl.setAttribute('data-i18n', titleKey);
       titleEl.textContent = t(titleKey);
-      hintEl.setAttribute('data-i18n', 'slotHint');
-      hintEl.textContent = t('slotHint');
+      // The formats are named once, under both slots.
+      hintEl.textContent = '';
       ctaEl.setAttribute('data-i18n', 'slotChoose');
       ctaEl.textContent = t('slotChoose');
     }

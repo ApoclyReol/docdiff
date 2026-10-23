@@ -436,6 +436,8 @@ function syncStatusTabStops() {
  * One place only: a compact column of three icon buttons (accept, reject, edit) in the right
  * margin of the current paragraph of the new version (or of the stacked view). Every
  * paragraph there keeps that margin free, so selecting a paragraph never moves any text.
+ * On phones the margin would cost too much of the narrow text column: the buttons sit in a
+ * row just above the bottom bar instead, within reach of the thumb.
  */
 
 // Created on first use (the module is also loaded without a DOM by the export tests).
@@ -450,6 +452,13 @@ function getReviewBar() {
   reviewBar.addEventListener('dblclick', e => e.stopPropagation());
   // Roving focus inside the group: one tab stop, arrow keys move between the buttons.
   reviewBar.addEventListener('keydown', e => handleRovingKeys(e, reviewBar));
+  // In the panes, clicks are handled by the pane; above the bottom bar, here.
+  reviewBar.addEventListener('click', e => {
+    const btn = e.target.closest('[data-review-action]');
+    if (!btn || !reviewBar.closest('.bottom-bar')) return;
+    e.stopPropagation();
+    runReviewAction(btn.getAttribute('data-review-action'), false);
+  });
   return reviewBar;
 }
 
@@ -461,11 +470,15 @@ const ICON_CHECK = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><pa
 const ICON_X = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 const ICON_EDIT = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
 
-// Icon buttons: accept / reject for an open change, edit for any paragraph of the new version.
-function reviewActionsHtml(item) {
+// Icon buttons: accept / reject for an open change, edit for any paragraph of the new version;
+// with `withUndo` (phones, where the margin has no undo button) also undo for a reviewed one.
+function reviewActionsHtml(item, withUndo = false) {
   const btn = (action, icon, label, title, key, cls) =>
-    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" aria-label="${escapeHtml(label)}" aria-keyshortcuts="${key}" data-tooltip="${escapeHtml(title)}" tabindex="-1">${icon}</button>`;
+    `<button type="button" class="ra-btn ${cls}" data-review-action="${action}" aria-label="${escapeHtml(label)}" ${key ? `aria-keyshortcuts="${key}" ` : ''}data-tooltip="${escapeHtml(title)}" tabindex="-1">${icon}<span class="ra-label" aria-hidden="true">${escapeHtml(label)}</span></button>`;
   const edit = btn('edit', ICON_EDIT, t('editBtn'), t('editTitle'), 'E', 'ra-edit');
+  if (withUndo && item && item.status !== 'open') {
+    return rovingFirst(btn('reopen', ICON_UNDO, t('reopenBtn'), t('reopenTitle'), '', 'ra-reopen') + edit);
+  }
   if (item && item.status === 'open') {
     return rovingFirst(
       btn('accept', ICON_CHECK, t('acceptBtn'), t('acceptTitle'), 'A', 'ra-accept') +
@@ -513,15 +526,18 @@ function placeReviewBar() {
   }
   const bar = getReviewBar();
   const item = getActiveItem();
+  const phone = document.body.classList.contains('tier-phone');
+  const barHost = phone ? document.getElementById('mobile-bottom-bar') : host;
   const hadFocus = bar.contains(document.activeElement);
   const focusedAction = hadFocus ? document.activeElement.getAttribute('data-review-action') : null;
-  bar.innerHTML = reviewActionsHtml(item);
+  bar.innerHTML = reviewActionsHtml(item, phone);
+  bar.setAttribute('aria-orientation', phone ? 'horizontal' : 'vertical');
   bar.setAttribute(
     'aria-label',
     item ? formatMsg('reviewBarLabel', { i: item.index, n: state.listItems.length }) : t('paraActionsLabel')
   );
   const buttons = bar.querySelectorAll('button');
-  if (bar.parentElement !== host) host.appendChild(bar);
+  if (bar.parentElement !== barHost) barHost.appendChild(bar);
   const request = reviewFocusRequest;
   reviewFocusRequest = null;
   let target = null;
