@@ -18,11 +18,18 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify security and standalone invariants
-        run: node scripts/check.mjs
+      - name: Build and verify that the committed bundle is current
+        run: |
+          python3 scripts/build.py
+          node scripts/check.mjs
+          git diff --exit-code site DocDiff.html
+          test -z "$(git status --porcelain -- site DocDiff.html)" || { git status --short -- site DocDiff.html; echo "Commit the rebuilt files"; exit 1; }
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

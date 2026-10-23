@@ -24,4 +24,5 @@ jobs:
         run: |
           python3 scripts/build.py
           node scripts/check.mjs
-          git diff --exit-code site/index.html DocDiff.html
+          git diff --exit-code site DocDiff.html
+          test -z "$(git status --porcelain -- site DocDiff.html)" || { git status --short -- site DocDiff.html; echo "Commit the rebuilt files"; exit 1; }

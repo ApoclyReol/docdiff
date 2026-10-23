@@ -1,0 +1,40 @@
+name: Release
+
+# Pushing a tag like v1.5.0 builds the bundle, verifies it, and publishes a
+# GitHub release with DocDiff.html attached. Release notes are read from
+# docs/releases/<tag>.md (title on the first line as "# <title>").
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and verify standalone bundle
+        run: |
+          python3 scripts/build.py
+          node scripts/check.mjs
+          git diff --exit-code site DocDiff.html
+          test -z "$(git status --porcelain -- site DocDiff.html)" || { git status --short -- site DocDiff.html; echo "Commit the rebuilt files"; exit 1; }
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          notes="docs/releases/${TAG}.md"
+          test -f "$notes" || { echo "Missing $notes"; exit 1; }
+          title="$(head -n 1 "$notes" | sed 's/^# *//')"
+          tail -n +2 "$notes" > /tmp/notes.md
+          gh release create "$TAG" DocDiff.html --title "$title" --notes-file /tmp/notes.md --verify-tag
