@@ -153,7 +153,7 @@ def json_ld(template: str, lang: str, strings: dict, version: str) -> str:
     page = PAGES[lang]
     license_url = REPO_URL + "/blob/main/LICENSE"
     author = {"@type": "Person", "name": "Tobias Schnorpfeil", "url": "https://github.com/tschnorpfeil"}
-    features = re.findall(r'data-i18n="(scopeCan\d+)"', template)
+    features = re.findall(r'data-i18n="(local\dTitle|scopeCan\d+)"', template)
     faq_keys = re.findall(r'<summary data-i18n="(faq\w+)Q"', template)
     app = {
         "@type": "WebApplication",

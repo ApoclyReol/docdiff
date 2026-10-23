@@ -172,7 +172,7 @@ for (const page of [
   const strings = I18N[lang];
   const bodyStart = html.indexOf('<body');
   const head = html.slice(0, bodyStart);
-  const firstScript = html.indexOf('<script>');
+  const firstScript = html.indexOf('<script>', bodyStart);
   const staticMarkup = html.slice(bodyStart, firstScript);
 
   // Security invariants hold for every page, with the same CSP.
@@ -213,7 +213,9 @@ for (const page of [
   }
 
   // Performance: the landing markup comes before the ~2.5 MB of inline scripts
-  assert.ok(!/<script>/.test(head), `${where}: executable scripts must not sit in <head>`);
+  // The one exception is the tiny theme switch that sets dark mode before the first paint.
+  const headScripts = head.match(/<script>[\s\S]*?<\/script>/g) || [];
+  assert.ok(headScripts.length <= 1 && headScripts.every(s => s.length < 300), `${where}: only the small theme script may sit in <head>`);
   assert.ok(firstScript > html.indexOf('id="faq-title"'), `${where}: scripts must follow the landing content`);
   assert.ok(html.indexOf('id="pdfjs-worker-source"') > bodyStart, `${where}: PDF.js worker source must be present`);
   // PDF.js and Mammoth are embedded but only started when a PDF or Word file is first read.

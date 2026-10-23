@@ -1207,6 +1207,42 @@ body.is-dragging-file .drop-slot-btn {
   font-size: var(--text-ui-sm);
   font-weight: 700;
 }
+.local-intro {
+  max-width: 46em;
+  margin-top: 10px;
+  font-size: var(--text-doc-lg);
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+.local-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+.local-card {
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: hsl(var(--card));
+  box-shadow: inset 0 0 0 1px var(--kante-200);
+}
+.local-card .icon {
+  width: 20px;
+  height: 20px;
+  color: hsl(var(--success-ink));
+}
+.local-card h3 {
+  margin-top: 10px;
+  font-size: var(--text-title);
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.local-card p {
+  margin-top: 6px;
+  font-size: var(--text-doc-lg);
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
 .scope-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -3410,6 +3446,7 @@ body.list-open .toast-region {
     padding-top: 24px;
   }
   .how-steps,
+  .local-grid,
   .scope-grid {
     grid-template-columns: 1fr;
     gap: 14px;
