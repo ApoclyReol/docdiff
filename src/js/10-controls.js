@@ -367,7 +367,8 @@ function applyLayoutTier(initial) {
   // Phones show one column only.
   if (tier === 'phone' && state.viewMode !== 'inline') setViewMode('inline');
   else if (!initial && prev === 'phone' && !state.viewModeChosen) setViewMode(initialInline && tier !== 'desktop' ? 'inline' : 'split');
-  applySidebarState();
+  applySidebarState();  // The review buttons sit in the paragraph margin, or above the bottom bar on phones.
+  if (!initial && typeof placeReviewBar === 'function') placeReviewBar();
 }
 
 function applySidebarState() {
