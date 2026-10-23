@@ -270,7 +270,7 @@ let groups = 0;
 // 8. Saved work: version 2 carries the review status; version 1 files still open.
 {
   const session = read('11-session.js');
-  const ctx = {};
+  const ctx = { atob };
   vm.createContext(ctx);
   const consts = session.split('\n').filter(l => /^const (SESSION_|REVIEW_TYPES).*;$/.test(l)).join('\n');
   const start = session.indexOf('class SessionFileError');
@@ -320,6 +320,14 @@ let groups = 0;
   bad({ ...v2, reviews: [{ ...rejected, pageNum: 0 }] });
   bad({ ...v2, reviews: [{ ...rejected, leftText: 5 }] });
   bad({ ...v2, reviews: 'x' });
+  // The original .docx of a side travels along (Word export in the original format).
+  const withSource = side => ({ ...v2, documents: { ...v2.documents, [side]: { ...v2.documents[side], source: { kind: 'docx', data: 'UEsDBA==', importedText: 'B' } } } });
+  const rs = ok(withSource('right'));
+  assert.deepEqual([...rs.right.source.bytes], [0x50, 0x4b, 3, 4], 'source bytes decoded');
+  assert.equal(rs.right.source.name, 'b', 'source belongs to its document');
+  assert.equal(rs.left.source, null, 'no source on the other side');
+  bad({ ...withSource('left'), documents: { ...v2.documents, left: { ...v2.documents.left, source: { kind: 'pdf', data: '', importedText: '' } } } });
+  bad({ ...withSource('left'), documents: { ...v2.documents, left: { ...v2.documents.left, source: { kind: 'docx', data: 'no base64!', importedText: '' } } } });
   assert.equal(({}).status, undefined, 'no prototype pollution');
   groups++;
 }

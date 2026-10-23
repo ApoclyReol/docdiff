@@ -54,11 +54,28 @@ const I18N = {
     listBtnLabel: 'Änderungsliste ({n} Änderungen)',
     exportBtn: 'Exportieren',
     expWord: 'Word mit Änderungsverfolgung (.docx)',
-    expPdf: 'Drucken oder als PDF sichern',
     expHtml: 'Bericht als Webseite (.html)',
     expMd: 'Bericht als Markdown (.md)',
     expCopy: 'Text der neuen Fassung kopieren',
-    expTxt: 'Neue Fassung als Textdatei (.txt)',
+    expTxt: 'Endfassung als Textdatei (.txt)',
+    expSecFinal: 'Endfassung',
+    expSecFinalDesc: 'Neue Fassung mit Ihren Entscheidungen, ohne Markierungen',
+    expSecFinalOpen: 'Neue Fassung mit Ihren Entscheidungen – {n} offene Änderungen sind wie angenommen enthalten',
+    expSecFinalOpenOne: 'Neue Fassung mit Ihren Entscheidungen – 1 offene Änderung ist wie angenommen enthalten',
+    expSecCompare: 'Vergleich',
+    expSecCompareDesc: 'Alt → neu mit allen Markierungen, zum Prüfen oder Weitergeben',
+    expWordFinal: 'Word (.docx)',
+    expWordFinalDescOriginal: 'Im Format Ihrer Datei „{name}“',
+    expWordFinalDescNew: 'Neu gesetzt, mit Überschriften und Nummerierung',
+    expPdfFinal: 'PDF',
+    expPdfFinalDesc: 'Sauberes Dokument, im Druckdialog „Als PDF sichern“',
+    expCopyDesc: 'Reiner Text für E-Mail oder andere Programme',
+    expWordDesc: 'Offene Änderungen in Word annehmen oder ablehnen',
+    expWordDescOriginal: 'Im Format von „{name}“, offene Änderungen in Word annehmen oder ablehnen',
+    expPdfSplit: 'PDF nebeneinander',
+    expPdfSplitDesc: 'Querformat, alte und neue Fassung in zwei Spalten',
+    expPdfInline: 'PDF als Fließtext',
+    expPdfInlineDesc: 'Hochformat, Änderungen im Text markiert',
     moreLabel: 'Weitere Aktionen',
     clearBtn: 'Neuer Vergleich',
     textBtn: 'Text einfügen/bearbeiten',
@@ -77,6 +94,8 @@ const I18N = {
 
     // ── Toasts & announcements ───────────────────────────────────────────
     toastWord: 'Word-Datei gespeichert: {name}',
+    toastWordOriginal: 'Word-Datei im Originalformat gespeichert: {name}',
+    noticeWordFallback: 'Gespeichert: {name}. Das Originalformat ließ sich für diese Datei nicht sicher übernehmen (z. B. wegen Änderungen in Fußnoten oder Textfeldern). Die Word-Datei wurde deshalb neu gesetzt; der Text ist vollständig.',
     toastHtml: 'Bericht gespeichert: {name}',
     toastMd: 'Markdown-Bericht gespeichert: {name}',
     toastTxt: 'Textdatei gespeichert: {name}',
@@ -87,7 +106,7 @@ const I18N = {
     toastUndo: 'Rückgängig',
     toastUndone: 'Rückgängig gemacht',
     toastRedone: 'Wiederhergestellt',
-    copyFailed: 'Kopieren in die Zwischenablage ist hier nicht möglich. Bitte nutzen Sie stattdessen „Neue Fassung als Textdatei (.txt)“ unter „Weitere Formate“.',
+    copyFailed: 'Kopieren in die Zwischenablage ist hier nicht möglich. Bitte nutzen Sie stattdessen „Endfassung als Textdatei (.txt)“ unter „Weitere Formate“.',
     announceCompared: 'Vergleich fertig: {n} Änderungen. Mit J und K springen Sie von Änderung zu Änderung.',
     announceComparedOne: 'Vergleich fertig: 1 Änderung.',
     announceIdentical: 'Vergleich fertig: keine Textunterschiede.',
@@ -140,6 +159,7 @@ const I18N = {
     movedFromHere: 'Verschoben – von hier',
     movedToHere: 'Verschoben – hierher',
     moreDeltas: 'weitere Änderungen',
+    moreDeltasOne: 'weitere Änderung',
     pageLabel: 'Seite',
     pageShort: 'S.',
     pageOf: 'von',
@@ -179,7 +199,11 @@ const I18N = {
       </section>
       <section class="help-sec">
         <h3>Prüfen</h3>
-        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft, springen zur nächsten offenen Änderung und Ein geprüfter Absatz trägt rechts ein ✓ oder ✗; der Pfeil darunter (<strong>Rückgängig</strong>) nimmt die Prüfung zurück. Im Word-Export sind angenommene Änderungen übernommen, abgelehnte zurückgenommen und offene als nachverfolgte Änderungen eingetragen.</p>
+        <p><strong>Annehmen</strong> behält die neue Fassung, <strong>Ablehnen</strong> stellt für diesen Absatz die alte Fassung wieder her. Die Symbole <strong>✓</strong> (annehmen), <strong>✗</strong> (ablehnen) und <strong>✎</strong> (bearbeiten) stehen oben rechts am aktuellen Absatz. Annehmen und Ablehnen markieren die Änderung als geprüft und springen zur nächsten offenen Änderung. Ein geprüfter Absatz trägt rechts ein ✓ oder ✗; der Pfeil darunter (<strong>Rückgängig</strong>) nimmt die Prüfung zurück.</p>
+      </section>
+      <section class="help-sec">
+        <h3>Exportieren</h3>
+        <p><strong>Endfassung</strong>: die neue Fassung mit allen Entscheidungen und Bearbeitungen, ohne Markierungen – als Word-Datei (bei einer Word-Datei als neuer Fassung in deren Originalformat), als PDF oder als Text. Noch offene Änderungen sind darin wie angenommen enthalten. <strong>Vergleich</strong>: alt → neu mit Markierungen – als Word-Datei mit Änderungsverfolgung (angenommene Änderungen übernommen, abgelehnte zurückgenommen, offene zum Annehmen oder Ablehnen) oder als PDF nebeneinander bzw. als Fließtext.</p>
       </section>
       <section class="help-sec">
         <h3>Tastenkürzel</h3>
@@ -268,6 +292,7 @@ const I18N = {
     exportTitleFmt: 'Vergleich: {left} → {right}',
     exportVs: 'vs.',
     exportCountsFmt: '{total} Änderungen ({mod} geändert, {ins} hinzugefügt, {del} entfernt)',
+    exportCountsFmtOne: '1 Änderung ({mod} geändert, {ins} hinzugefügt, {del} entfernt)',
     exportReviewFmt: '{k} von {n} geprüft ({a} angenommen, {r} abgelehnt)',
     exportLabelOriginal: 'Alte Fassung',
     exportLabelRevised: 'Neue Fassung',
@@ -279,9 +304,9 @@ const I18N = {
     exportLabelDetail: 'Angabe',
     exportScopeFull: 'Vollständiges Dokument',
     exportScopeChanges: 'Nur Änderungen (Filter „Nur Änderungen“ aktiv, unveränderte Absätze ausgelassen)',
-    exportHfIgnored: 'ausgeblendet (nicht verglichen)',
-    exportHfIgnoredCount: 'ausgeblendet ({n} Zeilen nicht verglichen)',
-    exportHfIncluded: 'mitverglichen',
+    exportHfIgnored: 'unveränderte ausgeblendet; geänderte sind als Änderung aufgeführt',
+    exportHfIgnoredCount: '{n} unveränderte Zeilen ausgeblendet; geänderte sind als Änderung aufgeführt',
+    exportHfIncluded: 'vollständig mitverglichen',
     exportSummaryHeading: 'Zusammenfassung',
     exportCountTotal: 'Änderungen gesamt',
     exportChangesHeading: 'Änderungsübersicht',
@@ -302,8 +327,10 @@ const I18N = {
     a11yAddedStart: '[hinzugefügt:',
     a11yAddedEnd: ']',
     docxSubject: 'Vergleich mit nachverfolgten Änderungen',
-    docxNote: 'Offene Abweichungen sind als nachverfolgte Änderungen (Autor „Doc Diff“) eingetragen. In Doc Diff angenommene Änderungen sind bereits übernommen, abgelehnte bereits zurückgenommen. In Word unter „Überprüfen“ einzeln oder alle auf einmal annehmen bzw. ablehnen.',
-    exportFileFinal: 'Neue_Fassung',
+    docxSubjectFinal: 'Endfassung',
+    docxNote: 'Offene Änderungen sind als nachverfolgte Änderungen (Autor „Doc Diff“) eingetragen, angenommene bereits übernommen, abgelehnte zurückgenommen. In Word unter „Überprüfen“ einzeln oder alle auf einmal annehmen bzw. ablehnen. Diesen Kommentar können Sie löschen.',
+    docxHfHeading: 'Geänderte Kopf-/Fußzeilen (nicht im Fließtext):',
+    exportFileFinal: 'Endfassung',
     exportFileRedline: 'Vergleich',
     exportFileReport: 'Bericht',
     sampleLeftName: 'Vertrag_v1_Vorher.docx',
@@ -333,7 +360,7 @@ const I18N = {
     how2Title: 'Änderungen durchgehen',
     how2Text: 'Entferntes ist rot durchgestrichen, Neues grün markiert. Jede Änderung können Sie annehmen oder ablehnen.',
     how3Title: 'Ergebnis sichern, wenn Sie es brauchen',
-    how3Text: 'Als Word-Datei mit Änderungsverfolgung, als PDF oder als Bericht.',
+    how3Text: 'Als saubere Endfassung (Word im Originalformat oder PDF) oder als Vergleich mit Änderungsverfolgung.',
     scopeTitle: 'Was es kann – und was nicht',
     scopeCanTitle: 'Kann',
     scopeCan1: 'PDFs mit Textebene, Word-Dateien (.docx) und reinen Text vergleichen – auch gemischt, etwa PDF mit Word',
@@ -365,7 +392,7 @@ const I18N = {
             `,
     faqWordQ: 'Kann ich die Änderungen in Word weiterbearbeiten?',
     faqWordA: `
-              <p>Ja. Der Export „Word mit Änderungsverfolgung“ erzeugt eine .docx-Datei, in der jeder noch offene Unterschied als nachverfolgte Änderung steht. In Word oder LibreOffice können Sie die Änderungen einzeln annehmen oder ablehnen. Übernommen wird nur der Text, nicht die ursprüngliche Formatierung.</p>
+              <p>Ja. Der Export „Word mit Änderungsverfolgung“ erzeugt eine .docx-Datei, in der jeder noch offene Unterschied als nachverfolgte Änderung steht. In Word oder LibreOffice können Sie die Änderungen einzeln annehmen oder ablehnen. Ist die neue Fassung eine Word-Datei, behält der Export deren Formatierung: Formatvorlagen, Nummerierung, Tabellen und Bilder bleiben erhalten. Aus PDF oder Text wird ein neu gesetztes Word-Dokument. Die Endfassung ohne Markierungen gibt es ebenso als Word-Datei.</p>
             `,
     metaTitle: 'Doc Diff – PDF- und Word-Dokumente vergleichen, ohne Upload',
     otherPageHint: 'Diese Seite gibt es auch auf Deutsch →',
@@ -427,11 +454,28 @@ const I18N = {
     listBtnLabel: 'List of changes ({n} changes)',
     exportBtn: 'Export',
     expWord: 'Word with tracked changes (.docx)',
-    expPdf: 'Print or save as PDF',
     expHtml: 'Report as web page (.html)',
     expMd: 'Report as Markdown (.md)',
     expCopy: 'Copy text of the new version',
-    expTxt: 'New version as text file (.txt)',
+    expTxt: 'Final version as text file (.txt)',
+    expSecFinal: 'Final version',
+    expSecFinalDesc: 'The new version with your decisions, without marks',
+    expSecFinalOpen: 'The new version with your decisions – {n} open changes are included as accepted',
+    expSecFinalOpenOne: 'The new version with your decisions – 1 open change is included as accepted',
+    expSecCompare: 'Comparison',
+    expSecCompareDesc: 'Old → new with all marks, to review or pass on',
+    expWordFinal: 'Word (.docx)',
+    expWordFinalDescOriginal: 'In the format of your file “{name}”',
+    expWordFinalDescNew: 'Newly typeset, with headings and numbering',
+    expPdfFinal: 'PDF',
+    expPdfFinalDesc: 'A clean document; choose “Save as PDF” in the print dialog',
+    expCopyDesc: 'Plain text for email or other apps',
+    expWordDesc: 'Accept or reject the open changes in Word',
+    expWordDescOriginal: 'In the format of “{name}”; accept or reject the open changes in Word',
+    expPdfSplit: 'PDF side by side',
+    expPdfSplitDesc: 'Landscape, old and new version in two columns',
+    expPdfInline: 'PDF as running text',
+    expPdfInlineDesc: 'Portrait, changes marked in the text',
     moreLabel: 'More actions',
     clearBtn: 'New comparison',
     textBtn: 'Paste or edit text',
@@ -450,6 +494,8 @@ const I18N = {
 
     // ── Toasts & announcements ───────────────────────────────────────────
     toastWord: 'Word file saved: {name}',
+    toastWordOriginal: 'Word file saved in the original format: {name}',
+    noticeWordFallback: 'Saved: {name}. The original format could not be kept reliably for this file (for example because of changes in footnotes or text boxes), so the Word file was typeset anew; the text is complete.',
     toastHtml: 'Report saved: {name}',
     toastMd: 'Markdown report saved: {name}',
     toastTxt: 'Text file saved: {name}',
@@ -460,7 +506,7 @@ const I18N = {
     toastUndo: 'Undo',
     toastUndone: 'Undone',
     toastRedone: 'Redone',
-    copyFailed: 'Copying to the clipboard is not possible here. Please use “New version as text file (.txt)” under “More formats” instead.',
+    copyFailed: 'Copying to the clipboard is not possible here. Please use “Final version as text file (.txt)” under “More formats” instead.',
     announceCompared: 'Comparison ready: {n} changes. Press J and K to move between changes.',
     announceComparedOne: 'Comparison ready: 1 change.',
     announceIdentical: 'Comparison ready: no text differences.',
@@ -513,6 +559,7 @@ const I18N = {
     movedFromHere: 'Moved – from here',
     movedToHere: 'Moved – to here',
     moreDeltas: 'more changes',
+    moreDeltasOne: 'more change',
     pageLabel: 'Page',
     pageShort: 'p.',
     pageOf: 'of',
@@ -552,7 +599,11 @@ const I18N = {
       </section>
       <section class="help-sec">
         <h3>Reviewing</h3>
-        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed, move on to the next open change A reviewed paragraph carries a ✓ or ✗ on the right; the arrow below it (<strong>Undo</strong>) takes the review back. In the Word export, accepted changes are applied, rejected ones are reverted and open ones are recorded as tracked changes.</p>
+        <p><strong>Accept</strong> keeps the new wording, <strong>Reject</strong> restores the old wording of that paragraph. The symbols <strong>✓</strong> (accept), <strong>✗</strong> (reject) and <strong>✎</strong> (edit) sit at the top right of the current paragraph. Accepting and rejecting mark the change as reviewed and move on to the next open change. A reviewed paragraph carries a ✓ or ✗ on the right; the arrow below it (<strong>Undo</strong>) takes the review back.</p>
+      </section>
+      <section class="help-sec">
+        <h3>Exporting</h3>
+        <p><strong>Final version</strong>: the new version with every decision and edit applied, without marks – as a Word file (in the original format when the new version is a Word file), as PDF or as text. Changes that are still open are included as if accepted. <strong>Comparison</strong>: old → new with marks – as a Word file with tracked changes (accepted changes applied, rejected ones reverted, open ones to accept or reject) or as PDF side by side or as running text.</p>
       </section>
       <section class="help-sec">
         <h3>Keyboard shortcuts</h3>
@@ -641,6 +692,7 @@ const I18N = {
     exportTitleFmt: 'Comparison: {left} → {right}',
     exportVs: 'vs.',
     exportCountsFmt: '{total} changes ({mod} changed, {ins} added, {del} removed)',
+    exportCountsFmtOne: '1 change ({mod} changed, {ins} added, {del} removed)',
     exportReviewFmt: '{k} of {n} reviewed ({a} accepted, {r} rejected)',
     exportLabelOriginal: 'Old version',
     exportLabelRevised: 'New version',
@@ -652,9 +704,9 @@ const I18N = {
     exportLabelDetail: 'Detail',
     exportScopeFull: 'Full document',
     exportScopeChanges: 'Changes only (“Changes only” filter active, unchanged paragraphs omitted)',
-    exportHfIgnored: 'hidden (not compared)',
-    exportHfIgnoredCount: 'hidden ({n} lines not compared)',
-    exportHfIncluded: 'included in the comparison',
+    exportHfIgnored: 'unchanged ones hidden; changed ones are listed as changes',
+    exportHfIgnoredCount: '{n} unchanged lines hidden; changed ones are listed as changes',
+    exportHfIncluded: 'fully compared',
     exportSummaryHeading: 'Summary',
     exportCountTotal: 'Total changes',
     exportChangesHeading: 'List of changes',
@@ -675,8 +727,10 @@ const I18N = {
     a11yAddedStart: '[added:',
     a11yAddedEnd: ']',
     docxSubject: 'Comparison with tracked changes',
-    docxNote: 'Open differences are recorded as tracked changes (author “Doc Diff”). Changes accepted in Doc Diff are already applied, rejected ones already reverted. In Word, use Review › Accept / Reject to process them one by one or all at once.',
-    exportFileFinal: 'New_version',
+    docxSubjectFinal: 'Final version',
+    docxHfHeading: 'Changed headers/footers (not in the body text):',
+    docxNote: 'Open changes are recorded as tracked changes (author “Doc Diff”); accepted ones are already applied, rejected ones reverted. In Word, use Review › Accept / Reject one by one or all at once. You can delete this comment.',
+    exportFileFinal: 'final',
     exportFileRedline: 'Comparison',
     exportFileReport: 'Report',
     sampleLeftName: 'Contract_v1_Before.docx',
@@ -706,7 +760,7 @@ const I18N = {
     how2Title: 'Go through the changes',
     how2Text: 'Removed text is struck through in red, added text is marked green. You can accept or reject each change.',
     how3Title: 'Save the result if you need it',
-    how3Text: 'As a Word file with tracked changes, as PDF or as a report.',
+    how3Text: 'As a clean final version (Word in the original format, or PDF) or as a comparison with tracked changes.',
     scopeTitle: 'What it can do – and what it can’t',
     scopeCanTitle: 'Can',
     scopeCan1: 'Compare PDFs with a text layer, Word files (.docx) and plain text – also mixed, e.g. a PDF against a Word file',
@@ -738,12 +792,12 @@ const I18N = {
             `,
     faqWordQ: 'Can I keep working on the changes in Word?',
     faqWordA: `
-              <p>Yes. The “Word with tracked changes” export creates a .docx file in which every difference that is still open is a tracked change. In Word or LibreOffice you can accept or reject each change. Only the text is carried over, not the original formatting.</p>
+              <p>Yes. The “Word with tracked changes” export creates a .docx file in which every difference that is still open is a tracked change. In Word or LibreOffice you can accept or reject each change. When the new version is a Word file, the export keeps its formatting: styles, numbering, tables and images stay as they were. From a PDF or text, a newly typeset Word document is created. The final version without marks is available as a Word file, too.</p>
             `,
     metaTitle: 'Doc Diff – Compare PDF and Word documents without uploading',
     otherPageHint: 'This page is also available in English →',
     metaDescription: 'Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads.',
-    ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green (German interface).',
+    ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green.',
     footerSource: 'Source code on GitHub',
     githubMenu: 'Source code on GitHub',
     footerLicense: 'MIT licence',

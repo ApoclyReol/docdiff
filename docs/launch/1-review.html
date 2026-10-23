@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!-- Launch gallery image 1: reviewing changes. Render: see README.md. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="launch.css">
+<style>
+  body { display: grid; grid-template-columns: 430px 1fr; gap: 48px; }
+  .left { display: flex; flex-direction: column; }
+  .left h1 { margin-top: 56px; }
+  .left .sub { margin-top: 20px; }
+  .steps { margin-top: auto; display: flex; flex-direction: column; gap: 12px; font-size: 17px; font-weight: 500; }
+  .steps div { display: flex; align-items: center; gap: 12px; }
+  .steps b { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 16px; border: 1px solid var(--border); background: #fff; }
+  .steps .a b { color: var(--ins-ink); } .steps .r b { color: var(--del-ink); } .steps .e b { color: var(--primary); }
+
+  .win { height: 648px; display: flex; flex-direction: column; }
+  .progress { margin-left: auto; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .progress .track { width: 120px; height: 6px; border-radius: 3px; background: hsl(0 0% 92%); overflow: hidden; }
+  .progress .track i { display: block; height: 100%; width: 60%; background: var(--ins-ink); }
+  .main { flex: 1; display: grid; grid-template-columns: 1fr 260px; min-height: 0; }
+  .doc { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; line-height: 1.55; border-right: 1px solid var(--border); }
+  .doc h3 { font-size: 15px; font-weight: 650; }
+  .para { padding: 10px 12px; border-left: 3px solid transparent; border-radius: 4px; position: relative; }
+  .para.active { border-left-color: var(--primary); background: hsl(212.8 100% 36% / .05); box-shadow: 0 0 0 1px hsl(212.8 100% 36% / .18); }
+  .para.done { border-left-color: var(--ins-ink); }
+  .para.rej { border-left-color: var(--faint); color: var(--muted); }
+  .actions { position: absolute; right: 10px; top: -16px; display: flex; gap: 6px; }
+  .actions span { font-size: 13px; font-weight: 600; padding: 5px 10px; border-radius: 8px; background: #fff; border: 1px solid var(--border); box-shadow: 0 6px 16px -8px hsl(215 30% 20% / .35); }
+  .actions .ok { background: var(--ins-ink); border-color: var(--ins-ink); color: #fff; }
+  .actions .no { color: var(--del-ink); }
+  .tag { font-size: 12px; font-weight: 600; padding: 2px 7px; border-radius: 5px; margin-left: 8px; vertical-align: 2px; }
+  .tag.ok { background: var(--ins-bg); color: var(--ins-ink); }
+  .tag.no { background: hsl(0 0% 93%); color: var(--muted); }
+  .edit { outline: 2px solid var(--primary); outline-offset: 1px; border-radius: 3px; padding: 0 2px; }
+  .caret { display: inline-block; width: 2px; height: 1.1em; background: var(--primary); vertical-align: -3px; margin-left: 1px; }
+  .list { padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; background: hsl(0 0% 98.5%); font-size: 13px; line-height: 1.4; }
+  .list .hd { display: flex; justify-content: space-between; font-weight: 650; font-size: 13.5px; padding: 0 4px 4px; }
+  .list .hd span { color: var(--faint); font-weight: 500; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; }
+  .card small, .card div { grid-column: 1; }
+  .card small { color: var(--faint); font-weight: 600; font-size: 11.5px; }
+  .card .st { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-weight: 700; font-size: 14px; }
+  .card.on { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+  .card.ok .st { color: var(--ins-ink); } .card.no .st { color: var(--faint); }
+  .card.no div { color: var(--faint); }
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="brand"><img src="../favicon.svg" alt="">Doc Diff<span class="url">docdiff.app</span></div>
+    <h1>Review every change like in Word.</h1>
+    <p class="sub">Go through the changes one by one: accept, reject or rewrite. The new version updates as you decide.</p>
+    <div class="steps">
+      <div class="a"><b>✓</b>Accept what is fine</div>
+      <div class="r"><b>✕</b>Reject and get the old wording back</div>
+      <div class="e"><b>✎</b>Edit the text right in place</div>
+    </div>
+  </div>
+  <div class="win">
+    <div class="bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span style="font-weight:600">Contract_v1.pdf → Contract_v2.docx</span>
+      <div class="progress"><span>12 of 20 reviewed</span><div class="track"><i></i></div></div>
+    </div>
+    <div class="main">
+      <div class="doc">
+        <h3>1. Scope of Services</h3>
+        <div class="para done">(1) Delivery<ins>, training</ins> and documentation as per the specification dated <ins>April 18, 2026</ins>.<span class="tag ok">Accepted</span></div>
+        <div class="para rej">(2) Change requests must be made in writing.<span class="tag no">Rejected · old wording kept</span></div>
+        <h3>2. Fees</h3>
+        <div class="para active">
+          <div class="actions"><span class="ok">✓ Accept</span><span class="no">✕ Reject</span><span>✎ Edit</span></div>
+          (1) Fixed price of <del>EUR 145,000.00</del> <ins>EUR 168,500.00</ins> net, payable within <del>14</del> <ins>30</ins> days of invoice.
+        </div>
+        <div class="para">(2) Travel expenses are reimbursed at cost <span class="edit">up to EUR 2,000 per quarter<span class="caret"></span></span>.</div>
+        <h3>4. Liability</h3>
+        <div class="para">(3) Liability for slight negligence is limited to <ins>twice</ins> the contract value.</div>
+      </div>
+      <div class="list">
+        <div class="hd">Changes <span>20</span></div>
+        <div class="card ok"><small>1. (1) · p. 1</small><div>…<ins>, training</ins> and documentation…</div><span class="st">✓</span></div>
+        <div class="card no"><small>1. (2) · p. 1</small><div>…made <s>by email</s></div><span class="st">✕</span></div>
+        <div class="card on"><small>2. (1) · p. 2</small><div>Fixed price of <del>EUR 145,000.00</del> <ins>EUR 168,500.00</ins></div></div>
+        <div class="card"><small>2. (2) · p. 2</small><div>…at cost <ins>up to EUR 2,000</ins>…</div></div>
+        <div class="card"><small>4. (3) · p. 3</small><div>…limited to <ins>twice</ins> the…</div></div>
+        <div class="card"><small>5. (1) · p. 3</small><div><del>Liability for consequential…</del></div></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

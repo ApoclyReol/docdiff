@@ -37,6 +37,8 @@ const state = {
   rightName: '',
   leftFormat: '',
   rightFormat: '',
+  // The .docx files as loaded ({ name, bytes, importedText }): the Word export keeps their format.
+  docSources: { left: null, right: null },
   alignedRows: [],
   changeRows: [],
   listItems: [],

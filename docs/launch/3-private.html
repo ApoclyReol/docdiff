@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!-- Launch gallery image 3: privacy and formats. Render: see README.md. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="launch.css">
+<style>
+  body { display: grid; grid-template-columns: 1fr 520px; gap: 56px; }
+  .left { display: flex; flex-direction: column; }
+  .left h1 { margin-top: 56px; font-size: 58px; }
+  .left .sub { margin-top: 20px; max-width: 30em; }
+  .facts { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fact { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .fact b { display: block; font-size: 17px; font-weight: 650; margin-bottom: 3px; }
+  .fact span { font-size: 14.5px; color: var(--muted); line-height: 1.4; }
+
+  .right { display: flex; flex-direction: column; gap: 22px; justify-content: center; }
+  .win .bar { gap: 12px; }
+  .addr { flex: 1; display: flex; align-items: center; gap: 8px; font: 500 14px 'Geist Mono', monospace; padding: 6px 12px; border-radius: 8px; background: hsl(0 0% 96%); color: var(--muted); }
+  .addr svg { flex: none; }
+  .net { padding: 16px 18px 18px; font-size: 14px; }
+  .net .hd { display: flex; justify-content: space-between; font-weight: 650; margin-bottom: 10px; }
+  .net .hd span { color: var(--faint); font-weight: 500; font-family: 'Geist Mono', monospace; font-size: 13px; }
+  .row { display: grid; grid-template-columns: 1fr auto; padding: 9px 0; border-top: 1px solid hsl(0 0% 93%); font-family: 'Geist Mono', monospace; font-size: 13px; }
+  .row b { font-family: Geist, sans-serif; font-weight: 600; color: var(--ins-ink); font-size: 14px; }
+  .big { display: flex; align-items: baseline; gap: 12px; padding: 14px 0 4px; }
+  .big strong { font-size: 64px; font-weight: 720; letter-spacing: -0.04em; color: var(--ins-ink); line-height: 1; }
+  .big span { font-size: 16px; color: var(--muted); }
+  .formats { display: flex; gap: 10px; }
+  .formats span { flex: 1; text-align: center; font: 600 15px 'Geist Mono', monospace; padding: 14px 0; border-radius: 12px; background: #fff; border: 1px solid var(--border); }
+  .formats span:nth-child(1) { color: hsl(0 70% 42%); } .formats span:nth-child(2) { color: hsl(214 80% 40%); }
+  .cap { font-size: 14px; color: var(--faint); text-align: center; margin-top: -10px; }
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="brand"><img src="../favicon.svg" alt="">Doc Diff<span class="url">docdiff.app</span></div>
+    <h1>Your contracts never leave your browser.</h1>
+    <p class="sub">Doc Diff reads and compares everything on your device. No upload, no account, no tracking. Safe for confidential documents.</p>
+    <div class="facts">
+      <div class="fact"><b>Works offline</b><span>One HTML file: download it and use it without internet.</span></div>
+      <div class="fact"><b>Open source</b><span>MIT licensed. Read every line of the code yourself.</span></div>
+      <div class="fact"><b>Free</b><span>No sign-up, no limits, no paywall.</span></div>
+      <div class="fact"><b>Save your review</b><span>Continue later from a .docdiff file on your disk.</span></div>
+    </div>
+  </div>
+  <div class="right">
+    <div class="win">
+      <div class="bar">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <div class="addr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>docdiff.app</div>
+      </div>
+      <div class="net">
+        <div class="hd">Network while comparing <span>Contract_v1.pdf ↔ v2.docx</span></div>
+        <div class="big"><strong>0</strong><span>bytes of your documents sent anywhere</span></div>
+        <div class="row">File upload<b>none</b></div>
+        <div class="row">Analytics &amp; cookies<b>none</b></div>
+        <div class="row">Third-party requests<b>blocked by policy</b></div>
+      </div>
+    </div>
+    <div class="formats"><span>PDF</span><span>DOCX</span><span>TXT</span><span>MD</span><span>HTML</span></div>
+    <p class="cap">Compare any two of them, even a PDF against a Word file.</p>
+  </div>
+</body>
+</html>

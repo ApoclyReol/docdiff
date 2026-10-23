@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!-- Launch gallery image 2: exports. Render: see README.md. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="launch.css">
+<style>
+  body { display: flex; flex-direction: column; }
+  .top { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .top h1 { margin-top: 24px; max-width: 900px; font-size: 50px; }
+  .top .sub { margin-top: 16px; max-width: 760px; }
+  .cards { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .card { display: flex; flex-direction: column; gap: 14px; }
+  .label { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 650; }
+  .fmt { font: 600 12.5px 'Geist Mono', monospace; padding: 3px 8px; border-radius: 6px; color: #fff; }
+  .fmt.docx { background: hsl(214 80% 42%); } .fmt.pdf { background: hsl(0 70% 46%); }
+  .label small { font-size: 14px; font-weight: 500; color: var(--faint); margin-left: auto; }
+  .page { background: #fff; border: 1px solid var(--border); border-radius: 10px; height: 300px; padding: 20px 22px; font-family: Georgia, 'Times New Roman', serif; font-size: 12.5px; line-height: 1.6; box-shadow: 0 24px 50px -26px hsl(215 30% 20% / .35); overflow: hidden; position: relative; }
+  .page h4 { font-family: Geist, sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .page h5 { font-family: Geist, sans-serif; font-size: 12.5px; font-weight: 650; margin: 10px 0 4px; }
+  .page p + p { margin-top: 6px; }
+  .page ul { margin: 4px 0 0 18px; }
+  .page .lnk { color: var(--primary); text-decoration: underline; }
+  .page sup { font-size: 9px; }
+  .rl ins { background: none; box-shadow: none; color: hsl(214 80% 40%); text-decoration: underline; font-weight: inherit; padding: 0; }
+  .rl del { background: none; box-shadow: none; color: hsl(0 70% 42%); padding: 0; margin-right: 2px; }
+  .rl .bar { position: absolute; left: 8px; width: 2px; background: hsl(0 0% 40%); border: 0; padding: 0; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-family: Geist, sans-serif; font-size: 11px; line-height: 1.5; }
+  .split > div { display: flex; flex-direction: column; gap: 8px; }
+  .split .colh { font-weight: 650; font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  .split del, .split ins { padding: 0 2px; }
+  .note { font-size: 15px; color: var(--muted); line-height: 1.4; }
+  .note b { color: var(--fg); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div>
+      <div class="brand"><img src="../favicon.svg" alt="">Doc Diff<span class="url">docdiff.app</span></div>
+      <h1>Export the final version in your original Word format.</h1>
+      <p class="sub">Your decisions go straight into your own .docx: styles, numbering, links and footnotes stay as they are.</p>
+    </div>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <div class="label"><span class="fmt docx">DOCX</span>Final version<small>clean</small></div>
+      <div class="page">
+        <h4>Framework Agreement</h4>
+        <h5>1. Scope of Services</h5>
+        <p>(1) Delivery, training and documentation as per the <span class="lnk">specification</span> dated April 18, 2026.<sup>1</sup></p>
+        <ul><li>Module A: quantity take-off</li><li>Module B: cost estimate</li></ul>
+        <h5>2. Fees</h5>
+        <p>(1) Fixed price of EUR 168,500.00 net, payable within 30 days of invoice.</p>
+        <p>(2) Travel expenses are reimbursed at cost up to EUR 2,000 per quarter.</p>
+      </div>
+      <p class="note"><b>Ready to send.</b> Accepted, rejected and edited changes, nothing else.</p>
+    </div>
+    <div class="card">
+      <div class="label"><span class="fmt docx">DOCX</span>Tracked changes<small>redline</small></div>
+      <div class="page rl">
+        <h4>Framework Agreement</h4>
+        <h5>1. Scope of Services</h5>
+        <p>(1) Delivery<ins>, training</ins> and documentation as per the <span class="lnk">specification</span> dated <del>March 12</del><ins>April 18</ins>, 2026.<sup>1</sup></p>
+        <ul><li>Module A: quantity take-off</li><li>Module B: cost estimate</li></ul>
+        <h5>2. Fees</h5>
+        <p>(1) Fixed price of <del>EUR 145,000.00</del><ins>EUR 168,500.00</ins> net, payable within <del>14</del><ins>30</ins> days of invoice.</p>
+        <p>(2) Travel expenses are reimbursed at cost<ins> up to EUR 2,000 per quarter</ins>.</p>
+      </div>
+      <p class="note"><b>Open in Word</b> and accept or reject what is still open.</p>
+    </div>
+    <div class="card">
+      <div class="label"><span class="fmt pdf">PDF</span>Comparison<small>side by side or inline</small></div>
+      <div class="page">
+        <div class="split">
+          <div>
+            <div class="colh">Old · Contract_v1.pdf</div>
+            <div><b>1. (1)</b> Delivery and documentation as per the specification dated <del>March 12, 2026</del>.</div>
+            <div><b>2. (1)</b> Fixed price of <del>EUR 145,000.00</del> net, payable within <del>14</del> days.</div>
+            <div><b>4. (3)</b> <del>Liability for consequential damages is excluded.</del></div>
+          </div>
+          <div>
+            <div class="colh">New · Contract_v2.docx</div>
+            <div><b>1. (1)</b> Delivery<ins>, training</ins> and documentation as per the specification dated <ins>April 18, 2026</ins>.</div>
+            <div><b>2. (1)</b> Fixed price of <ins>EUR 168,500.00</ins> net, payable within <ins>30</ins> days.</div>
+            <div><b>2. (4)</b> <ins>Adjusted to the CPI from month 13 on.</ins></div>
+          </div>
+        </div>
+      </div>
+      <p class="note"><b>For the record.</b> Every change marked, with page and clause numbers.</p>
+    </div>
+  </div>
+</body>
+</html>

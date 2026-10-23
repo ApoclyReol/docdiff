@@ -683,6 +683,45 @@ body:not(.is-comparing) .topbar {
 .menu-label + .menu-seg {
   margin-top: 2px;
 }
+/* Export menu: section titles and items with a one-line explanation */
+.menu-export {
+  width: 340px;
+  max-width: calc(100vw - 16px);
+}
+.menu-label-2line {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px 4px;
+  color: hsl(var(--foreground));
+}
+.menu-label-desc {
+  font-size: var(--text-ui-sm);
+  font-weight: 400;
+  line-height: 1.35;
+  color: hsl(var(--muted-foreground));
+}
+.menu-item.mi-2line {
+  align-items: flex-start;
+  white-space: normal;
+}
+.menu-item.mi-2line > svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.mi-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.mi-desc {
+  font-size: var(--text-ui-sm);
+  font-weight: 400;
+  line-height: 1.35;
+  color: hsl(var(--muted-foreground));
+  overflow-wrap: anywhere;
+}
 .menu-sep {
   height: 1px;
   margin: 5px 4px;
@@ -3161,6 +3200,44 @@ body.list-open .toast-region {
   #print-view .pv-empty-note {
     font-style: italic;
     color: #444;
+  }
+  /* Final version: a clean document, no marks */
+  #print-view .pv-final {
+    font-size: 10.5pt;
+    line-height: 1.5;
+    hyphens: auto;
+  }
+  #print-view .pv-final h1 {
+    font-size: 16pt;
+    line-height: 1.25;
+    margin: 0 0 12pt;
+    break-after: avoid;
+  }
+  #print-view .pv-final h2 {
+    font-size: 12pt;
+    margin: 16pt 0 6pt;
+    break-after: avoid;
+  }
+  #print-view .pv-final h3 {
+    font-size: 10.5pt;
+    margin: 12pt 0 4pt;
+    break-after: avoid;
+  }
+  #print-view .pv-final p {
+    margin: 0 0 6pt;
+    orphans: 3;
+    widows: 3;
+  }
+  #print-view .pv-final .pvf-item {
+    display: flex;
+    gap: 0;
+  }
+  #print-view .pv-final .pvf-marker {
+    flex: 0 0 2.4em;
+  }
+  #print-view .pv-final .pvf-body {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 }
 
