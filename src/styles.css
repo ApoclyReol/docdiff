@@ -565,7 +565,7 @@ body:not(.is-comparing) .topbar {
   gap: 1px;
 }
 .menu-label {
-  padding: 6px 10px 4px 34px;
+  padding: 6px 10px 4px 10px;
   font-size: 13px;
   font-weight: 600;
   color: hsl(var(--muted-foreground));
@@ -639,6 +639,49 @@ body:not(.is-comparing) .topbar {
   background: none;
   box-shadow: none;
   font-weight: 500;
+}
+/* Segmented choice inside a menu (layout, colour scheme): icon above a short label */
+.menu-seg {
+  display: flex;
+  gap: 2px;
+  margin: 2px 6px 4px;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: hsl(var(--ton-1));
+}
+.menu-item.seg-item {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 56px;
+  padding: var(--sp-2) var(--sp-1);
+  border-radius: calc(var(--radius-md) - 2px);
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-ui-sm);
+  text-align: center;
+  white-space: normal;
+}
+.menu-item.seg-item > svg {
+  width: 18px;
+  height: 18px;
+  color: inherit;
+}
+.menu-item.seg-item[aria-checked="true"] {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  box-shadow: 0 0 0 1px hsl(var(--border)), var(--elev-1);
+}
+@media (hover: hover) {
+  .menu-item.seg-item[aria-checked="false"]:hover {
+    background: hsl(var(--ton-2));
+    color: hsl(var(--foreground));
+  }
+}
+.menu-seg + .menu-seg,
+.menu-label + .menu-seg {
+  margin-top: 2px;
 }
 .menu-sep {
   height: 1px;

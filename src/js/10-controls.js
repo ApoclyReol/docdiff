@@ -145,8 +145,10 @@ for (const [id, triggerId] of Object.entries(MENU_TRIGGERS)) {
     if (!items.length) return;
     const idx = items.indexOf(document.activeElement);
     let next = null;
-    if (e.key === 'ArrowDown') next = items[(idx + 1) % items.length];
-    else if (e.key === 'ArrowUp') next = items[(idx - 1 + items.length) % items.length];
+    // Inside a segmented row the left/right arrows move like down/up.
+    const inSeg = document.activeElement && document.activeElement.closest('.menu-seg');
+    if (e.key === 'ArrowDown' || (inSeg && e.key === 'ArrowRight')) next = items[(idx + 1) % items.length];
+    else if (e.key === 'ArrowUp' || (inSeg && e.key === 'ArrowLeft')) next = items[(idx - 1 + items.length) % items.length];
     else if (e.key === 'Home') next = items[0];
     else if (e.key === 'End') next = items[items.length - 1];
     else if (e.key === 'Escape') {
