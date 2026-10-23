@@ -130,7 +130,7 @@ for (const doc of ['README.md', 'SECURITY.md']) {
 assert.ok(appJsCode.includes('isEvalSupported: false'), 'PDF.js getDocument() must pass isEvalSupported: false');
 
 // 5. Verify site legal and domain files for docdiff.app
-for (const siteFile of ['CNAME', 'og-image.png', 'impressum.html', 'datenschutz.html', 'legal.css', 'robots.txt', 'sitemap.xml', '.nojekyll']) {
+for (const siteFile of ['CNAME', 'og-image.png', 'og-image-en.png', 'impressum.html', 'datenschutz.html', 'legal.css', 'robots.txt', 'sitemap.xml', '.nojekyll']) {
   const p = path.join(root, 'site', siteFile);
   assert.ok(fs.existsSync(p), `Missing required site file: site/${siteFile}`);
 }
@@ -180,7 +180,10 @@ for (const page of [
   const alternates = Object.fromEntries([...head.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map(m => [m[1], m[2]]));
   assert.deepEqual(alternates, { de: SITE, en: `${SITE}en/`, 'x-default': SITE }, `${where}: hreflang alternates`);
   assert.equal(metaContent(head, 'property', 'og:url'), url, `${where}: og:url`);
-  assert.equal(metaContent(head, 'property', 'og:image'), `${SITE}og-image.png?v=2`, `${where}: og:image`);
+  // Each language has its own link preview image.
+  const ogImage = lang === 'en' ? `${SITE}og-image-en.png?v=1` : `${SITE}og-image.png?v=3`;
+  assert.equal(metaContent(head, 'property', 'og:image'), ogImage, `${where}: og:image`);
+  assert.equal(metaContent(head, 'name', 'twitter:image'), ogImage, `${where}: twitter:image`);
 
   // Title and description: from i18n, sensible lengths
   const title = decodeEntities(head.match(/<title>([^<]*)<\/title>/)[1]);

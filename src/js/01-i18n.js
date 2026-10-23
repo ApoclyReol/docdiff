@@ -743,7 +743,7 @@ const I18N = {
     metaTitle: 'Doc Diff – Compare PDF and Word documents without uploading',
     otherPageHint: 'This page is also available in English →',
     metaDescription: 'Compare two versions of a contract or document: PDF, Word or text, marked word by word. Free, open source, runs in your browser without uploads.',
-    ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green (German interface).',
+    ogImageAlt: 'Doc Diff: two versions of a contract side by side, removed text struck through in red, added text marked green.',
     footerSource: 'Source code on GitHub',
     githubMenu: 'Source code on GitHub',
     footerLicense: 'MIT licence',

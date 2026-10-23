@@ -52,6 +52,7 @@ PAGES = {
         "asset_base": "",
         "og_locale": "de_DE",
         "og_locale_alt": "en_US",
+        "og_image": SITE_URL + "og-image.png?v=3",
         "outputs": [os.path.join("site", "index.html"), "DocDiff.html"],
     },
     "en": {
@@ -60,6 +61,7 @@ PAGES = {
         "asset_base": "../",
         "og_locale": "en_US",
         "og_locale_alt": "de_DE",
+        "og_image": SITE_URL + "og-image-en.png?v=1",
         "outputs": [os.path.join("site", "en", "index.html")],
     },
 }
@@ -169,7 +171,7 @@ def json_ld(template: str, lang: str, strings: dict, version: str) -> str:
         "featureList": [strings[key] for key in features],
         "downloadUrl": OFFLINE_URL,
         "softwareHelp": {"@type": "CreativeWork", "url": REPO_URL + "#readme"},
-        "image": SITE_URL + "og-image.png?v=2",
+        "image": page["og_image"],
         "author": author,
         "sameAs": [REPO_URL],
     }
@@ -220,6 +222,7 @@ def render_page(template: str, lang: str, i18n: dict, version: str) -> str:
         .replace("__ASSET_BASE__", page["asset_base"])
         .replace("__OG_LOCALE__", page["og_locale"])
         .replace("__OG_LOCALE_ALT__", page["og_locale_alt"])
+        .replace("__OG_IMAGE__", page["og_image"])
         .replace("__LANG_LABEL__", "English" if lang == "de" else "Deutsch")
         .replace("__JSON_LD__", json_ld(template, lang, strings, version))
     )
