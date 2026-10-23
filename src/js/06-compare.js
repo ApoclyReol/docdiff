@@ -182,6 +182,7 @@ function loadSampleComparison() {
   state.rightName = t('sampleRightName');
   state.rightFormat = 'DEMO';
   state.rightText = sample.v2;
+  state.docSources = { left: null, right: null };
   resetEditHistory();
   runComparison();
 }
@@ -192,11 +193,13 @@ function clearLandingSide(side) {
     state.leftText = '';
     state.leftName = '';
     state.leftFormat = '';
+    state.docSources.left = null;
     document.getElementById('file-input-left').value = '';
   } else {
     state.rightText = '';
     state.rightName = '';
     state.rightFormat = '';
+    state.docSources.right = null;
     resetEditHistory();
     document.getElementById('file-input-right').value = '';
   }
@@ -569,6 +572,11 @@ function extractDeltaPairs(wordDiffs) {
   return pairs;
 }
 
+// "1 weitere Änderung" / "2 weitere Änderungen" (the number is written by the caller).
+function moreDeltasText(n) {
+  return n === 1 ? t('moreDeltasOne') : t('moreDeltas');
+}
+
 // Word diffs of a list item: the row's own, or (rejected change) recomputed from what was rejected.
 const ghostDiffCache = new WeakMap();
 function getItemWordDiffs(item) {
@@ -780,7 +788,7 @@ function renderSidebarList(bothLoaded) {
         const pageLabel = pages.length > 1 ? `${t('pageShort')} ${Math.min(...pages)}–${Math.max(...pages)}` : `${t('pageShort')} ${page}`;
         const head = item.members ? `${ref} · ${pageLabel}` : [ref, pageLabel].filter(Boolean).join(' · ');
         const delta = renderSidebarDeltaHtml(item);
-        const moreHtml = delta.more > 0 ? `<span class="nav-more"><span aria-hidden="true">+${delta.more}</span><span class="sr-only">, ${delta.more} ${escapeHtml(t('moreDeltas'))}</span></span>` : '';
+        const moreHtml = delta.more > 0 ? `<span class="nav-more"><span aria-hidden="true">+${delta.more}</span><span class="sr-only">, ${delta.more} ${escapeHtml(moreDeltasText(delta.more))}</span></span>` : '';
         return `<div class="nav-item ${cls} is-${item.status}${isActive ? ' is-active' : ''}" data-row-id="${item.rowId}" data-item-id="${item.id}"><button type="button" class="nav-item-main" tabindex="${item.id === focusId ? 0 : -1}"${isActive ? ' aria-current="true"' : ''}><span class="nav-item-head"><span class="nav-item-ref">${escapeHtml(head)}</span>${moreHtml}${statusIcon}<span class="sr-only">, ${escapeHtml(getChangeTypeLabel(item))}, ${escapeHtml(getStatusLabel(item.status))}. </span></span>${delta.html}</button></div>`;
       })
       .join('')

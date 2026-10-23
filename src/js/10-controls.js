@@ -85,6 +85,7 @@ function openMenu(id, trigger, focus = 'first') {
   trigger = trigger || document.getElementById(MENU_TRIGGERS[id]);
   trigger.setAttribute('aria-expanded', 'true');
   openMenuState = { id, trigger };
+  if (id === 'export-menu') updateExportMenuTexts();
   document.body.classList.toggle('menu-sheet-open', isPhoneWidth());
   menuItems(menu).forEach(item => (item.tabIndex = -1));
   if (focus) {
@@ -530,6 +531,7 @@ function clearComparison() {
   state.rightName = '';
   state.leftFormat = '';
   state.rightFormat = '';
+  state.docSources = { left: null, right: null };
   state.activeRowId = null;
   state.hoveredRowId = null;
   state.sidebarFilter = 'all';
@@ -603,6 +605,7 @@ document.getElementById('btn-swap-docs').addEventListener('click', () => {
   [state.leftText, state.rightText] = [state.rightText, state.leftText];
   [state.leftName, state.rightName] = [state.rightName, state.leftName];
   [state.leftFormat, state.rightFormat] = [state.rightFormat, state.leftFormat];
+  state.docSources = { left: state.docSources.right, right: state.docSources.left };
   resetEditHistory();
   runComparison();
   btnFiles.focus();
@@ -637,11 +640,13 @@ document.getElementById('btn-apply-modal').addEventListener('click', () => {
     state.leftText = sanitizeExternalText(textareaLeft.value);
     state.leftName = '';
     state.leftFormat = '';
+    state.docSources.left = null;
   }
   if (rightChanged) {
     state.rightText = sanitizeExternalText(textareaRight.value);
     state.rightName = '';
     state.rightFormat = '';
+    state.docSources.right = null;
   }
   if (leftChanged || rightChanged) resetEditHistory();
   if (state.leftText.trim() && !state.leftName) {

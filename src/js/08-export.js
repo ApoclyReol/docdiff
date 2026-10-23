@@ -80,23 +80,17 @@ function getExportTitle() {
 }
 
 /**
- * The changes of the comparison with their review status, in document order: the list items
- * (including rejected changes) when the review index is current, otherwise the change rows.
+ * The changes of the comparison with their review status, exactly as the change list shows them
+ * (same order, same count: an identical header/footer change on several pages is one change),
+ * including rejected changes. Falls back to the change rows while the review index is not current.
  */
 function getExportItems() {
   if (
     Array.isArray(state.listItems) &&
     state.listItems.length &&
-    state.listItems.every(i => state.alignedRows.includes(i.row))
+    state.listItems.every(i => itemMembers(i).every(m => state.alignedRows.includes(m.row)))
   ) {
-    // Exports follow the document: every occurrence of a merged header/footer change, in
-    // document order (the list shows those after the body changes).
-    const pos = new Map(state.alignedRows.map((r, i) => [r.id, i]));
-    return state.listItems
-      .flatMap(item => (item.members ? item.members : [item]))
-      .map(item => ({ ...item, members: undefined }))
-      .sort((a, b) => pos.get(a.rowId) - pos.get(b.rowId) || (a.sub || 0) - (b.sub || 0))
-      .map((item, i) => ({ ...item, index: i + 1 }));
+    return state.listItems.map((item, i) => ({ ...item, index: i + 1 }));
   }
   return state.changeRows.map((row, i) => ({
     id: row.id,
@@ -133,13 +127,24 @@ function getExportStatusLabel(status) {
   return status === 'accepted' ? t('statusAccepted') : status === 'rejected' ? t('statusRejected') : t('statusOpen');
 }
 
+/** Reference as the change list shows it ("§ 1 (2)", "Kopf-/Fußzeile – auf 3 Seiten …"). */
 function getExportItemRef(item) {
-  if (item.ghost) return item.ghost.refCode || '';
-  return getRowRefCode(item.row);
+  return getItemRef(item);
+}
+
+/** "S. 2" or, for a change on several pages, "S. 1–3". */
+function getExportItemPages(item) {
+  const pages = itemMembers(item).map(m => getItemPage(m));
+  const min = Math.min(...pages);
+  const max = Math.max(...pages);
+  return min === max ? String(min) : `${min}–${max}`;
+}
+function getExportItemPageLabel(item) {
+  return `${t('pageShort')} ${getExportItemPages(item)}`;
 }
 
 function formatExportCountsLine(c) {
-  return tf('exportCountsFmt', { total: c.total, mod: c.modified, ins: c.inserted, del: c.deleted });
+  return tf(c.total === 1 ? 'exportCountsFmtOne' : 'exportCountsFmt', { total: c.total, mod: c.modified, ins: c.inserted, del: c.deleted });
 }
 
 function formatExportDate(date) {
@@ -173,7 +178,7 @@ function getRowReportTag(row) {
   if (row.type === 'equal') {
     return row.ghostNote ? `${t('statusRejected')} · ${t('exportRejectedNote')}` : '';
   }
-  const parts = [getRowTypeLabel(row), getRowRefCode(row)].filter(Boolean);
+  const parts = [getRowTypeLabel(row), getDisplayRef(row)].filter(Boolean);
   if (row.reviewStatus === 'accepted') parts.push(t('statusAccepted'));
   return parts.join(' · ');
 }
@@ -287,11 +292,7 @@ function getRowChangeSummary(rowOrItem, maxLen = 70) {
  * furniture and are always left out, whether or not the header/footer filter is active.
  */
 function buildFinalText() {
-  const blocks = state.alignedRows.length
-    ? state.alignedRows.filter(r => r.rightBlock).map(r => r.rightBlock)
-    : parseIntoBlocks(state.rightText || '');
-  return blocks
-    .filter(b => !b.isHeaderFooter && !isInternalMarkerLine(b.text))
+  return getFinalBlocks()
     .map(b => cleanExportText(b.text).trim())
     .filter(Boolean)
     .join('\n\n');
@@ -323,7 +324,7 @@ function renderReportSummaryPairsHtml(row) {
     if (p.ins) return renderReportTokensHtml([{ value: p.ins, added: true }]);
     return renderReportTokensHtml([{ value: p.del, removed: true }]);
   });
-  if (more) items.push(`<span class="more">+${more} ${escapeHtml(t('moreDeltas'))}</span>`);
+  if (more) items.push(`<span class="more">+${more} ${escapeHtml(moreDeltasText(more))}</span>`);
   return items.map(html => `<div>${html}</div>`).join('');
 }
 
@@ -392,13 +393,22 @@ function buildExportHtmlReport(date = new Date()) {
   const items = getExportItems();
   const counts = getExportCounts(items);
   const title = getExportTitle();
-  // Anchors: every changed row, and the row a rejected change was restored to.
+  // Anchors: every changed row (all pages of a merged header/footer change), and the row a
+  // rejected change was restored to. The first row of a change carries its id.
   const anchorIndex = new Map();
   items.forEach((item, i) => {
-    if (item.ghost && item.type === 'inserted') return;
-    if (!anchorIndex.has(item.rowId)) anchorIndex.set(item.rowId, i + 1);
+    for (const m of itemMembers(item)) {
+      if (m.ghost && m.type === 'inserted') continue;
+      if (!anchorIndex.has(m.rowId)) anchorIndex.set(m.rowId, i + 1);
+    }
   });
-  const anchorFor = row => `c${anchorIndex.get(row.id)}`;
+  const anchorUsed = new Set();
+  const anchorFor = row => {
+    const n = anchorIndex.get(row.id);
+    if (!n || anchorUsed.has(n)) return '';
+    anchorUsed.add(n);
+    return ` id="c${n}"`;
+  };
   const reviewLine = getExportReviewLine(counts);
 
   const changeListHtml = items.length
@@ -410,10 +420,9 @@ ${items
   .map((item, i) => {
     const n = i + 1;
     const ref = getExportItemRef(item) || `#${n}`;
-    const page = item.ghost ? item.ghost.pageNum || 1 : item.row.pageNum || 1;
-    const target = item.ghost && item.type === 'inserted' ? 0 : anchorIndex.get(item.rowId);
+    const target = itemMembers(item).some(m => anchorIndex.get(m.rowId) === n) ? n : 0;
     const refHtml = target ? `<a href="#c${target}">${escapeHtml(ref)}</a>` : escapeHtml(ref);
-    return `<tr><td class="num">${n}</td><td class="ref">${refHtml}<div class="more">${escapeHtml(t('pageShort'))} ${page}</div></td><td><span class="badge ${item.type}">${escapeHtml(getRowTypeLabel(item))}</span></td><td class="status ${item.status}">${escapeHtml(getExportStatusLabel(item.status))}</td><td>${renderReportSummaryPairsHtml(item)}</td></tr>`;
+    return `<tr><td class="num">${n}</td><td class="ref">${refHtml}<div class="more">${escapeHtml(getExportItemPageLabel(item))}</div></td><td><span class="badge ${item.type}">${escapeHtml(getRowTypeLabel(item))}</span></td><td class="status ${item.status}">${escapeHtml(getExportStatusLabel(item.status))}</td><td>${renderReportSummaryPairsHtml(item)}</td></tr>`;
   })
   .join('\n')}
 </tbody>
@@ -429,7 +438,7 @@ ${items
           const inner = renderReportTokensHtml(getExportDiffTokens(row));
           const tag = kind === 'h1' ? 'h3' : kind === 'h2' ? 'h4' : kind === 'h3' ? 'h5' : 'p';
           const tagText = getRowReportTag(row);
-          const idAttr = anchorIndex.has(row.id) ? ` id="${anchorFor(row)}"` : '';
+          const idAttr = anchorFor(row);
           const tagHtml = tagText ? `<span class="row-tag"><a href="#changes">${escapeHtml(tagText)}</a></span>` : '';
           return `<div class="row ${row.type} kind-${kind}"${idAttr}>${tagHtml}<${tag}>${inner}</${tag}></div>`;
         })
@@ -570,7 +579,7 @@ function buildExportMarkdown(date = new Date()) {
   const counts = getExportCounts(items);
   const changeIndex = new Map();
   items.forEach((item, i) => {
-    if (!item.ghost && !changeIndex.has(item.rowId)) changeIndex.set(item.rowId, i + 1);
+    for (const m of itemMembers(item)) if (!m.ghost && !changeIndex.has(m.rowId)) changeIndex.set(m.rowId, i + 1);
   });
   const reviewLine = getExportReviewLine(counts);
   const lines = [
@@ -604,11 +613,10 @@ function buildExportMarkdown(date = new Date()) {
           if (p.ins) return renderMarkdownTokens([{ value: p.ins, added: true }]);
           return renderMarkdownTokens([{ value: p.del, removed: true }]);
         })
-        .concat(more ? [`+${more} ${escapeMarkdownInline(t('moreDeltas'))}`] : [])
+        .concat(more ? [`+${more} ${escapeMarkdownInline(moreDeltasText(more))}`] : [])
         .join('<br>');
-      const page = item.ghost ? item.ghost.pageNum || 1 : item.row.pageNum || 1;
       lines.push(
-        `| ${n} | ${escapeMarkdownInline(getExportItemRef(item) || `#${n}`)} | ${page} | ${escapeMarkdownInline(getRowTypeLabel(item))} | ${escapeMarkdownInline(getExportStatusLabel(item.status))} | ${escapeMarkdownTableCell(summary)} |`
+        `| ${n} | ${escapeMarkdownInline(getExportItemRef(item) || `#${n}`)} | ${getExportItemPages(item)} | ${escapeMarkdownInline(getRowTypeLabel(item))} | ${escapeMarkdownInline(getExportStatusLabel(item.status))} | ${escapeMarkdownTableCell(summary)} |`
       );
     }
   } else {
@@ -654,11 +662,16 @@ function renderPrintCellHtml(html, block) {
   return `<td class="pv-cell kind-${kind}">${html}</td>`;
 }
 
-/** Builds a print-only, paginated rendering of the comparison for the current view mode. */
-function buildPrintViewHtml(date = new Date()) {
+/**
+ * Builds a print-only, paginated rendering. kind: 'split' (old and new side by side, landscape),
+ * 'inline' (one column with the marks in the text, portrait) or 'final' (the new version with
+ * every decision applied, as a clean document).
+ */
+function buildPrintViewHtml(date = new Date(), kind = state.viewMode) {
+  if (kind === 'final') return buildFinalPrintHtml();
   const rows = getExportBodyRows();
   const counts = getExportCounts();
-  const mode = state.viewMode;
+  const mode = kind === 'inline' ? 'inline' : 'split';
   const head = `
     <header class="pv-head">
       <div class="pv-title">${escapeHtml(getExportTitle())}</div>
@@ -738,9 +751,44 @@ function buildPrintViewHtml(date = new Date()) {
   return `${head}<main class="pv-body pv-mode-${mode}">${body}${emptyHtml}</main>`;
 }
 
+/** The new version as a clean document: every decision and edit applied, no marks. */
+function buildFinalPrintHtml() {
+  const blocks = getFinalBlocks();
+  const html = blocks
+    .map(block => {
+      const text = cleanExportText(block.text).trim();
+      if (!text) return '';
+      const kind = block.kind || 'p';
+      if (kind === 'h1' || kind === 'h2' || kind === 'h3') {
+        const tag = kind === 'h1' ? 'h1' : kind === 'h2' ? 'h2' : 'h3';
+        return `<${tag} class="pvf-${kind}">${escapeHtml(text)}</${tag}>`;
+      }
+      const indent = block.indent > 0 ? ` style="margin-left:${Math.min(block.indent, 6) * 1.6}em"` : '';
+      const split = extractListMarker(text, kind);
+      if (split) {
+        return `<p class="pvf-item pvf-${kind}"${indent}><span class="pvf-marker">${escapeHtml(split.marker)}</span><span class="pvf-body">${escapeHtml(split.body)}</span></p>`;
+      }
+      return `<p class="pvf-p"${indent}>${escapeHtml(text)}</p>`;
+    })
+    .join('');
+  return `<main class="pv-final" lang="${state.lang === 'de' ? 'de' : 'en'}">${html}</main>`;
+}
+
+/** Blocks of the new version as it stands now, without running headers and footers. */
+function getFinalBlocks() {
+  const blocks = state.alignedRows.length
+    ? state.alignedRows.filter(r => r.rightBlock).map(r => r.rightBlock)
+    : parseIntoBlocks(state.rightText || '');
+  return blocks.filter(b => !b.isHeaderFooter && b.kind !== 'hf' && !isInternalMarkerLine(b.text));
+}
+
+// The print view requested from the export menu; Ctrl/Cmd+P prints the current view.
+let requestedPrintKind = null;
+
 function preparePrintView() {
   if (typeof ensureComparisonCurrent === 'function') ensureComparisonCurrent();
   if (!state.alignedRows.length) return;
+  const kind = requestedPrintKind || (state.viewMode === 'inline' ? 'inline' : 'split');
   const date = new Date();
   let view = document.getElementById('print-view');
   if (!view) {
@@ -750,7 +798,7 @@ function preparePrintView() {
     view.setAttribute('aria-hidden', 'true');
     document.body.appendChild(view);
   }
-  setSafeContainerHtml(view, buildPrintViewHtml(date));
+  setSafeContainerHtml(view, buildPrintViewHtml(date, kind));
 
   let pageStyle = document.getElementById('print-page-style');
   if (!pageStyle) {
@@ -758,15 +806,18 @@ function preparePrintView() {
     pageStyle.id = 'print-page-style';
     document.head.appendChild(pageStyle);
   }
-  const footerLeft = `${getDisplayDocName('right')} ${t('exportVs')} ${getDisplayDocName('left')}`;
-  const orientation = state.viewMode === 'inline' ? 'portrait' : 'landscape';
-  pageStyle.textContent = `@media print { @page { size: A4 ${orientation}; margin: 14mm 12mm 16mm;
+  const footerLeft =
+    kind === 'final' ? getDisplayDocName('right') : `${getDisplayDocName('right')} ${t('exportVs')} ${getDisplayDocName('left')}`;
+  const orientation = kind === 'split' ? 'landscape' : 'portrait';
+  const margin = kind === 'final' ? '22mm 20mm 20mm 24mm' : '14mm 12mm 16mm';
+  pageStyle.textContent = `@media print { @page { size: A4 ${orientation}; margin: ${margin};
     @bottom-left { content: ${cssString(footerLeft)}; font: 7.5pt sans-serif; color: #444; }
     @bottom-right { content: ${cssString(`${t('pageLabel')} `)} counter(page) ${cssString(` ${t('pageOf')} `)} counter(pages); font: 7.5pt sans-serif; color: #444; } } }`;
   document.body.classList.add('has-print-view');
 }
 
 function cleanupPrintView() {
+  requestedPrintKind = null;
   document.body.classList.remove('has-print-view');
   const view = document.getElementById('print-view');
   if (view) view.remove();
@@ -822,6 +873,55 @@ function downloadWithToast(content, mimeType, filename, toastKey) {
   if (typeof showToast === 'function') showToast(tf(toastKey, { name: filename }));
 }
 
+/** "Vertrag_v2_Endfassung.docx": named after the new version, which it is. */
+function buildFinalFileName(ext) {
+  const base = sanitizeFileNamePart(state.rightName, 'DocDiff', 100);
+  return `${base}_${sanitizeFileNamePart(t('exportFileFinal'), 'Final')}.${ext}`;
+}
+
+/** The .docx the new version was read from, if it is still the loaded new version. */
+function getRightDocxSource() {
+  const src = state.docSources && state.docSources.right;
+  if (!src || state.rightFormat !== 'DOCX' || src.name !== state.rightName || !src.bytes) return null;
+  return src;
+}
+
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+/**
+ * Word export. With a .docx as the new version, the file itself is the base (original format);
+ * if that cannot be done reliably, the newly typeset document is used and the user is told.
+ */
+async function exportWord(kind) {
+  const date = new Date();
+  const source = getRightDocxSource();
+  let bytes = null;
+  let fellBack = false;
+  if (source) {
+    try {
+      bytes = await buildDocxFromSource(source, parseIntoBlocks(state.rightText), state.alignedRows, kind, date);
+    } catch (err) {
+      fellBack = true;
+      if (typeof console !== 'undefined') console.warn('Doc Diff: original-format Word export not possible:', err && err.message);
+    }
+  }
+  if (!bytes) bytes = buildGeneratedDocx(kind, date);
+  const filename = kind === 'final' ? buildFinalFileName('docx') : buildExportFileName('exportFileRedline', 'docx');
+  downloadBlob(bytes, DOCX_MIME, filename);
+  if (fellBack && typeof showImportNotice === 'function') {
+    showImportNotice(tf('noticeWordFallback', { name: filename }), 'warning');
+  } else if (typeof showToast === 'function') {
+    showToast(tf(source ? 'toastWordOriginal' : 'toastWord', { name: filename }));
+  }
+}
+
+function startPrint(kind) {
+  if (!state.alignedRows.length) return;
+  requestedPrintKind = kind;
+  preparePrintView();
+  window.print();
+}
+
 function handleExportAction(type) {
   // Commit an inline edit that is still open so the export reflects it.
   const openEditor = document.querySelector('.clause-inline-editor');
@@ -830,33 +930,43 @@ function handleExportAction(type) {
   // the current text, not the rows from before.
   ensureComparisonCurrent();
 
-  if (type === 'print') {
-    if (!state.alignedRows.length) return;
-    preparePrintView();
-    window.print();
-    return;
-  }
-
   // Exports need a finished comparison. The menu is disabled until then; never substitute
   // sample content for (or overwrite) a document the user has loaded.
   if (!state.alignedRows.length) return;
 
-  if (type === 'copy') {
+  if (type === 'print' || type === 'print-split' || type === 'print-inline' || type === 'print-final') {
+    const kind = type === 'print' ? (state.viewMode === 'inline' ? 'inline' : 'split') : type.slice(6);
+    startPrint(kind);
+  } else if (type === 'copy') {
     copyFinalTextToClipboard();
   } else if (type === 'txt') {
-    downloadWithToast(`${buildFinalText()}\n`, 'text/plain;charset=utf-8', buildExportFileName('exportFileFinal', 'txt'), 'toastTxt');
-  } else if (type === 'word') {
-    downloadWithToast(
-      buildDocxRedline(),
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      buildExportFileName('exportFileRedline', 'docx'),
-      'toastWord'
-    );
+    downloadWithToast(`${buildFinalText()}\n`, 'text/plain;charset=utf-8', buildFinalFileName('txt'), 'toastTxt');
+  } else if (type === 'word' || type === 'word-final') {
+    exportWord(type === 'word' ? 'tracked' : 'final');
   } else if (type === 'html') {
     downloadWithToast(buildExportHtmlReport(), 'text/html;charset=utf-8', buildExportFileName('exportFileReport', 'html'), 'toastHtml');
   } else if (type === 'md') {
     downloadWithToast(buildExportMarkdown(), 'text/markdown;charset=utf-8', buildExportFileName('exportFileReport', 'md'), 'toastMd');
   }
+}
+
+/**
+ * The descriptions in the export menu that depend on the documents: whether the Word file keeps
+ * the original format, and that open changes are part of the final version.
+ */
+function updateExportMenuTexts() {
+  const set = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  const source = getRightDocxSource();
+  set('exp-desc-word-final', source ? tf('expWordFinalDescOriginal', { name: source.name }) : t('expWordFinalDescNew'));
+  set('exp-desc-word', source ? tf('expWordDescOriginal', { name: source.name }) : t('expWordDesc'));
+  const open = state.listItems.filter(item => item.status === 'open').length;
+  set(
+    'exp-sec-final-desc',
+    open === 0 ? t('expSecFinalDesc') : open === 1 ? t('expSecFinalOpenOne') : tf('expSecFinalOpen', { n: open })
+  );
 }
 
 /* ── Export availability ─────────────────────────────────────────────────── */

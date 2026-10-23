@@ -362,6 +362,20 @@ function takeRecentHistory(stack, budget) {
   return { kept, used };
 }
 
+// The original .docx of a side (for the Word export in the original format), as base64.
+function bytesToBase64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function sessionSourceOf(side) {
+  const src = state.docSources && state.docSources[side];
+  const name = side === 'left' ? state.leftName : state.rightName;
+  const format = side === 'left' ? state.leftFormat : state.rightFormat;
+  if (!src || format !== 'DOCX' || src.name !== name) return undefined;
+  return { kind: 'docx', data: bytesToBase64(src.bytes), importedText: src.importedText };
+}
+
 function buildSessionPayload() {
   const redo = takeRecentHistory(state.redoStack, SESSION_HISTORY_CHAR_BUDGET);
   const undo = takeRecentHistory(state.undoStack, SESSION_HISTORY_CHAR_BUDGET - redo.used);
@@ -376,12 +390,14 @@ function buildSessionPayload() {
         name: state.leftName,
         format: state.leftFormat,
         text: state.leftText,
+        source: sessionSourceOf('left'),
       },
       right: {
         name: state.rightName,
         format: state.rightFormat,
         originalText: sessionTracker.originalRightText,
         text: state.rightText,
+        source: sessionSourceOf('right'),
       },
     },
     view: {
@@ -502,6 +518,22 @@ function expectHistoryV2(value) {
   });
 }
 
+function base64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+// Optional original .docx of a side: { kind: 'docx', data (base64), importedText }.
+function expectSource(value, name) {
+  if (value === undefined) return null;
+  if (!isPlainObject(value) || value.kind !== 'docx') throw new SessionFileError('sessionErrorInvalid');
+  const data = expectString(value.data, SESSION_MAX_FILE_BYTES);
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(data) || data.length % 4 !== 0) throw new SessionFileError('sessionErrorInvalid');
+  return { name, bytes: base64ToBytes(data), importedText: expectString(value.importedText, SESSION_MAX_FILE_BYTES) };
+}
+
 // Returns a fresh, fully validated object; throws SessionFileError otherwise.
 function validateSessionData(raw) {
   if (!isPlainObject(raw) || raw.format !== SESSION_FORMAT_ID) {
@@ -546,12 +578,14 @@ function validateSessionData(raw) {
       name: expectString(docs.left.name, SESSION_MAX_NAME_CHARS),
       format: expectFormatTag(docs.left.format),
       text: expectString(docs.left.text, SESSION_MAX_FILE_BYTES),
+      source: expectSource(docs.left.source, docs.left.name),
     },
     right: {
       name: expectString(docs.right.name, SESSION_MAX_NAME_CHARS),
       format: expectFormatTag(docs.right.format),
       originalText: expectString(docs.right.originalText, SESSION_MAX_FILE_BYTES),
       text: expectString(docs.right.text, SESSION_MAX_FILE_BYTES),
+      source: expectSource(docs.right.source, docs.right.name),
     },
     view: {
       mode: view.mode === 'pages' ? 'split' : view.mode,
@@ -599,6 +633,7 @@ async function applySessionData(session) {
   state.rightName = session.right.name;
   state.rightFormat = session.right.format;
   state.rightText = session.right.text;
+  state.docSources = { left: session.left.source || null, right: session.right.source || null };
   state.reviews = cloneReviews(session.reviews);
   state.undoStack = session.history.undo.map(e => ({ text: e.text, reviews: cloneReviews(e.reviews) }));
   state.redoStack = session.history.redo.map(e => ({ text: e.text, reviews: cloneReviews(e.reviews) }));

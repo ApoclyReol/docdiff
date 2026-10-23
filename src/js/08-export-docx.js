@@ -163,32 +163,34 @@ function docxApplyMarkerTab(tokens, block) {
   return replaced.concat(tokens.slice(1));
 }
 
+function isHeaderFooterBlock(block) {
+  return Boolean(block && (block.isHeaderFooter || block.kind === 'hf'));
+}
+
 /**
- * Builds the WordprocessingML body for the comparison. Pure function of `rows` and `meta`
- * so it can be unit-tested without a browser.
+ * Builds the WordprocessingML body. Pure function of `rows` and `meta` so it can be unit-tested
+ * without a browser.
+ *   meta.kind 'tracked' (default): open changes as tracked changes, accepted ones applied
+ *   meta.kind 'final': the new version only, without any marks
+ * The body is the document text and nothing else: running headers and footers of the source
+ * (page furniture of a PDF) are left out, so "Accept all" in Word yields a clean document.
+ * meta.comment (lines of text) becomes a Word comment on the first paragraph.
  */
 function buildDocxDocumentXml(rows, meta) {
   const date = toWordDate(meta.date);
+  const final = meta.kind === 'final';
   let revId = 1;
   const revAttrs = () => `w:id="${revId++}" w:author="${escapeXml(DOCX_AUTHOR)}" w:date="${date}"`;
   const paragraphs = [];
 
-  const metaPara = (label, value) =>
-    `<w:p><w:pPr><w:pStyle w:val="DocDiffMeta"/></w:pPr>${docxRun(`${label}: `, false, '<w:b/>')}${docxRun(value)}</w:p>`;
-
-  paragraphs.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(meta.title)}</w:p>`);
-  for (const [label, value] of meta.lines) paragraphs.push(metaPara(label, value));
-  paragraphs.push(
-    `<w:p><w:pPr><w:pStyle w:val="DocDiffMeta"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="6" w:color="A6A6A6"/></w:pBdr><w:spacing w:after="360"/></w:pPr>${docxRun(meta.note, false, '<w:i/>')}</w:p>`
-  );
-
   for (const row of rows) {
     const block = row.rightBlock || row.leftBlock;
+    if (isHeaderFooterBlock(block)) continue;
     const style = docxStyleForBlock(block);
     // Word semantics: a change accepted in Doc Diff is plain text (an accepted deletion is
     // simply gone); open changes become tracked changes. Rejected changes are already reverted
-    // in the rows (they compare as unchanged).
-    const accepted = row.type !== 'equal' && meta.reviewStatusOf && meta.reviewStatusOf(row) === 'accepted';
+    // in the rows (they compare as unchanged). The final version applies every change.
+    const accepted = final || (row.type !== 'equal' && meta.reviewStatusOf && meta.reviewStatusOf(row) === 'accepted');
     if (accepted && !row.rightBlock) continue;
     const tokens = docxApplyMarkerTab(
       accepted ? [{ value: cleanExportText(row.rightBlock.text) }] : getExportDiffTokens(row),
@@ -212,7 +214,16 @@ function buildDocxDocumentXml(rows, meta) {
         return docxRun(tok.value, false);
       })
       .join('');
-    paragraphs.push(`<w:p>${pPr}${runs}</w:p>`);
+    paragraphs.push({ pPr, runs });
+  }
+  if (!paragraphs.length) paragraphs.push({ pPr: '', runs: '' });
+
+  if (meta.comment && meta.comment.length) {
+    const first = paragraphs[0];
+    first.runs =
+      '<w:commentRangeStart w:id="0"/>' +
+      first.runs +
+      '<w:commentRangeEnd w:id="0"/><w:r><w:commentReference w:id="0"/></w:r>';
   }
 
   const sectPr =
@@ -225,7 +236,23 @@ function buildDocxDocumentXml(rows, meta) {
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-    `<w:body>${paragraphs.join('')}${sectPr}</w:body></w:document>`
+    `<w:body>${paragraphs.map(p => `<w:p>${p.pPr}${p.runs}</w:p>`).join('')}${sectPr}</w:body></w:document>`
+  );
+}
+
+/** The Word comment with the summary of a comparison (one paragraph per line). */
+function buildDocxCommentsXml(meta) {
+  const date = toWordDate(meta.date);
+  const paras = meta.comment
+    .map((line, i) =>
+      `<w:p>${i === 0 ? '<w:r><w:annotationRef/></w:r>' : ''}${docxRun(line, false, i === 0 ? '<w:b/>' : '')}</w:p>`
+    )
+    .join('');
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    `<w:comment w:id="0" w:author="${escapeXml(DOCX_AUTHOR)}" w:date="${date}" w:initials="DD">${paras}</w:comment>` +
+    '</w:comments>'
   );
 }
 
@@ -234,9 +261,7 @@ function buildDocxFooterXml(meta) {
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
     '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-    '<w:p><w:pPr><w:pStyle w:val="Footer"/><w:tabs><w:tab w:val="right" w:pos="9072"/></w:tabs></w:pPr>' +
-    docxRun(meta.footer) +
-    '<w:r><w:tab/></w:r>' +
+    '<w:p><w:pPr><w:pStyle w:val="Footer"/><w:jc w:val="right"/></w:pPr>' +
     docxRun(`${meta.pageLabel} `) +
     '<w:fldSimple w:instr=" PAGE "><w:r><w:t>1</w:t></w:r></w:fldSimple>' +
     docxRun(` ${meta.pageOfLabel} `) +
@@ -280,7 +305,8 @@ function buildDocxStylesXml(langTag) {
 function buildDocxPackageFiles(rows, meta) {
   const langTag = meta.lang === 'de' ? 'de-DE' : 'en-US';
   const created = toWordDate(meta.date);
-  return [
+  const hasComment = Boolean(meta.comment && meta.comment.length);
+  const files = [
     {
       name: '[Content_Types].xml',
       data:
@@ -292,6 +318,7 @@ function buildDocxPackageFiles(rows, meta) {
         '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
         '<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
         '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' +
+        (hasComment ? '<Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/>' : '') +
         '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
         '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>' +
         '</Types>',
@@ -315,6 +342,7 @@ function buildDocxPackageFiles(rows, meta) {
         'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
         `<dc:title>${escapeXml(meta.title)}</dc:title>` +
         `<dc:subject>${escapeXml(meta.subject)}</dc:subject>` +
+        (meta.description ? `<dc:description>${escapeXml(meta.description)}</dc:description>` : '') +
         `<dc:creator>${DOCX_AUTHOR}</dc:creator>` +
         `<cp:lastModifiedBy>${DOCX_AUTHOR}</cp:lastModifiedBy>` +
         `<dc:language>${langTag}</dc:language>` +
@@ -337,6 +365,7 @@ function buildDocxPackageFiles(rows, meta) {
         '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
         '<Relationship Id="rIdSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>' +
         '<Relationship Id="rIdFooter1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>' +
+        (hasComment ? '<Relationship Id="rIdComments" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/>' : '') +
         '</Relationships>',
     },
     { name: 'word/document.xml', data: buildDocxDocumentXml(rows, meta) },
@@ -352,33 +381,62 @@ function buildDocxPackageFiles(rows, meta) {
     },
     { name: 'word/footer1.xml', data: buildDocxFooterXml(meta) },
   ];
+  if (hasComment) files.push({ name: 'word/comments.xml', data: buildDocxCommentsXml(meta) });
+  return files;
 }
 
-/** Builds the complete .docx file (Uint8Array) for the current comparison state. */
-function buildDocxRedline(date = new Date()) {
-  const counts = getExportCounts();
+/**
+ * Summary of the comparison for the Word comment of the tracked export: the documents, the
+ * counts, the review status, how to work with the marks, and the header/footer changes (they
+ * are not in the body text).
+ */
+function buildDocxSummaryLines(date) {
+  const items = getExportItems();
+  const counts = getExportCounts(items);
   const lines = [
-    [t('exportLabelOriginal'), getDisplayDocName('left')],
-    [t('exportLabelRevised'), getDisplayDocName('right')],
-    [t('exportLabelCreated'), formatExportDate(date)],
-    [t('exportLabelChanges'), formatExportCountsLine(counts)],
+    getExportTitle(),
+    `${t('exportLabelCreated')}: ${formatExportDate(date)}`,
+    `${t('exportLabelChanges')}: ${formatExportCountsLine(counts)}`,
   ];
-  const review = getExportReviewLine();
-  if (review) lines.push([t('exportLabelReview'), review]);
-  lines.push([t('exportLabelHf'), state.ignoreHeadersFooters ? t('exportHfIgnored') : t('exportHfIncluded')]);
+  const review = getExportReviewLine(counts);
+  if (review) lines.push(`${t('exportLabelReview')}: ${review}`);
+  lines.push(t('docxNote'));
+  const hf = items.filter(item => isHeaderFooterItem(item) && item.status !== 'rejected');
+  if (hf.length) {
+    lines.push(t('docxHfHeading'));
+    for (const item of hf) {
+      const { pairs } = getRowChangeSummary(item, 80);
+      const change = pairs.map(p => (p.del && p.ins ? `${p.del} → ${p.ins}` : p.ins || p.del)).join('; ');
+      lines.push(`${getExportItemRef(item)} (${getExportItemPageLabel(item)}, ${getExportStatusLabel(item.status)}): ${change}`);
+    }
+  }
+  return lines;
+}
+
+/**
+ * The newly typeset Word file (Uint8Array) for the current comparison state:
+ *   'tracked' – "Accept all" in Word yields the new version (with the rejections applied),
+ *               "Reject all" the old version with the accepted changes applied
+ *   'final'   – the new version with every decision and edit applied, no marks
+ */
+function buildGeneratedDocx(kind, date = new Date()) {
+  const counts = getExportCounts();
   const meta = {
+    kind,
     lang: state.lang,
     date,
-    title: getExportTitle(),
-    subject: t('docxSubject'),
-    lines,
+    title: kind === 'final' ? getDisplayDocName('right') : getExportTitle(),
+    subject: t(kind === 'final' ? 'docxSubjectFinal' : 'docxSubject'),
+    description: kind === 'final' ? '' : formatExportCountsLine(counts),
     reviewStatusOf: row => row.reviewStatus || '',
-    note: t('docxNote'),
-    footer: `${getDisplayDocName('right')} ${t('exportVs')} ${getDisplayDocName('left')}`,
+    comment: kind === 'final' ? null : buildDocxSummaryLines(date),
     pageLabel: t('pageLabel'),
     pageOfLabel: t('pageOf'),
   };
-  // The document is always complete: "Accept all" in Word yields the new version (with the
-  // rejections applied), "Reject all" the old version with the accepted changes applied.
   return buildZipArchive(buildDocxPackageFiles(state.alignedRows, meta), date);
+}
+
+// Kept for callers and tests written against the earlier name.
+function buildDocxRedline(date = new Date()) {
+  return buildGeneratedDocx('tracked', date);
 }

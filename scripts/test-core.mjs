@@ -91,6 +91,36 @@ test('word diff: delete-only next to a number keeps the number unchanged', () =>
   assert.ok(parts.some(p => !p.removed && !p.added && p.value.includes('14')));
 });
 
+test('word diff: changes joined only by a hyphen or a space read as one replacement', () => {
+  const parts = assertInvariant(
+    'Modul C: Standard-Berichtswesen und Preisspiegel-Export als PDF-Dokument',
+    'Modul C: Echtzeit-Nachtragsmanagement, Preisspiegel und automatisierter Soll-Ist-Abgleich'
+  );
+  assert.deepEqual(plain(parts), [
+    { value: 'Modul C: ' },
+    { value: 'Standard-Berichtswesen', removed: true },
+    { value: 'Echtzeit-Nachtragsmanagement, Preisspiegel', added: true },
+    { value: ' und ' },
+    { value: 'Preisspiegel-Export als PDF-Dokument', removed: true },
+    { value: 'automatisierter Soll-Ist-Abgleich', added: true },
+  ]);
+});
+
+test('word diff: a single replaced word next to unchanged punctuation stays a single word', () => {
+  assert.deepEqual(plain(assertInvariant('Gerichtsstand ist Berlin.', 'Gerichtsstand ist München.')), [
+    { value: 'Gerichtsstand ist ' },
+    { value: 'Berlin', removed: true },
+    { value: 'München', added: true },
+    { value: '.' },
+  ]);
+  assert.deepEqual(plain(assertInvariant('EKT-Aufgliederung und Zuschlag', 'EKT-Kalkulation und Zuschlag')), [
+    { value: 'EKT-' },
+    { value: 'Aufgliederung', removed: true },
+    { value: 'Kalkulation', added: true },
+    { value: ' und Zuschlag' },
+  ]);
+});
+
 test('word diff: partial number replacements expand to the whole number', () => {
   const cases = [
     ['Betrag 145.000,00 EUR', 'Betrag 146.000,00 EUR', '145.000,00', '146.000,00'],
@@ -704,6 +734,14 @@ test('hf filter: identical running lines stay hidden, filter off shows everythin
   assert.equal(same.hfCount, 40);
   const b = pagedDoc(10, (p, parts) => { if (p === 7) parts.header = 'Bauvertrag Kita – Fassung 1.1'; });
   assert.equal(compare(a, b, false).changes.length, 1);
+});
+
+test('a rewritten text keeps the heading markers of the source (no heading turns into a paragraph)', () => {
+  const blocks = core.parseIntoBlocks('# Vertrag\n\n## Allgemeines\n\nText.\n\nOhne Marker');
+  const lines = blocks.map(b => core.serializeBlockLine(b));
+  assert.deepEqual([...lines.slice(0, 3)], ['# Vertrag', '## Allgemeines', 'Text.']);
+  assert.ok(!lines[3].startsWith('#'), 'no marker is added where the source had none');
+  assert.equal(core.parseIntoBlocks(lines.join("\n\n")).map(b => b.kind).join(), blocks.map(b => b.kind).join());
 });
 
 for (const f of failures) console.error(f);

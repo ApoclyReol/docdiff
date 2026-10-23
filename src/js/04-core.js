@@ -36,7 +36,8 @@ function serializeBlockLine(block) {
   const meta = [];
   if (block.kind === 'hf' || block.isHeaderFooter) meta.push('hf');
   if (block.indent > 0) meta.push(`lvl=${block.indent}`);
-  return metaLine(meta.join(';'), block.text);
+  // A heading marker ("## ") from the source stays, so a rewritten text keeps its structure.
+  return metaLine(meta.join(';'), (block.headingMarker || '') + block.text);
 }
 
 function parseLineMeta(line) {
@@ -658,8 +659,11 @@ function parseIntoBlocks(rawText) {
         (repeatCounts.get(normalizeHfRepeatKey(line)) || 0) >= 2);
 
     const kind = classifyBlockKind(line, !seenContentBlock && !isHeaderFooter, isHeaderFooter);
+    let headingMarker = '';
     if (!isHeaderFooter) {
       seenContentBlock = true;
+      const m = line.match(/^#{1,3}\s+/);
+      if (m) headingMarker = `${m[0].trim()} `;
       line = line.replace(/^#{1,3}\s+/, '').trim();
       if (!line) continue;
     }
@@ -691,6 +695,7 @@ function parseIntoBlocks(rawText) {
       sectionRef: currentSectionRef,
       text: line,
       kind,
+      headingMarker,
       indent: entry.indent,
       isHeading,
       isHeaderFooter,
@@ -1083,15 +1088,95 @@ function computeCleanWordDiff(oldText, newText) {
     }
   }
 
-  const cleaned = mergedNums
-    .filter(tok => tok.value.length > 0)
-    .map(tok => (tok.added ? { value: tok.value, added: true } : tok.removed ? { value: tok.value, removed: true } : { value: tok.value }));
+  const cleaned = mergeFragmentedChanges(
+    mergedNums
+      .filter(tok => tok.value.length > 0)
+      .map(tok => (tok.added ? { value: tok.value, added: true } : tok.removed ? { value: tok.value, removed: true } : { value: tok.value }))
+  );
 
   if (wordDiffPreservesTexts(cleaned, oldText, newText)) return cleaned;
   // Never show a diff that does not reproduce the source texts: fall back to the raw diff.
   return raw.map(tok =>
     tok.added ? { value: tok.value, added: true } : tok.removed ? { value: tok.value, removed: true } : { value: tok.value }
   );
+}
+
+/**
+ * Joins changes that only an unchanged hyphen or space separates into one replacement, so a
+ * rewritten phrase reads as one change instead of misleading word pairs:
+ * "[Standard]→[Echtzeit]-[Berichtswesen]→[Nachtragsmanagement]" becomes
+ * "[Standard-Berichtswesen]→[Echtzeit-Nachtragsmanagement]". The joined glue goes into both
+ * sides, so the invariant (unchanged + removed = old, unchanged + added = new) holds. Each run of
+ * adjacent changes ends up as at most one removal followed by one insertion; whitespace shared
+ * by both sides at the edges stays unchanged.
+ */
+function mergeFragmentedChanges(parts) {
+  const isChange = tok => Boolean(tok && (tok.removed || tok.added));
+  const glued = [];
+  for (let i = 0; i < parts.length; i++) {
+    const cur = parts[i];
+    const isGlue =
+      !isChange(cur) &&
+      isChange(glued[glued.length - 1]) &&
+      isChange(parts[i + 1]) &&
+      (/^\s+$/.test(cur.value) || !/\s/.test(cur.value));
+    if (isGlue) {
+      glued.push({ value: cur.value, removed: true }, { value: cur.value, added: true });
+    } else {
+      glued.push(cur);
+    }
+  }
+
+  const out = [];
+  const pushEqual = value => {
+    if (!value) return;
+    const last = out[out.length - 1];
+    if (last && !isChange(last)) last.value += value;
+    else out.push({ value });
+  };
+  let i = 0;
+  while (i < glued.length) {
+    if (!isChange(glued[i])) {
+      pushEqual(glued[i].value);
+      i++;
+      continue;
+    }
+    let rem = '';
+    let add = '';
+    while (i < glued.length && isChange(glued[i])) {
+      if (glued[i].removed) rem += glued[i].value;
+      else add += glued[i].value;
+      i++;
+    }
+    let lead = '';
+    let trail = '';
+    if (rem && add) {
+      const leadRem = rem.match(/^\s*/)[0];
+      const leadAdd = add.match(/^\s*/)[0];
+      while (lead.length < Math.min(leadRem.length, leadAdd.length) && leadRem[lead.length] === leadAdd[lead.length]) {
+        lead += leadRem[lead.length];
+      }
+      rem = rem.slice(lead.length);
+      add = add.slice(lead.length);
+      const trailRem = rem.match(/\s*$/)[0];
+      const trailAdd = add.match(/\s*$/)[0];
+      let n = 0;
+      while (
+        n < Math.min(trailRem.length, trailAdd.length) &&
+        trailRem[trailRem.length - 1 - n] === trailAdd[trailAdd.length - 1 - n]
+      ) {
+        n++;
+      }
+      trail = n ? rem.slice(rem.length - n) : '';
+      rem = rem.slice(0, rem.length - n);
+      add = add.slice(0, add.length - n);
+    }
+    pushEqual(lead);
+    if (rem) out.push({ value: rem, removed: true });
+    if (add) out.push({ value: add, added: true });
+    pushEqual(trail);
+  }
+  return out;
 }
 
 function coalesceSideTokens(sideParts, prop) {

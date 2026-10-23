@@ -680,6 +680,7 @@ async function readDocumentFile(file) {
   } else if (kind === 'docx') {
     result = await extractDocxText(buffer);
     result.format = 'DOCX';
+    result.sourceBytes = bytes;
   } else {
     const { text, warnings } = decodeTextFile(bytes, ext);
     const looksLikeHtml = /^\s*(?:<!doctype html|<html[\s>])/i.test(text.slice(0, 2048));
@@ -719,7 +720,7 @@ async function handleFileUpload(file, side, opts = {}) {
   fnLabel.textContent = `${t('readingFile')} ${file.name}…`;
 
   try {
-    const { text, format, warnings } = await readDocumentFile(file);
+    const { text, format, warnings, sourceBytes } = await readDocumentFile(file);
     if (isStale()) {
       if (seq === uploadSeq[side]) restoreLabel();
       return false;
@@ -734,6 +735,7 @@ async function handleFileUpload(file, side, opts = {}) {
       state.rightFormat = format;
       state.rightText = text;
     }
+    state.docSources[side] = sourceBytes ? { name: file.name, bytes: sourceBytes, importedText: text } : null;
     resetEditHistory();
     if (warnings && warnings.length) {
       showImportNotice(`${file.name}: ${warnings.join(' ')}`, 'warning');

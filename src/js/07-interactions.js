@@ -409,6 +409,7 @@ function rebuildRightTextFromRows(targetRowId, replacementText) {
       serializeBlockLine({
         text: line.trim(),
         kind: template ? template.kind : 'p',
+        headingMarker: template ? template.headingMarker : '',
         indent: template ? template.indent : 0,
         isHeaderFooter: Boolean(target && target.rightBlock && target.rightBlock.isHeaderFooter),
       })
@@ -470,6 +471,7 @@ function rebuildRightTextReplacingRows(replacements) {
         serializeBlockLine({
           text: line.trim(),
           kind: row.rightBlock.kind,
+          headingMarker: row.rightBlock.headingMarker,
           indent: row.rightBlock.indent,
           isHeaderFooter: Boolean(row.rightBlock.isHeaderFooter),
         })

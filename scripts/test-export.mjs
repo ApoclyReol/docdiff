@@ -22,6 +22,7 @@ const sources = [
   'src/js/06d-review.js',
   'src/js/08-export-docx.js',
   'src/js/08-export.js',
+  'src/js/08b-export-docx-source.js',
 ];
 
 const harness = `
@@ -31,6 +32,7 @@ const state = {
   filteredHfCount: 0, viewMode: 'split', rightAllBlocks: [],
 };
 function t(key) { return I18N[state.lang][key] || I18N.de[key] || key; }
+function formatMsg(key, params = {}) { return t(key).replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? String(params[k]) : '')); }
 function compare(leftText, rightText, opts = {}) {
   Object.assign(state, { onlyChanges: false, ignoreHeadersFooters: true }, opts);
   const l = parseIntoBlocks(leftText);
@@ -50,6 +52,10 @@ function compare(leftText, rightText, opts = {}) {
 const context = {
   console,
   TextEncoder,
+  TextDecoder,
+  Blob,
+  Response,
+  DecompressionStream,
   URL,
   Intl,
   navigator: { language: 'de-DE', languages: ['de-DE'] },
@@ -96,8 +102,8 @@ function readZip(bytes) {
 
 /** Text of each body paragraph after accepting (or rejecting) all tracked changes. */
 function resolveRevisions(documentXml, mode) {
-  const body = documentXml.split('<w:body>')[1];
-  const paragraphs = body.match(/<w:p>[\s\S]*?<\/w:p>/g) || [];
+  const body = documentXml.split(/<w:body>/)[1];
+  const paragraphs = body.match(/<w:p(?: [^>]*)?>[\s\S]*?<\/w:p>/g) || [];
   const out = [];
   for (let p of paragraphs) {
     const markDeleted = /<w:pPr>.*?<w:rPr><w:del /.test(p);
@@ -116,8 +122,7 @@ function resolveRevisions(documentXml, mode) {
 }
 
 const normalizeSpace = s => s.replace(/\s+/g, ' ').trim();
-/** Title + "DocDiffMeta" paragraphs before the document body. */
-const metaParagraphCount = documentXml => 1 + (documentXml.match(/<w:pStyle w:val="DocDiffMeta"\/>/g) || []).length;
+const isHf = block => Boolean(block && (block.isHeaderFooter || block.kind === 'hf'));
 let checks = 0;
 
 /* ── File names ───────────────────────────────────────────────────────────── */
@@ -156,7 +161,7 @@ for (const lang of ['de', 'en']) {
 
     // DOCX: valid ZIP, required parts, accept-all == new version, reject-all == old version.
     const files = readZip(api.buildDocxRedline(new Date('2026-10-22T12:00:00Z')));
-    for (const part of ['[Content_Types].xml', '_rels/.rels', 'word/document.xml', 'word/styles.xml', 'word/settings.xml', 'word/_rels/document.xml.rels', 'word/footer1.xml', 'docProps/core.xml', 'docProps/app.xml']) {
+    for (const part of ['[Content_Types].xml', '_rels/.rels', 'word/document.xml', 'word/styles.xml', 'word/settings.xml', 'word/_rels/document.xml.rels', 'word/footer1.xml', 'word/comments.xml', 'docProps/core.xml', 'docProps/app.xml']) {
       assert.ok(files.has(part), `${label}: docx part ${part}`);
       assert.ok(files.get(part).startsWith('<?xml'), `${label}: ${part} has XML declaration`);
     }
@@ -166,15 +171,28 @@ for (const lang of ['de', 'en']) {
     assert.match(doc, /<w:pStyle w:val="Heading2"\/>/);
     const ids = [...doc.matchAll(/<w:(?:ins|del) w:id="(\d+)"/g)].map(m => m[1]);
     assert.equal(new Set(ids).size, ids.length, `${label}: revision ids are unique`);
-    const metaParagraphs = metaParagraphCount(doc);
-    assert.equal(metaParagraphs, 1 + 5 + 1, `${label}: title, five facts, note (nothing reviewed)`);
-    const accepted = resolveRevisions(doc, 'accept').slice(metaParagraphs).map(normalizeSpace);
-    const rejected = resolveRevisions(doc, 'reject').slice(metaParagraphs).map(normalizeSpace);
+    // The body is the document text only: no cover block, no running headers/footers.
+    assert.ok(!doc.includes('DocDiffMeta'), `${label}: no summary block in the body`);
+    const accepted = resolveRevisions(doc, 'accept').map(normalizeSpace);
+    const rejected = resolveRevisions(doc, 'reject').map(normalizeSpace);
     // Arrays created inside the vm realm have a different prototype; copy them for deepEqual.
-    const expectNew = [...state.alignedRows.filter(r => r.rightBlock).map(r => normalizeSpace(r.rightBlock.text))];
-    const expectOld = [...state.alignedRows.filter(r => r.leftBlock).map(r => normalizeSpace(r.leftBlock.text))];
+    const bodyRows = state.alignedRows.filter(r => !isHf(r.rightBlock || r.leftBlock));
+    const expectNew = [...bodyRows.filter(r => r.rightBlock).map(r => normalizeSpace(r.rightBlock.text))];
+    const expectOld = [...bodyRows.filter(r => r.leftBlock).map(r => normalizeSpace(r.leftBlock.text))];
     assert.deepEqual(accepted, expectNew, `${label}: Accept all yields the new version`);
     assert.deepEqual(rejected, expectOld, `${label}: Reject all yields the old version`);
+    // The summary (and the header/footer changes, which are not body text) is a Word comment.
+    const comments = files.get('word/comments.xml');
+    assert.ok(comments.includes(api.escapeXml(api.formatExportCountsLine(api.getExportCounts()))), `${label}: counts in the comment`);
+    assert.equal(doc.includes('<w:commentReference w:id="0"/>'), true, `${label}: comment anchored in the body`);
+    assert.ok(files.get('[Content_Types].xml').includes('/word/comments.xml'), `${label}: comment part registered`);
+    const hfChanged = state.changeRows.some(r => isHf(r.rightBlock || r.leftBlock));
+    assert.equal(comments.includes(api.escapeXml(api.t('docxHfHeading'))), hfChanged, `${label}: header/footer changes listed in the comment`);
+    // Final version: no marks, no comment, exactly the new body text.
+    const finalFiles = readZip(api.buildGeneratedDocx('final', new Date('2026-10-22T12:00:00Z')));
+    const finalDoc = finalFiles.get('word/document.xml');
+    assert.ok(!/<w:(ins|del) /.test(finalDoc) && !finalFiles.has('word/comments.xml'), `${label}: final version has no marks`);
+    assert.deepEqual(resolveRevisions(finalDoc, 'accept').map(normalizeSpace), expectNew, `${label}: final version text`);
 
     // HTML report.
     for (const onlyChanges of [false, true]) {
@@ -185,10 +203,14 @@ for (const lang of ['de', 'en']) {
       assert.ok(!/<script/i.test(html), 'report contains no script');
       assert.ok(!/https?:\/\//.test(html), 'report contains no external URL');
       assert.ok(html.includes(api.t(onlyChanges ? 'exportScopeChanges' : 'exportScopeFull')), 'report states scope');
-      for (const row of state.changeRows) {
-        const n = state.changeRows.indexOf(row) + 1;
+      const items = api.getExportItems();
+      assert.equal(items.length, state.listItems.length, `${label}: report lists the changes as the list does`);
+      items.forEach((item, i) => {
+        const n = i + 1;
         assert.ok(html.includes(`href="#c${n}"`) && html.includes(`id="c${n}"`), `report anchor c${n}`);
-      }
+      });
+      assert.equal(new Set([...html.matchAll(/ id="(c\d+)"/g)].map(m => m[1])).size, [...html.matchAll(/ id="(c\d+)"/g)].length, `${label}: anchor ids unique`);
+      assert.ok(html.includes(api.formatExportCountsLine(api.getExportCounts())) || html.includes(`<strong>${items.length}</strong>`), `${label}: count as in the list`);
       assert.ok(html.includes(`<span class="sr">${api.t('a11yRemovedStart')} </span>`));
       const tagBalance = tag => (html.match(new RegExp(`<${tag}>`, 'g')) || []).length === (html.match(new RegExp(`</${tag}>`, 'g')) || []).length;
       assert.ok(tagBalance('del') && tagBalance('ins'), 'balanced del/ins');
@@ -300,10 +322,10 @@ checks += 2;
     vm.runInContext('state.reviews = {};', context);
     api.__compareFull(sample.v1, sample.v2);
     const date = new Date('2026-10-22T12:00:00Z');
-    // Exports count every occurrence (the list merges identical header/footer changes).
+    // Exports count the changes as the list does (identical header/footer changes are one).
     const total = api.getExportItems().length;
-    assert.equal(total, state.changeRows.length, `${lang}: one export item per change row`);
-    assert.ok(state.listItems.length < total, `${lang}: repeated header/footer changes are one list item`);
+    assert.equal(total, state.listItems.length, `${lang}: one export item per list item`);
+    assert.ok(total < state.changeRows.length, `${lang}: repeated header/footer changes are one change`);
     assert.ok(state.listItems.some(i => i.members && i.members.length > 1), `${lang}: merged header/footer item`);
 
     // Nothing reviewed: identical to an export without review semantics.
@@ -326,12 +348,12 @@ checks += 2;
 
     const files = readZip(api.buildDocxRedline(date));
     const doc = files.get('word/document.xml');
-    const metaCount = metaParagraphCount(doc);
-    assert.equal(metaCount, 1 + 6 + 1, `${lang}: review line among the facts`);
-    assert.ok(doc.includes(api.escapeXml(api.tf('exportReviewFmt', { k: 7, n: total, a: 4, r: 3 }))), `${lang}: review summary in the Word file`);
-    const acceptAll = resolveRevisions(doc, 'accept').slice(metaCount).map(normalizeSpace);
-    const rejectAll = resolveRevisions(doc, 'reject').slice(metaCount).map(normalizeSpace);
-    const rows = [...state.alignedRows];
+    const counts2 = api.getExportCounts();
+    const reviewLine = api.tf('exportReviewFmt', { k: counts2.accepted + counts2.rejected, n: total, a: counts2.accepted, r: counts2.rejected });
+    assert.ok(files.get('word/comments.xml').includes(api.escapeXml(reviewLine)), `${lang}: review summary in the Word comment`);
+    const acceptAll = resolveRevisions(doc, 'accept').map(normalizeSpace);
+    const rejectAll = resolveRevisions(doc, 'reject').map(normalizeSpace);
+    const rows = [...state.alignedRows].filter(r => !isHf(r.rightBlock || r.leftBlock));
     const expectAccept = rows.filter(r => r.rightBlock).map(r => normalizeSpace(r.rightBlock.text));
     const expectReject = [];
     for (const r of rows) {
@@ -367,5 +389,71 @@ checks += 2;
     checks += 12;
   }
 }
+
+/* ── Word export in the original format (the new version is a .docx) ───────────────────
+ * The file is the base: untouched paragraphs stay byte for byte, changed ones keep the run
+ * formatting of the words that stay; the result is verified before it is returned. */
+await (async () => {
+  const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+  const P = {
+    heading: '<w:p w14:paraId="1"><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Vertrag</w:t></w:r></w:p>',
+    bold: '<w:p><w:r><w:t xml:space="preserve">Der </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>Auftragnehmer</w:t></w:r><w:r><w:t xml:space="preserve"> liefert bis 12.03.2026.</w:t></w:r></w:p>',
+    link: '<w:p><w:bookmarkStart w:id="7" w:name="lh"/><w:hyperlink r:id="rIdLink"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t>Lastenheft</w:t></w:r></w:hyperlink><w:bookmarkEnd w:id="7"/><w:r><w:t xml:space="preserve"> gilt.</w:t></w:r></w:p>',
+    numbered: '<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>Leistungen werden erbracht.</w:t></w:r></w:p>',
+    tab: '<w:p><w:r><w:rPr><w:i/></w:rPr><w:t>Preis:</w:t></w:r><w:r><w:tab/></w:r><w:r><w:t>100 EUR</w:t></w:r></w:p>',
+    table: '<w:tbl><w:tblPr/><w:tr><w:tc><w:p><w:r><w:t>A</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>B</w:t></w:r></w:p></w:tc></w:tr></w:tbl>',
+  };
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ${W} xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"><w:body>${Object.values(P).join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/></w:sectPr></w:body></w:document>`;
+  const bytes = api.buildZipArchive([
+    { name: '[Content_Types].xml', data: '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>' },
+    { name: 'word/document.xml', data: documentXml },
+    { name: 'word/media/image1.png', data: new Uint8Array([137, 80, 78, 71, 0, 1, 2]) },
+  ]);
+  // What the reader makes of it: list numbers and headings are added as text.
+  const imported = ['# Vertrag', 'Der Auftragnehmer liefert bis 12.03.2026.', 'Lastenheft gilt.', '(1) Leistungen werden erbracht.', 'Preis: 100 EUR', 'A · B'].join('\n\n');
+  const old = ['# Vertrag', 'Der Auftragnehmer liefert bis 01.02.2026.', 'Lastenheft gilt.', 'Alt entfällt.', '(1) Leistungen werden erbracht.', 'Preis: 90 EUR', 'A · C'].join('\n\n');
+  // Edited one paragraph, rejected the price change (the old wording is back).
+  const current = imported.replace('Lastenheft gilt.', 'Lastenheft gilt ab sofort.').replace('Preis: 100 EUR', 'Preis: 90 EUR');
+  const finalBlocks = api.parseIntoBlocks(current);
+  const rows = api.alignDocumentBlocks(api.parseIntoBlocks(old), finalBlocks);
+  const source = { bytes, importedText: imported };
+  const date = new Date('2026-10-22T12:00:00Z');
+
+  const read = async out => {
+    const entries = await api.readZipEntries(out);
+    return { doc: new TextDecoder().decode(entries.find(e => e.name === 'word/document.xml').data), entries };
+  };
+  const paraTexts = (doc, mode) => resolveRevisions(doc, mode).map(normalizeSpace).filter(Boolean);
+
+  // Final version.
+  const fin = await read(await api.buildDocxFromSource(source, finalBlocks, rows, 'final', date));
+  assert.ok(fin.entries.some(e => e.name === 'word/media/image1.png' && e.data.length === 7), 'other parts are kept');
+  for (const key of ['heading', 'bold', 'numbered', 'table']) assert.ok(fin.doc.includes(P[key]), `final: unchanged ${key} paragraph is byte-identical`);
+  assert.ok(!/<w:(ins|del) /.test(fin.doc), 'final: no revision marks');
+  assert.deepEqual(paraTexts(fin.doc, 'accept'), ['Vertrag', 'Der Auftragnehmer liefert bis 12.03.2026.', 'Lastenheft gilt ab sofort.', 'Leistungen werden erbracht.', 'Preis: 90 EUR', 'A', 'B'], 'final: text');
+  assert.match(fin.doc, /<w:hyperlink r:id="rIdLink"><w:r><w:rPr><w:rStyle w:val="Hyperlink"\/><\/w:rPr><w:t xml:space="preserve">Lastenheft<\/w:t><\/w:r><\/w:hyperlink>/, 'final: the link stays a link');
+  assert.ok(fin.doc.includes('<w:bookmarkStart w:id="7" w:name="lh"/>'), 'final: bookmarks stay');
+  assert.match(fin.doc, /<w:i\/><\/w:rPr><w:t xml:space="preserve">Preis:<\/w:t><\/w:r><w:r><w:tab\/>(?:<\/w:r><w:r>)?<w:t xml:space="preserve">90 EUR/, 'final: italics and the tab stay');
+  assert.ok(fin.doc.includes('<w:sectPr><w:pgSz w:w="11906" w:h="16838"/></w:sectPr>'), 'final: page layout stays');
+
+  // Tracked changes on the original.
+  const tr = await read(await api.buildDocxFromSource(source, finalBlocks, rows, 'tracked', date));
+  assert.ok(tr.doc.includes(P.heading) && tr.doc.includes(P.numbered), 'tracked: unchanged paragraphs are byte-identical');
+  assert.deepEqual(paraTexts(tr.doc, 'accept'), ['Vertrag', 'Der Auftragnehmer liefert bis 12.03.2026.', 'Lastenheft gilt ab sofort.', 'Leistungen werden erbracht.', 'Preis: 90 EUR', 'A', 'B'], 'tracked: Accept all = final version');
+  assert.deepEqual(paraTexts(tr.doc, 'reject'), ['Vertrag', 'Der Auftragnehmer liefert bis 01.02.2026.', 'Lastenheft gilt.', 'Alt entfällt.', 'Leistungen werden erbracht.', 'Preis: 90 EUR', 'A', 'C'], 'tracked: Reject all = old version');
+  assert.match(tr.doc, /<w:b\/><\/w:rPr><w:t xml:space="preserve">Auftragnehmer<\/w:t>/, 'tracked: bold word keeps its formatting');
+  assert.match(tr.doc, /<w:del w:id="\d+" w:author="Doc Diff" w:date="2026-10-22T12:00:00Z"><w:r><w:delText xml:space="preserve">01\.02\.2026<\/w:delText>/, 'tracked: deletion');
+  assert.match(tr.doc, /<w:pPr><w:rPr><w:del [^>]*\/><\/w:rPr><\/w:pPr><w:del [^>]*><w:r><w:delText xml:space="preserve">Alt entfällt\.<\/w:delText>/, 'tracked: removed paragraph with deleted paragraph mark');
+  const ids = [...tr.doc.matchAll(/<w:(?:ins|del) w:id="(\d+)"/g)].map(m => m[1]);
+  assert.equal(new Set(ids).size, ids.length, 'tracked: revision ids unique');
+  assert.ok(ids.every(id => Number(id) > 7), 'tracked: revision ids do not clash with bookmark ids');
+
+  // A change the file cannot carry (text that is not in the body) is refused, never dropped.
+  const withNote = `${imported}\n\nFußnotentext.`;
+  const noteFinal = api.parseIntoBlocks(`${current}\n\nGeänderter Fußnotentext.`);
+  const noteRows = api.alignDocumentBlocks(api.parseIntoBlocks(old), noteFinal);
+  await assert.rejects(api.buildDocxFromSource({ bytes, importedText: withNote }, noteFinal, noteRows, 'final', date), /outside the body/);
+  checks += 6;
+})();
 
 console.log(`✓ Export builder tests passed (${checks} check groups).`);
