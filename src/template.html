@@ -576,15 +576,17 @@ __APP_CSS__
     </div>
   </dialog>
   <!-- Inlined libraries (PDF.js + PDF.js worker + Mammoth DOCX + jsdiff) and the app.
-       They sit at the end of <body> so the static landing page above renders first. -->
-  <script>
+       They sit at the end of <body> so the static landing page above renders first.
+       PDF.js and Mammoth are not executed here: they start the first time a PDF or Word file is
+       read (startEmbeddedLibrary), so opening the page does not wait for ~1 MB of JavaScript. -->
+  <script type="text/plain" id="lib-pdfjs">
 __PDF_JS__
   </script>
   <!-- Not executed here: started as a Blob Web Worker on first PDF import (ensurePdfJsWorker) -->
   <script type="text/plain" id="pdfjs-worker-source">
 __PDF_WORKER_JS__
   </script>
-  <script>
+  <script type="text/plain" id="lib-mammoth">
 __MAMMOTH_JS__
   </script>
   <script>
