@@ -5,9 +5,10 @@ Builds the self-contained single-file HTML bundle from `src/template.html`, `src
 
 - `site/index.html` and `DocDiff.html`: German page (default), identical files
 - `site/en/index.html`: the same app as an English page for https://docdiff.app/en/
+- `DocDiff_简体中文.html`: the standalone file pinned to Simplified Chinese
 
 The page language only decides the static HTML (head metadata, structured data and the landing
-text crawlers and no-JS visitors see); every page contains both languages and the DE / EN toggle.
+text crawlers and no-JS visitors see); every page contains all three languages and a language toggle.
 Static text is rendered from `src/js/01-i18n.js`, the single source of truth (read with Node).
 """
 import base64
@@ -63,6 +64,18 @@ PAGES = {
         "og_locale_alt": "de_DE",
         "og_image": SITE_URL + "og-image-en.png?v=1",
         "outputs": [os.path.join("site", "en", "index.html")],
+    },
+}
+
+# A local-only Chinese bundle; no additional hosted URL is advertised.
+PAGES['zh-CN'] = {
+    **PAGES['de'],
+    'html_attrs': 'lang="zh-CN" data-page-lang="zh-CN"',
+    'og_locale': 'zh_CN',
+    'outputs': ['DocDiff_简体中文.html'],
+    'output_html_attrs': {},
+    'output_strip_lines': {
+        'DocDiff_简体中文.html': PAGES['de']['output_strip_lines']['DocDiff.html'],
     },
 }
 
@@ -167,7 +180,7 @@ def json_ld(template: str, lang: str, strings: dict, version: str) -> str:
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
         "isAccessibleForFree": True,
         "license": license_url,
-        "inLanguage": ["de", "en"],
+        "inLanguage": ["de", "en", "zh-CN"],
         "featureList": [strings[key] for key in features],
         "downloadUrl": OFFLINE_URL,
         "softwareHelp": {"@type": "CreativeWork", "url": REPO_URL + "#readme"},
@@ -211,6 +224,11 @@ def render_page(template: str, lang: str, i18n: dict, version: str) -> str:
     """Language-specific static parts of the page; runs on the template only, never on bundled code."""
     page, strings = PAGES[lang], i18n[lang]
     out = render_static_text(template, strings)
+    out = out.replace('>0 Änderungen</h2>', '>' + html.escape(strings['listTitle'].replace('{n}', '0')) + '</h2>')
+    for literal, key in [('Prüfstand', 'filterGroupStatus'), ('Art', 'filterGroupKind')]:
+        out = out.replace('label="' + literal + '"', 'label="' + html.escape(strings[key], quote=True) + '"')
+    for literal, key in [('Alte Fassung', 'colLeft'), ('Neue Fassung', 'colRight'), ('Alte und neue Fassung', 'paneUnifiedLabel')]:
+        out = out.replace('aria-label="' + literal + '"', 'aria-label="' + html.escape(strings[key], quote=True) + '"')
     out = re.sub(
         r"__I18N:(\w+)__",
         lambda m: html.escape(strings[m.group(1)], quote=True),
@@ -223,7 +241,7 @@ def render_page(template: str, lang: str, i18n: dict, version: str) -> str:
         .replace("__OG_LOCALE__", page["og_locale"])
         .replace("__OG_LOCALE_ALT__", page["og_locale_alt"])
         .replace("__OG_IMAGE__", page["og_image"])
-        .replace("__LANG_LABEL__", "English" if lang == "de" else "Deutsch")
+        .replace("__LANG_LABEL__", "简体中文" if lang == "de" else "Deutsch" if lang == "en" else "English")
         .replace("__JSON_LD__", json_ld(template, lang, strings, version))
     )
     return out

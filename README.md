@@ -27,6 +27,12 @@
   </picture>
 </p>
 
+## Simplified Chinese in this fork
+
+Download [`DocDiff_简体中文.html`](DocDiff_简体中文.html) and open the saved file in a browser. It is a single offline HTML file with Simplified Chinese UI, help, examples, error messages, reports and export labels. The original copyright, bundled libraries and security policy are retained.
+
+The Chinese file starts in Simplified Chinese. `DocDiff.html` follows the browser language, including Chinese; the existing hosted pages keep their German and English defaults. The language button cycles through Simplified Chinese, English and German. All bundles are generated from the same sources with `python3 scripts/build.py`.
+
 ## Your documents stay on your device
 
 - **No upload.** Files are read and compared inside the browser tab. The page's Content Security Policy (`connect-src 'none'`) makes the browser block every network connection from the page.
@@ -40,7 +46,7 @@ This makes it suitable for confidential contracts and documents with personal da
 
 Doc Diff is a small tool for one job: you have an old and a new version of a document, typically a contract or a tender, and you want to know exactly what changed. It is free, has no accounts, no ads and no tracking, and the whole app is a single HTML file you can also run offline.
 
-It was written with German contracts in mind (`§ 1`, `(1)`, `1.1` clause numbering), and the interface is in German and English.
+It was written with German contracts in mind (`§ 1`, `(1)`, `1.1` clause numbering), and the interface supports German, English and Simplified Chinese.
 
 ## How to use it
 
@@ -133,11 +139,11 @@ The app is plain HTML, CSS and JavaScript without a framework or package manager
 - `src/js/*.js`: application code, concatenated in file-name order into one inline script
 
 ```sh
-python3 scripts/build.py   # writes site/index.html, site/en/index.html and DocDiff.html
+python3 scripts/build.py   # writes site/index.html, site/en/index.html, DocDiff.html and DocDiff_简体中文.html
 node scripts/check.mjs     # invariants and tests
 ```
 
-`scripts/check.mjs` verifies the Content Security Policy, the absence of external URLs and storage APIs, matching German and English strings, the search metadata of both language pages (title, canonical, hreflang, JSON-LD that matches the visible FAQ, sitemap, `llms.txt`), and runs the unit tests for the diff core (`scripts/test-core.mjs`) and the export builders (`scripts/test-export.mjs`). CI runs the same and also checks that the committed bundle is up to date.
+`scripts/check.mjs` verifies the Content Security Policy, the absence of external URLs and storage APIs, matching German, English and Chinese strings and translation placeholders, the search metadata of both language pages (title, canonical, hreflang, JSON-LD that matches the visible FAQ, sitemap, `llms.txt`), and runs the unit tests for the diff core (`scripts/test-core.mjs`) and the export builders (`scripts/test-export.mjs`). CI runs the same and also checks that the committed bundle is up to date.
 
 Bundled libraries: [PDF.js](https://github.com/mozilla/pdf.js), [Mammoth.js](https://github.com/mwilliamson/mammoth.js), [jsdiff](https://github.com/kpdecker/jsdiff), and the [Geist](https://vercel.com/font) fonts. Versions and licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 

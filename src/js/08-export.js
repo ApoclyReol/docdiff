@@ -56,7 +56,7 @@ function buildExportBaseName(leftName, rightName) {
   while (common < left.length && common < right.length && left[common] === right[common]) common++;
   const boundary = Math.max(left.lastIndexOf('_', common - 1), left.lastIndexOf('-', common - 1));
   const leftShort = boundary >= 2 ? left.slice(boundary + 1) : left;
-  return `${right}_vs_${leftShort || left}`;
+  return `${right}_${state.lang === 'zh-CN' ? '对照' : 'vs'}_${leftShort || left}`;
 }
 
 function buildExportFileName(suffixKey, ext) {
@@ -149,7 +149,7 @@ function formatExportCountsLine(c) {
 
 function formatExportDate(date) {
   try {
-    return date.toLocaleString(state.lang === 'de' ? 'de-DE' : 'en-GB', {
+    return date.toLocaleString(state.lang === 'zh-CN' ? 'zh-CN' : state.lang === 'de' ? 'de-DE' : 'en-GB', {
       dateStyle: 'long',
       timeStyle: 'short',
     });
@@ -449,7 +449,7 @@ ${items
     "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
   return `<!DOCTYPE html>
-<html lang="${state.lang === 'de' ? 'de' : 'en'}">
+<html lang="${state.lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -771,7 +771,7 @@ function buildFinalPrintHtml() {
       return `<p class="pvf-p"${indent}>${escapeHtml(text)}</p>`;
     })
     .join('');
-  return `<main class="pv-final" lang="${state.lang === 'de' ? 'de' : 'en'}">${html}</main>`;
+  return `<main class="pv-final" lang="${state.lang}">${html}</main>`;
 }
 
 /** Blocks of the new version as it stands now, without running headers and footers. */

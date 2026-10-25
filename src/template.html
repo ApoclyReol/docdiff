@@ -471,15 +471,15 @@ __APP_CSS__
           <span class="list-progress" id="list-progress"></span>
           <label class="sr-only" for="list-filter" data-i18n="listFilterLabel">Änderungen filtern</label>
           <select class="list-filter-select" id="list-filter">
-            <option value="all">Alle</option>
+            <option value="all" data-i18n="filterAll">Alle</option>
             <optgroup id="lf-group-status" label="Prüfstand">
-              <option value="open">Offen</option>
-              <option value="reviewed">Geprüft</option>
+              <option value="open" data-i18n="filterOpen">Offen</option>
+              <option value="reviewed" data-i18n="filterReviewed">Geprüft</option>
             </optgroup>
             <optgroup id="lf-group-kind" label="Art">
-              <option value="modified">Geändert</option>
-              <option value="inserted">Hinzugefügt</option>
-              <option value="deleted">Entfernt</option>
+              <option value="modified" data-i18n="filterMod">Geändert</option>
+              <option value="inserted" data-i18n="filterIns">Hinzugefügt</option>
+              <option value="deleted" data-i18n="filterDel">Entfernt</option>
             </optgroup>
           </select>
         </div>
@@ -571,7 +571,7 @@ __APP_CSS__
     </div>
     <div class="dialog-body-single" id="i18n-privacy-body"></div>
     <div class="dialog-footer">
-      <button type="button" class="btn btn-primary" id="btn-ok-privacy">OK</button>
+      <button type="button" class="btn btn-primary" id="btn-ok-privacy" data-i18n="sessionOk">OK</button>
     </div>
   </dialog>
 

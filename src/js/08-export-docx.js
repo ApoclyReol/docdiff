@@ -303,7 +303,7 @@ function buildDocxStylesXml(langTag) {
 
 /** Returns the list of files that make up the .docx package. */
 function buildDocxPackageFiles(rows, meta) {
-  const langTag = meta.lang === 'de' ? 'de-DE' : 'en-US';
+  const langTag = meta.lang === 'zh-CN' ? 'zh-CN' : meta.lang === 'de' ? 'de-DE' : 'en-US';
   const created = toWordDate(meta.date);
   const hasComment = Boolean(meta.comment && meta.comment.length);
   const files = [

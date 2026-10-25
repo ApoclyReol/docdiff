@@ -135,12 +135,13 @@ function applyTranslationsToStaticDom() {
   applyDataI18n();
   const btnLang = document.getElementById('btn-lang');
   // Named by the language it switches to, in that language.
-  const target = state.lang === 'de' ? 'en' : 'de';
-  btnLang.textContent = t('langTarget');
+  const target = state.lang === 'zh-CN' ? 'en' : state.lang === 'en' ? 'de' : 'zh-CN';
+  const targetLabel = target === 'zh-CN' ? '简体中文' : target === 'en' ? 'English' : 'Deutsch';
+  btnLang.textContent = targetLabel;
   btnLang.setAttribute('lang', target);
   setTooltip(btnLang, t('langTitle'));
   const menuLang = document.querySelector('#menu-lang [data-i18n="langMenu"]');
-  if (menuLang) menuLang.setAttribute('lang', target);
+  if (menuLang) { menuLang.setAttribute('lang', target); menuLang.textContent = targetLabel; }
   setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
   setTooltip(document.getElementById('btn-prev'), t('prevTitle'), t('prevLabel'));
   setTooltip(document.getElementById('btn-next'), t('nextTitle'), t('nextLabel'));

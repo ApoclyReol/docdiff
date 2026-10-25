@@ -82,7 +82,8 @@
       "license": "https://github.com/tschnorpfeil/docdiff/blob/main/LICENSE",
       "inLanguage": [
         "de",
-        "en"
+        "en",
+        "zh-CN"
       ],
       "featureList": [
         "Kein Upload",
@@ -3749,7 +3750,7 @@ body.list-open .toast-region {
         <span data-i18n="helpBtn">Hilfe</span>
       </button>
       <!-- Landing page only -->
-      <button type="button" class="btn btn-ghost landing-only" id="btn-lang">English</button>
+      <button type="button" class="btn btn-ghost landing-only" id="btn-lang">简体中文</button>
       <button type="button" class="btn btn-icon btn-ghost landing-only" id="btn-theme">
         <svg class="icon" id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
       </button>
@@ -3855,7 +3856,7 @@ body.list-open .toast-region {
           <div class="menu-sep" role="separator"></div>
           <button type="button" class="menu-item phone-only" role="menuitem" id="menu-view"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg><span data-i18n="viewMenu">Ansicht</span></button>
           <button type="button" class="menu-item phone-only" role="menuitem" id="menu-help"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-i18n="helpMenu">Hilfe &amp; Tastenkürzel</span></button>
-          <button type="button" class="menu-item" role="menuitem" id="menu-lang"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg><span data-i18n="langMenu">English</span></button>
+          <button type="button" class="menu-item" role="menuitem" id="menu-lang"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg><span data-i18n="langMenu">简体中文</span></button>
           <button type="button" class="menu-item" role="menuitem" id="btn-privacy-info"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-i18n="footerPrivacy">Impressum &amp; Datenschutz</span></button>
           <a class="menu-item" role="menuitem" href="https://github.com/tschnorpfeil/docdiff" target="_blank" rel="noopener noreferrer"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span data-i18n="githubMenu">Quellcode auf GitHub</span></a>
         </div>
@@ -4047,15 +4048,15 @@ body.list-open .toast-region {
           <span class="list-progress" id="list-progress"></span>
           <label class="sr-only" for="list-filter" data-i18n="listFilterLabel">Änderungen filtern</label>
           <select class="list-filter-select" id="list-filter">
-            <option value="all">Alle</option>
+            <option value="all" data-i18n="filterAll">Alle</option>
             <optgroup id="lf-group-status" label="Prüfstand">
-              <option value="open">Offen</option>
-              <option value="reviewed">Geprüft</option>
+              <option value="open" data-i18n="filterOpen">Offen</option>
+              <option value="reviewed" data-i18n="filterReviewed">Geprüft</option>
             </optgroup>
-            <optgroup id="lf-group-kind" label="Art">
-              <option value="modified">Geändert</option>
-              <option value="inserted">Hinzugefügt</option>
-              <option value="deleted">Entfernt</option>
+            <optgroup id="lf-group-kind" label="Art der Änderung">
+              <option value="modified" data-i18n="filterMod">Geändert</option>
+              <option value="inserted" data-i18n="filterIns">Hinzugefügt</option>
+              <option value="deleted" data-i18n="filterDel">Entfernt</option>
             </optgroup>
           </select>
         </div>
@@ -4147,7 +4148,7 @@ body.list-open .toast-region {
     </div>
     <div class="dialog-body-single" id="i18n-privacy-body"></div>
     <div class="dialog-footer">
-      <button type="button" class="btn btn-primary" id="btn-ok-privacy">OK</button>
+      <button type="button" class="btn btn-primary" id="btn-ok-privacy" data-i18n="sessionOk">OK</button>
     </div>
   </dialog>
 
@@ -4333,10 +4334,10 @@ const I18N = {
     redoLabel: 'Wiederherstellen',
     helpMenu: 'Hilfe & Tastenkürzel',
     helpBtn: 'Hilfe',
-    langMenu: 'English',
-    langTarget: 'English',
+    langMenu: '简体中文',
+    langTarget: '简体中文',
     moreFormats: 'Weitere Formate',
-    langTitle: 'Sprache wechseln (Deutsch / English)',
+    langTitle: 'Sprache wechseln (Deutsch / English / 简体中文)',
     kbdCtrl: 'Strg',
     kbdShift: 'Umschalt',
 
@@ -4744,7 +4745,7 @@ const I18N = {
     langMenu: 'Deutsch',
     langTarget: 'Deutsch',
     moreFormats: 'More formats',
-    langTitle: 'Switch language (Deutsch / English)',
+    langTitle: 'Switch language (Deutsch / English / 简体中文)',
     kbdCtrl: 'Ctrl',
     kbdShift: 'Shift',
 
@@ -5066,6 +5067,343 @@ const I18N = {
     githubMenu: 'Source code on GitHub',
     footerLicense: 'MIT licence',
   },
+  "zh-CN": {
+    "filesTitle": "文档",
+    "filesBtnLabel": "文档：{left} → {right}。替换、交换或查看文件信息",
+    "replaceLeft": "替换旧版本…",
+    "replaceShort": "替换…",
+    "removeShort": "移除",
+    "replaceRight": "替换新版本…",
+    "swapBtn": "交换新旧版本",
+    "colLeft": "旧版本",
+    "colRight": "新版本",
+    "paneUnifiedLabel": "新旧版本对照",
+    "noFileLeft": "尚未载入旧版本",
+    "noFileRight": "尚未载入新版本",
+    "metaPages": "{n} 页",
+    "metaPagesOne": "1 页",
+    "metaParas": "{n} 段",
+    "metaParasOne": "1 段",
+    "demoLabel": "示例",
+    "dockLabel": "逐项查看修订",
+    "prevLabel": "上一处修订",
+    "nextLabel": "下一处修订",
+    "prevTitle": "上一处修订（K）",
+    "nextTitle": "下一处待审阅修订（J）",
+    "stepPos": "{i} / {n}",
+    "mobStepLabel": "第 {i} / {n} 处修订。打开修订列表",
+    "searchLabel": "在文档中查找",
+    "searchTitle": "在文档中查找（/ 或 {mod}+F）",
+    "searchPlaceholder": "在文档中查找",
+    "searchPrev": "上一个匹配项（Shift+Enter）",
+    "searchNext": "下一个匹配项（Enter）",
+    "searchClose": "关闭查找（Esc）",
+    "searchCount": "{i} / {n}",
+    "searchNone": "未找到匹配项",
+    "viewMenu": "视图",
+    "viewLayoutLabel": "布局",
+    "modeSplit": "并排对照",
+    "modeInline": "行内对照",
+    "pageBreaks": "显示分页",
+    "onlyChanges": "仅显示修订",
+    "hfFilterBtn": "隐藏页眉和页脚",
+    "hfHiddenCount": "已隐藏 {n} 项",
+    "sidebarToggle": "修订列表",
+    "themeLabel": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "themeTitle": "切换浅色或深色主题",
+    "mobList": "列表",
+    "listBtnLabel": "修订列表（{n} 处修订）",
+    "exportBtn": "导出",
+    "expWord": "带修订标记的 Word（.docx）",
+    "expHtml": "网页报告（.html）",
+    "expMd": "Markdown 报告（.md）",
+    "expCopy": "复制新版本文本",
+    "expTxt": "最终版本文本文件（.txt）",
+    "expSecFinal": "最终版本",
+    "expSecFinalDesc": "应用审阅决定后的新版本，不含标记",
+    "expSecFinalOpen": "应用审阅决定后的新版本；{n} 处待审阅修订将按接受处理",
+    "expSecFinalOpenOne": "应用审阅决定后的新版本；1 处待审阅修订将按接受处理",
+    "expSecCompare": "对照版本",
+    "expSecCompareDesc": "旧 → 新，保留全部标记，便于审阅或分享",
+    "expWordFinal": "Word（.docx）",
+    "expWordFinalDescOriginal": "保留文件“{name}”的原有格式",
+    "expWordFinalDescNew": "重新排版，保留标题和编号",
+    "expPdfFinal": "PDF",
+    "expPdfFinalDesc": "无修订标记；请在打印对话框中选择“另存为 PDF”",
+    "expCopyDesc": "用于邮件或其他应用的纯文本",
+    "expWordDesc": "可在 Word 中接受或拒绝待审阅修订",
+    "expWordDescOriginal": "保留“{name}”的格式；可在 Word 中接受或拒绝待审阅修订",
+    "expPdfSplit": "PDF 并排对照",
+    "expPdfSplitDesc": "横向页面，新旧版本分两栏显示",
+    "expPdfInline": "PDF 行内对照",
+    "expPdfInlineDesc": "纵向页面，在正文中标记修订",
+    "moreLabel": "更多操作",
+    "clearBtn": "新建对照",
+    "textBtn": "粘贴或编辑文本",
+    "sessionSave": "保存工作进度…",
+    "sessionOpen": "打开工作进度…",
+    "undoLabel": "撤销",
+    "redoLabel": "重做",
+    "helpMenu": "帮助与快捷键",
+    "helpBtn": "帮助",
+    "langMenu": "English",
+    "langTarget": "English",
+    "moreFormats": "更多格式",
+    "langTitle": "切换语言（简体中文 / English / Deutsch）",
+    "kbdCtrl": "Ctrl",
+    "kbdShift": "Shift",
+    "toastWord": "Word 文件已保存：{name}",
+    "toastWordOriginal": "Word 文件已按原有格式保存：{name}",
+    "noticeWordFallback": "已保存：{name}。无法可靠保留此文件的原有格式（例如脚注或文本框中存在修订），因此已重新排版为 Word 文件；文本完整保留。",
+    "toastHtml": "报告已保存：{name}",
+    "toastMd": "Markdown 报告已保存：{name}",
+    "toastTxt": "文本文件已保存：{name}",
+    "toastSession": "工作进度已保存：{name}",
+    "toastCopied": "已复制新版本文本",
+    "toastEdited": "段落已修改",
+    "toastEditedReopened": "段落已修改，此处修订已重新设为待审阅",
+    "toastUndo": "撤销",
+    "toastUndone": "已撤销",
+    "toastRedone": "已重做",
+    "copyFailed": "当前无法复制到剪贴板。请在“更多格式”中选择“最终版本文本文件（.txt）”。",
+    "announceCompared": "对照完成：共 {n} 处修订。按 J 和 K 可在修订之间切换。",
+    "announceComparedOne": "对照完成：共 1 处修订。",
+    "announceIdentical": "对照完成：文本没有差异。",
+    "announceStep": "第 {i} / {n} 处修订：{ref}，{type}{status}",
+    "announceAcceptedNext": "已接受，转到第 {j} / {n} 处修订",
+    "announceRejectedNext": "已拒绝，转到第 {j} / {n} 处修订",
+    "announceAcceptedDone": "已接受第 {i} / {n} 处修订，没有待审阅修订",
+    "announceRejectedDone": "已拒绝第 {i} / {n} 处修订，没有待审阅修订",
+    "announceReopened": "第 {i} / {n} 处修订已重新设为待审阅",
+    "announceSearch": "第 {i} / {n} 个匹配项",
+    "compareHeading": "文档对照：{left} 与 {right}",
+    "compareBusy": "正在对照文档…",
+    "listTitle": "{n} 处修订",
+    "listTitleOne": "1 处修订",
+    "listProgress": "已审阅 {k} / {n} 处",
+    "filterAll": "全部",
+    "filterOpen": "待审阅",
+    "filterReviewed": "已审阅",
+    "filterMod": "修改",
+    "filterIns": "新增",
+    "filterDel": "删除",
+    "stepPosFiltered": "{label}：{i} / {n}",
+    "stepLabel_open": "待审阅",
+    "stepLabel_reviewed": "已审阅",
+    "stepLabel_modified": "修改",
+    "stepLabel_inserted": "新增",
+    "stepLabel_deleted": "删除",
+    "listTitleFiltered": "{k} / {n} 处修订",
+    "listFilterLabel": "筛选修订",
+    "filterGroupStatus": "审阅状态",
+    "filterGroupKind": "修订类型",
+    "mobDone": "完成",
+    "noMatchesTitle": "当前筛选条件下没有修订",
+    "noMatchesDesc": "选择“全部”，并取消“待审阅”或“已审阅”筛选，即可查看所有修订。",
+    "identicalTitle": "文档内容相同",
+    "identicalDesc": "新旧版本之间没有文本差异。",
+    "typeMod": "修改",
+    "typeIns": "新增",
+    "typeDel": "删除",
+    "typeMoved": "移动",
+    "typeHf": "页眉/页脚",
+    "statMod": "修改",
+    "statIns": "新增",
+    "statDel": "删除",
+    "statusOpen": "待审阅",
+    "statusAccepted": "已接受",
+    "statusRejected": "已拒绝",
+    "movedFromHere": "移动：原位置",
+    "movedToHere": "移动：新位置",
+    "moreDeltas": "处其他修订",
+    "moreDeltasOne": "处其他修订",
+    "pageLabel": "页",
+    "pageShort": "页",
+    "pageOf": "/",
+    "hfGroup": "页眉/页脚",
+    "acceptBtn": "接受",
+    "rejectBtn": "拒绝",
+    "editBtn": "编辑",
+    "reopenBtn": "撤销审阅",
+    "acceptTitle": "接受（A）",
+    "rejectTitle": "拒绝（R）",
+    "editTitle": "编辑（E）",
+    "reopenTitle": "撤销此处修订的审阅决定",
+    "rejectedInsNote": "已拒绝，已移除下方新增段落",
+    "cardRemoved": "删除：",
+    "cardAdded": "新增：",
+    "paragraphShort": "段落",
+    "hfMergedRef": "页眉/页脚：{n} 页上出现相同修订",
+    "reviewBarLabel": "第 {i} / {n} 处修订",
+    "paraActionsLabel": "段落",
+    "acceptedNote": "已接受",
+    "rejectedNote": "已拒绝，已恢复旧版本文字",
+    "editorHintText": "Enter = 应用 · Esc = 取消",
+    "editorSave": "应用",
+    "editorCancel": "取消",
+    "helpTitle": "帮助与快捷键",
+    "helpSampleBtn": "查看示例",
+    "helpOkBtn": "知道了",
+    "shortcutsToggle": "启用单键快捷键（J、K、A、R、/）",
+    "footerPrivacy": "法律声明与隐私",
+    "privacyTitle": "法律声明与隐私",
+    "close": "关闭",
+    "cancel": "取消",
+    "compare": "开始对照",
+    "modalPasteTitle": "粘贴或编辑文本",
+    "modalLeftLabel": "旧版本",
+    "modalRightLabel": "新版本",
+    "modalLeftPh": "在此粘贴旧版本文本…",
+    "modalRightPh": "在此粘贴新版本文本…",
+    "manualLeft": "粘贴的文本（旧版本）",
+    "manualRight": "粘贴的文本（新版本）",
+    "sessionDiscardTitle": "放弃尚未保存的工作？",
+    "sessionDiscardBody": "您已审阅修订或编辑段落，但尚未保存或导出这些工作。放弃后，这些内容将丢失。",
+    "sessionDiscardConfirm": "放弃",
+    "sessionSaveContinue": "保存工作进度",
+    "sessionErrorTitle": "无法打开工作进度",
+    "sessionErrorInvalid": "此文件不是有效的 Doc Diff 工作进度文件（.docdiff），或文件已损坏。未更改任何内容。",
+    "sessionErrorTooLarge": "文件过大（最大 50 MB）。未更改任何内容。",
+    "sessionErrorVersion": "此工作进度由较新版本的 Doc Diff 保存，当前版本无法打开。未更改任何内容。",
+    "sessionNothingTitle": "没有可保存的内容",
+    "sessionNothingBody": "请先载入文档，再保存工作进度。",
+    "sessionOk": "确定",
+    "readingFile": "正在读取",
+    "readError": "文件读取失败",
+    "noticeClose": "关闭提示",
+    "errUnsupportedType": "不支持此文件格式。请使用 PDF、Word（.docx）、HTML 或纯文本（.txt、.md）。",
+    "errLegacyDoc": "不支持旧版 Word 文件（.doc）。请在 Word 中另存为 .docx 后重新载入。",
+    "errRtf": "不支持 RTF 文件。请另存为 .docx 或 .txt 后重新载入。",
+    "errNotText": "文件不是可读取的 UTF-8 文本。请使用 PDF、Word（.docx）或 UTF-8 文本文件。",
+    "errEmptyFile": "文件中没有文本。请选择包含文本的文件；扫描件请先进行文字识别（OCR）。",
+    "errScannedPdf": "此 PDF 是不含文本的扫描件。请先通过文字识别（OCR）将其转换为可搜索的 PDF。",
+    "errScannedPdfFile": "“{name}”是不含文本的扫描件。请先通过文字识别（OCR）将其转换为可搜索的 PDF。",
+    "warnPdfPagesWithoutText": "提示：以下页面没有文本层（扫描件或图片），无法进行对照：",
+    "errDocxEmpty": "Word 文档中未找到文本。",
+    "errPdfPassword": "此 PDF 受密码保护。请移除密码保护（例如重新保存或打印为无密码版本），然后重新载入。",
+    "errPdfCorrupt": "此 PDF 已损坏或不完整，无法读取。",
+    "errDocxCorrupt": "此 Word 文档已损坏、不完整或不是有效的 .docx，无法读取。",
+    "warnTextLegacyEncoding": "提示：此文本文件并非 UTF-8 编码，已按 Windows-1252（西欧）编码读取。请检查变音字母和特殊字符。",
+    "warnDocxTrackedChanges": "提示：此 Word 文档包含修订标记。对照时按接受全部修订后的版本读取，不包含已删除的文本。",
+    "errImage": "不支持图片文件，因为未内置文字识别（OCR）。请使用带文本层的 PDF、Word（.docx）或文本。",
+    "dropLeft": "将旧版本拖放到此处",
+    "dropRight": "将新版本拖放到此处",
+    "exportFallbackLeft": "旧版本",
+    "exportFallbackRight": "新版本",
+    "exportTitleFmt": "文档对照：{left} → {right}",
+    "exportVs": "与",
+    "exportCountsFmt": "共 {total} 处修订（修改 {mod} 处，新增 {ins} 处，删除 {del} 处）",
+    "exportCountsFmtOne": "共 1 处修订（修改 {mod} 处，新增 {ins} 处，删除 {del} 处）",
+    "exportReviewFmt": "已审阅 {k} / {n} 处（接受 {a} 处，拒绝 {r} 处）",
+    "exportLabelOriginal": "旧版本",
+    "exportLabelRevised": "新版本",
+    "exportLabelCreated": "生成时间",
+    "exportLabelChanges": "修订",
+    "exportLabelReview": "审阅状态",
+    "exportLabelScope": "范围",
+    "exportLabelHf": "页眉/页脚",
+    "exportLabelDetail": "说明",
+    "exportScopeFull": "完整文档",
+    "exportScopeChanges": "仅修订内容（已启用“仅显示修订”筛选，省略未修改的段落）",
+    "exportHfIgnored": "隐藏未修改项；已修改项列为修订",
+    "exportHfIgnoredCount": "已隐藏 {n} 行未修改内容；已修改项列为修订",
+    "exportHfIncluded": "全部参与对照",
+    "exportSummaryHeading": "摘要",
+    "exportCountTotal": "修订总数",
+    "exportChangesHeading": "修订列表",
+    "exportChangeListCaption": "列出所有修订的位置和审阅状态。点击位置可跳转到正文对应处。",
+    "exportColRef": "位置",
+    "exportColType": "类型",
+    "exportColStatus": "状态",
+    "exportColChange": "修订内容",
+    "exportRedlineHeading": "带修订标记的文本（旧 → 新版本）",
+    "exportLegendLabel": "图例",
+    "exportLegendIns": "新增",
+    "exportLegendDel": "删除",
+    "exportRejectedNote": "已拒绝，保留旧版本文字",
+    "exportNoChanges": "未发现差异：两个版本的内容相同。",
+    "exportFooterNote": "由 Doc Diff 生成。所有内容均在浏览器本地处理，未上传任何数据。",
+    "a11yRemovedStart": "[删除：",
+    "a11yRemovedEnd": "]",
+    "a11yAddedStart": "[新增：",
+    "a11yAddedEnd": "]",
+    "docxSubject": "带修订标记的文档对照",
+    "docxSubjectFinal": "最终版本",
+    "docxHfHeading": "已修改的页眉/页脚（不在正文中）：",
+    "docxNote": "待审阅修订已记录为修订标记（作者为“Doc Diff”）；已接受的修订已应用，已拒绝的修订已还原。在 Word 的“审阅”选项卡中，可逐项或批量接受、拒绝修订。此批注可以删除。",
+    "exportFileFinal": "最终版本",
+    "exportFileRedline": "对照版本",
+    "exportFileReport": "对照报告",
+    "sampleLeftName": "示例合同_v1_修订前.docx",
+    "sampleRightName": "示例合同_v2_修订后.docx",
+    "lpLoaded": "已载入",
+    "lpChangeFile": "选择其他文件",
+    "pasteText": "粘贴文本",
+    "loadSample": "查看示例",
+    "heroTitle": "<del class=\"hero-del\" aria-hidden=\"true\" data-word=\"费力\"></del><ins class=\"hero-ins\">轻松</ins>对照文档。",
+    "heroSub": "逐词标记每一处修订。文件始终保留在您的设备上。",
+    "trustLine": "无需上传 · 支持离线 · 免费开源（MIT） · 无跟踪",
+    "slotLeftTitle": "旧版本",
+    "slotRightTitle": "新版本",
+    "slotHint": "PDF、Word（.docx）或文本",
+    "slotChoose": "选择文件",
+    "slotDrag": " · 也可拖放文件到此处",
+    "slotClearLeft": "移除旧版本",
+    "slotClearRight": "移除新版本",
+    "howTitle": "使用方法",
+    "landingMore": "了解更多",
+    "how1Title": "选择两个版本",
+    "how1Text": "支持 PDF、Word 文件或粘贴的文本。文件仅在当前浏览器标签页中读取。",
+    "how2Title": "逐项审阅修订",
+    "how2Text": "删除内容以红色删除线显示，新增内容以绿色标记。您可以接受或拒绝每一处修订。",
+    "how3Title": "按需保存结果",
+    "how3Text": "可保存为无标记的最终版本（保留原有格式的 Word 或 PDF），或带修订标记的对照版本。",
+    "localTitle": "文档始终由您掌握",
+    "localIntro": "在线对照服务通常将文件上传至服务器。Doc Diff 在您的浏览器中读取和对照文档，不会将文档发送到本项目或任何第三方的服务器。这有助于处理保密合同并保护数据隐私（GDPR）。",
+    "local1Title": "无需上传",
+    "local1Text": "浏览器通过内容安全策略（CSP）阻止页面发起网络连接。文件仅存在于当前标签页的内存中。",
+    "local2Title": "支持离线",
+    "local2Text": "整个应用只有一个 HTML 文件。保存到本地后，即使断网也能继续使用。",
+    "local3Title": "不留存，不分享",
+    "local3Text": "无需账号，无 Cookie、跟踪或浏览器持久存储。关闭标签页后，内存中的内容即被清除。",
+    "local4Title": "可自行核查",
+    "local4Text": "源代码按 MIT 许可证开放。打开浏览器开发者工具的“网络”面板，可检查对照时是否发出请求。",
+    "scopeTitle": "功能与限制",
+    "scopeCanTitle": "支持",
+    "scopeCan1": "对照带文本层的 PDF、Word 文件（.docx）和纯文本；也支持混合格式，例如 PDF 与 Word 对照",
+    "scopeCan2": "逐词显示修订，包括数字、日期和金额的变化",
+    "scopeCan3": "按原文显示分页，自动隐藏重复的页眉和页脚",
+    "scopeCan4": "以单个 HTML 文件离线运行",
+    "scopeCannotTitle": "不支持",
+    "scopeCannot1": "读取扫描版 PDF；未内置文字识别（OCR）",
+    "scopeCannot2": "打开旧版 Word 文件（.doc）；请先另存为 .docx",
+    "scopeCannot3": "比较格式；粗体、斜体、表格布局和图片不参与对照，仅比较文本",
+    "scopeCan5": "将移动的段落标记为“移动”",
+    "faqTitle": "常见问题",
+    "faqUploadQ": "如何检查文件没有被上传？",
+    "faqOfflineQ": "能否离线使用 Doc Diff？",
+    "faqWhoQ": "谁开发了这个工具？源代码在哪里？",
+    "faqScanQ": "能否对照扫描版 PDF？",
+    "faqWordQ": "能否在 Word 中继续处理修订？",
+    "metaTitle": "Doc Diff 简体中文版 — 本地对照 PDF、Word 和文本，无需上传",
+    "otherPageHint": "本页也提供简体中文版本 →",
+    "metaDescription": "对照 PDF、Word 或文本的两个版本，逐词标记修订。在浏览器本地运行，无需上传，支持离线，免费开源。",
+    "ogImageAlt": "Doc Diff：并排显示合同的两个版本，以红色删除线标记删除内容，以绿色标记新增内容。",
+    "footerSource": "GitHub 源代码",
+    "githubMenu": "GitHub 源代码",
+    "footerLicense": "MIT 许可证",
+    "helpBodyHtml": "\n<section class=\"help-sec\"><h3>阅读对照</h3><p>左侧为旧版本，右侧为新版本。<del class=\"tok-del\">删除线</del>表示删除，<ins class=\"tok-ins\">绿色</ins>表示新增，<span class=\"legend-swatch\" aria-hidden=\"true\"></span>琥珀色边缘表示该段落有修改。两个版本之间的细条（堆叠视图中位于文本旁）显示修订在文档中的分布；点击即可跳转。</p></section>\n<section class=\"help-sec\"><h3>审阅修订</h3><p><strong>接受</strong>保留新版本文字，<strong>拒绝</strong>恢复该段落的旧版本文字。当前段落右上角提供 <strong>✓</strong>（接受）、<strong>✗</strong>（拒绝）和 <strong>✎</strong>（编辑）。接受或拒绝后，此处修订会标记为已审阅，并转到下一处待审阅修订。已审阅段落右侧显示 ✓ 或 ✗；点击下方箭头（<strong>撤销审阅</strong>）可撤回决定。</p></section>\n<section class=\"help-sec\"><h3>导出结果</h3><p><strong>最终版本</strong>：应用所有审阅决定和编辑后的新版本，不含修订标记；可导出为 Word（新版本为 Word 文件时保留原有格式）、PDF 或文本。尚未审阅的修订将按接受处理。<strong>对照版本</strong>：带标记的旧 → 新对照；可导出为带修订标记的 Word（已接受项已应用，已拒绝项已还原，待审阅项可继续接受或拒绝），或并排、行内对照的 PDF。</p></section>\n<section class=\"help-sec\"><h3>键盘快捷键</h3><table class=\"help-keys\"><tbody>\n<tr><th scope=\"row\"><kbd>J</kbd> / <kbd>K</kbd></th><td>下一处 / 上一处待审阅修订</td></tr>\n<tr><th scope=\"row\"><kbd>A</kbd></th><td>接受修订</td></tr><tr><th scope=\"row\"><kbd>R</kbd></th><td>拒绝修订</td></tr><tr><th scope=\"row\"><kbd>E</kbd></th><td>编辑段落</td></tr>\n<tr><th scope=\"row\"><kbd>Enter</kbd></th><td>在列表中跳转到修订位置</td></tr><tr><th scope=\"row\"><kbd>/</kbd> 或 <kbd>{mod}+F</kbd></th><td>在文档中查找</td></tr>\n<tr><th scope=\"row\"><kbd>{mod}+Z</kbd></th><td>撤销</td></tr><tr><th scope=\"row\"><kbd>{redo}</kbd></th><td>重做</td></tr><tr><th scope=\"row\"><kbd>Esc</kbd></th><td>关闭菜单、查找栏或对话框</td></tr>\n</tbody></table><p class=\"help-note\">单键快捷键仅在文档或修订列表获得焦点时生效；输入文字时不会触发。</p></section>\n<section class=\"help-sec\"><h3>您的数据</h3><p>页面通过安全策略阻止浏览器发起网络连接；文件仅在当前标签页内读取，关闭后即被清除。<strong>⋯</strong> 菜单中的<strong>保存工作进度…</strong>会将两个版本和审阅进度保存为 <code>.docdiff</code> 文件；请像保管原始文档一样妥善保管。</p></section>",
+    "privacyBodyHtml": "<p><strong>法律声明（德国《数字服务法》§ 5 DDG）：</strong><br/>Tobias Schnorpfeil · Im Palert 5 · 56253 Treis-Karden, Germany · <a href=\"mailto:tschnorpfeil@gmail.com\">tschnorpfeil@gmail.com</a></p>\n<p><strong>隐私：</strong><br/>所有文件和文本均仅在浏览器内存中本地处理。文档不会上传，不设置 Cookie，也不使用分析追踪。本地打开本 HTML 文件无需联网。如访问 <code>docdiff.app</code> 网站，GitHub Pages（GitHub, Inc.，美国）和 Cloudflare DNS 会处理常规连接元数据（IP 地址、时间戳、用户代理），依据为 GDPR 第 6(1)(f) 条。</p>\n<p><a href=\"https://docdiff.app/impressum.html\">原项目法律声明</a> · <a href=\"https://docdiff.app/datenschutz.html\">原项目隐私政策</a> · <a href=\"https://github.com/tschnorpfeil/docdiff\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a></p>",
+    "faqUploadA": "<p>页面包含内容安全策略（CSP），浏览器据此阻止页面发起网络连接。文件仅载入当前标签页内存，关闭标签页后即被清除。</p><p>您可以打开浏览器开发者工具（F12），切换到“网络”面板后载入文档，检查是否发出请求。也可以断开网络，再打开本 HTML 文件验证离线功能。</p>",
+    "faqOfflineA": "<p>可以。当前简体中文版已包含所有组件。请将 <code>DocDiff_简体中文.html</code> 保存在本地，双击后使用浏览器打开，无需安装，也无需联网。原项目的 <a href=\"https://github.com/tschnorpfeil/docdiff/raw/main/DocDiff.html\" rel=\"noopener noreferrer\">DocDiff.html</a> 可从 GitHub 获取。</p>",
+    "faqWhoA": "<p>Doc Diff 是 Tobias Schnorpfeil 开发的个人开源项目，没有公司、广告或数据收集。完整源代码按 MIT 许可证发布于 <a href=\"https://github.com/tschnorpfeil/docdiff\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a>，可自行审查、构建或部署。本文件为基于原版制作的简体中文本地化版本。</p>",
+    "faqScanA": "<p>不能。Doc Diff 仅读取带文本层的 PDF，即可以选择和复制文字的 PDF。扫描件是页面图片，而本工具未内置文字识别（OCR），因此会提示无法读取。请先使用 OCR 软件将扫描件转换为可搜索的 PDF。</p>",
+    "faqWordA": "<p>可以。“带修订标记的 Word”会生成 .docx 文件，将尚未审阅的差异保留为修订标记。您可在 Word 或 LibreOffice 中逐项接受或拒绝。若新版本是 Word 文件，导出时会保留其格式，包括样式、编号、表格和图片。若输入为 PDF 或文本，则重新排版生成 Word 文档。也支持导出不含标记的最终版本 Word 文件。</p>"
+  },
+
 };
 
 const SAMPLES = {
@@ -5343,6 +5681,143 @@ Between Apex Construction Partners Ltd., 114 Fleet Street, London (hereinafter r
   },
 };
 
+SAMPLES['zh-CN'] = {
+  v1: `=== [SEITE 1] ===
+[[HF]] 软件与工程服务框架协议 · 初稿 v1.0（2026年3月12日）· 第 1 / 3 页
+
+软件与工程服务框架协议
+
+甲方：Apex 建设项目有限公司，伦敦 Fleet Street 114 号（以下简称“委托方”）；乙方：Alpha 系统工程有限公司，旧金山 Market Street 35 号（以下简称“承包方”）。
+
+## 1. 服务范围
+
+(1) 承包方应根据2026年3月12日的工作说明书（附件 A），完成云端成本估算平台的交付、配置和文档编制，并提供可直接投入使用的完整系统。
+
+### 1.1 平台核心模块与交付成果
+
+• 模块 A：工程量计算与结构化工程量清单导入（GAEB DA XML 3.3）
+• 模块 B：基准成本计算、单位成本明细与间接费用加成
+• 模块 C：标准报告与 PDF 报价对比导出
+
+(2) 委托方后续提出的变更请求须以书面形式提交；超出基准工作量5.0%的部分，按约定日费率另行计费。
+
+(3) 承包方须仅使用其自有的长期全职工程人员提供全部服务。
+
+[[HF]] 保密 · Apex 建设有限公司 / Alpha 系统有限公司 · 第 1 / 3 页
+=== [SEITE 2] ===
+[[HF]] 软件与工程服务框架协议 · 初稿 v1.0（2026年3月12日）· 第 2 / 3 页
+
+## 2. 费用、基准成本计算与付款条件
+
+(1) 对于第1条规定的服务，双方约定固定总价为145,000.00欧元（不含税），另加法定增值税。
+
+### 2.1 成本计算依据与间接费用加成
+
+(2) 开工前，承包方应提交密封的基准成本计算文件，披露所有直接单位成本，以及12.0%的间接费用加成和6.0%的利润率。
+
+(3) 阶段发票应在收到后14个自然日内全额支付。如在7个自然日内付款，可享受2.0%的提前付款折扣。
+
+## 3. 交付进度与延期违约金
+
+(1) 整个平台最迟应于2026年9月30日正式上线。
+
+(2) 如承包方未能在约定完工日期完成，每延误一个完整自然周，应支付不含税合同价0.5%的违约金，累计不超过合同总价的5.0%。
+
+[[HF]] 保密 · Apex 建设有限公司 / Alpha 系统有限公司 · 第 2 / 3 页
+=== [SEITE 3] ===
+[[HF]] 软件与工程服务框架协议 · 初稿 v1.0（2026年3月12日）· 第 3 / 3 页
+
+## 4. 质保与责任限制
+
+(1) 缺陷质保期为委托方书面最终验收之日起24个月。
+
+(2) 因轻微过失违反重要合同义务的，赔偿责任限于可预见的通常损失，每次事件最高为500,000.00欧元。
+
+(3) 对于轻微过失造成的利润损失或间接后果性损失，不承担赔偿责任。
+
+## 5. 保密与数据保护
+
+(1) 双方应对合作中获知的全部保密信息与商业秘密承担无期限的保密义务。
+
+(2) 个人数据仅可依照数据处理补充协议（附件 B）在欧盟境内的服务器上处理。
+
+## 6. 终止与适用法律
+
+(1) 任一方可提前3个月书面通知，在自然季度末无因终止本协议。
+
+(2) 本协议适用德意志联邦共和国法律。因本协议产生的争议由柏林法院专属管辖。
+
+[[HF]] 保密 · Apex 建设有限公司 / Alpha 系统有限公司 · 第 3 / 3 页`,
+  v2: `=== [SEITE 1] ===
+[[HF]] 软件与工程服务框架协议 · 修订稿 v2.0（2026年4月18日）· 第 1 / 4 页
+
+软件与工程服务框架协议
+
+甲方：Apex 建设项目有限公司，伦敦 Fleet Street 114 号（以下简称“委托方”）；乙方：Alpha 系统工程有限公司，旧金山 Market Street 35 号（以下简称“承包方”）。
+
+## 1. 服务范围
+
+(1) 承包方应根据2026年4月18日更新的工作说明书（附件 A），完成云端成本估算平台的交付、配置、用户培训和文档编制，并提供可直接投入使用的完整系统。
+
+### 1.1 平台核心模块与交付成果
+
+• 模块 A：工程量计算与结构化工程量清单导入（GAEB DA XML 3.3 与 BIM-IFC）
+• 模块 B：基准成本计算、单位成本明细与间接费用加成
+• 模块 C：实时变更订单管理、报价对比与自动目标/实际偏差分析
+
+(2) 委托方后续提出的变更请求可以文本形式提交；超出基准工作量10.0%的部分，按约定日费率另行计费。
+
+(3) 经委托方事先书面同意，承包方有权聘用欧盟境内具备资质的分包商。
+
+[[HF]] 保密 · Apex 建设有限公司 / Alpha 系统有限公司 · 第 1 / 4 页
+=== [SEITE 2] ===
+[[HF]] 软件与工程服务框架协议 · 修订稿 v2.0（2026年4月18日）· 第 2 / 4 页
+
+## 2. 费用、基准成本计算与付款条件
+
+(1) 对于第1条规定的服务，双方约定固定总价为168,500.00欧元（不含税），另加法定增值税。
+
+### 2.1 成本计算依据与间接费用加成
+
+(2) 开工前，承包方应提交密封的基准成本计算文件，披露所有直接单位成本，以及14.5%的间接费用加成和7.5%的利润率。
+
+(3) 阶段发票应在收到后30个自然日内全额支付。不提供提前付款折扣。
+
+(4) 新增：价格调整条款——如合同期限延长超过12个月，任一方均可要求依据消费者价格指数调整日费率。
+
+## 3. 交付进度与延期违约金
+
+(1) 整个平台最迟应于2026年11月15日正式上线。
+
+(2) 如因承包方过错未能在约定完工日期完成，每延误一个完整自然周，应支付不含税合同价0.3%的违约金，累计不超过合同总价的3.0%。
+
+[[HF]] 保密 · Apex 建设有限公司 / Alpha 系统有限公司 · 第 2 / 4 页
+=== [SEITE 3] ===
+[[HF]] 软件与工程服务框架协议 · 修订稿 v2.0（2026年4月18日）· 第 3 / 4 页
+
+## 4. 质保与责任限制
+
+(1) 缺陷质保期为委托方书面最终验收之日起12个月。
+
+(2) 因轻微过失违反重要合同义务的，赔偿责任限于可预见的通常损失，每次事件最高为250,000.00欧元。
+
+## 5. 保密、人工智能训练与数据保护
+
+(1) 双方应对合作中获知的全部保密信息承担保密义务，期限为本协议终止后3年。
+
+(2) 个人数据仅可依照数据处理补充协议（附件 B）在欧盟境内的服务器上处理。
+
+(3) 新增：承包方可以使用匿名化的项目遥测数据和元数据，训练和改进其自有人工智能估算模型。
+
+## 6. 终止与适用法律
+
+(1) 任一方可提前6个月书面通知，在自然年末无因终止本协议。
+
+(2) 本协议适用德意志联邦共和国法律。因本协议产生的争议由慕尼黑法院专属管辖。
+
+[[HF]] 保密 · Apex 建设有限公司 / Alpha 系统有限公司 · 第 3 / 4 页`,
+};
+
 // The samples above are written in a readable notation ("=== [SEITE n] ===" page breaks,
 // "[[HF]]" header/footer lines). Convert it to the internal document encoding
 // (see DOC_PAGE_MARK / DOC_META_MARK in 04-core.js); user input never gets this treatment.
@@ -5356,13 +5831,12 @@ for (const lang of Object.keys(SAMPLES)) {
 
 // A page built for one language (/en/) says so with data-page-lang; otherwise follow the browser.
 const pageLang = typeof document !== 'undefined' ? document.documentElement.getAttribute('data-page-lang') : null;
-const initialLang = pageLang === 'en' || pageLang === 'de'
+const browserLanguage = typeof navigator !== 'undefined' ? (navigator.language || '').toLowerCase() : '';
+const initialLang = pageLang === 'en' || pageLang === 'de' || pageLang === 'zh-CN'
   ? pageLang
-  : typeof navigator !== 'undefined' &&
-  navigator.language &&
-  navigator.language.toLowerCase().startsWith('de')
-    ? 'de'
-    : 'en';
+  : browserLanguage.startsWith('zh')
+    ? 'zh-CN'
+    : browserLanguage.startsWith('de') ? 'de' : 'en';
 
 // Layout tiers: phone < 768 px ≤ tablet < 1200 px ≤ desktop.
 const PHONE_MAX = 767;
@@ -5501,12 +5975,13 @@ function applyTranslationsToStaticDom() {
   applyDataI18n();
   const btnLang = document.getElementById('btn-lang');
   // Named by the language it switches to, in that language.
-  const target = state.lang === 'de' ? 'en' : 'de';
-  btnLang.textContent = t('langTarget');
+  const target = state.lang === 'zh-CN' ? 'en' : state.lang === 'en' ? 'de' : 'zh-CN';
+  const targetLabel = target === 'zh-CN' ? '简体中文' : target === 'en' ? 'English' : 'Deutsch';
+  btnLang.textContent = targetLabel;
   btnLang.setAttribute('lang', target);
   setTooltip(btnLang, t('langTitle'));
   const menuLang = document.querySelector('#menu-lang [data-i18n="langMenu"]');
-  if (menuLang) menuLang.setAttribute('lang', target);
+  if (menuLang) { menuLang.setAttribute('lang', target); menuLang.textContent = targetLabel; }
   setTooltip(document.getElementById('btn-theme'), t('themeTitle'));
   setTooltip(document.getElementById('btn-prev'), t('prevTitle'), t('prevLabel'));
   setTooltip(document.getElementById('btn-next'), t('nextTitle'), t('nextLabel'));
@@ -10924,7 +11399,7 @@ function buildDocxStylesXml(langTag) {
 
 /** Returns the list of files that make up the .docx package. */
 function buildDocxPackageFiles(rows, meta) {
-  const langTag = meta.lang === 'de' ? 'de-DE' : 'en-US';
+  const langTag = meta.lang === 'zh-CN' ? 'zh-CN' : meta.lang === 'de' ? 'de-DE' : 'en-US';
   const created = toWordDate(meta.date);
   const hasComment = Boolean(meta.comment && meta.comment.length);
   const files = [
@@ -11120,7 +11595,7 @@ function buildExportBaseName(leftName, rightName) {
   while (common < left.length && common < right.length && left[common] === right[common]) common++;
   const boundary = Math.max(left.lastIndexOf('_', common - 1), left.lastIndexOf('-', common - 1));
   const leftShort = boundary >= 2 ? left.slice(boundary + 1) : left;
-  return `${right}_vs_${leftShort || left}`;
+  return `${right}_${state.lang === 'zh-CN' ? '对照' : 'vs'}_${leftShort || left}`;
 }
 
 function buildExportFileName(suffixKey, ext) {
@@ -11213,7 +11688,7 @@ function formatExportCountsLine(c) {
 
 function formatExportDate(date) {
   try {
-    return date.toLocaleString(state.lang === 'de' ? 'de-DE' : 'en-GB', {
+    return date.toLocaleString(state.lang === 'zh-CN' ? 'zh-CN' : state.lang === 'de' ? 'de-DE' : 'en-GB', {
       dateStyle: 'long',
       timeStyle: 'short',
     });
@@ -11513,7 +11988,7 @@ ${items
     "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
   return `<!DOCTYPE html>
-<html lang="${state.lang === 'de' ? 'de' : 'en'}">
+<html lang="${state.lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11835,7 +12310,7 @@ function buildFinalPrintHtml() {
       return `<p class="pvf-p"${indent}>${escapeHtml(text)}</p>`;
     })
     .join('');
-  return `<main class="pv-final" lang="${state.lang === 'de' ? 'de' : 'en'}">${html}</main>`;
+  return `<main class="pv-final" lang="${state.lang}">${html}</main>`;
 }
 
 /** Blocks of the new version as it stands now, without running headers and footers. */
@@ -12984,7 +13459,7 @@ class ImportError extends Error {
 
 function describeImportError(err) {
   if (err && err.messageKey) return `${t(err.messageKey)}${err.detail ? ` ${err.detail}` : ''}`;
-  return (err && err.message) || String(err);
+  return state.lang === 'zh-CN' ? '无法读取文件。请检查文件格式及内容是否完整。' : (err && err.message) || String(err);
 }
 
 // Accessible, bilingual notice region (role="alert") for import errors and warnings.
@@ -14367,7 +14842,7 @@ function clearComparison() {
 (function showOtherLanguagePageHint() {
   const hint = document.getElementById('lang-hint');
   const link = document.getElementById('lang-hint-link');
-  if (!hint || !link || !pageLang || !/^https?:$/.test(location.protocol)) return;
+  if (!hint || !link || !pageLang || pageLang === 'zh-CN' || !/^https?:$/.test(location.protocol)) return;
   const browserLang = (navigator.language || '').toLowerCase().startsWith('de') ? 'de' : 'en';
   if (browserLang === pageLang) return;
   link.textContent = I18N[browserLang].otherPageHint;
@@ -14379,7 +14854,7 @@ function clearComparison() {
 function toggleLanguage() {
   const langHint = document.getElementById('lang-hint');
   if (langHint) langHint.hidden = true;
-  state.lang = state.lang === 'de' ? 'en' : 'de';
+  state.lang = state.lang === 'zh-CN' ? 'en' : state.lang === 'en' ? 'de' : 'zh-CN';
   if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
     const sample = SAMPLES[state.lang] || SAMPLES.de;
     state.leftName = t('sampleLeftName');
@@ -14599,7 +15074,7 @@ toastEl.addEventListener('focusin', () => clearTimeout(toastTimer));
     // A scanned PDF and an image (also one renamed to .pdf) get the same message.
     if (m && (m[2] === t('errScannedPdf') || m[2] === t('errImage'))) message = formatMsg('errScannedPdfFile', { name: m[1] });
     // English text uses English quotation marks.
-    else if (m && state.lang === 'en') message = message.replace(`„${m[1]}“`, `“${m[1]}”`);
+    else if (m && (state.lang === 'en' || state.lang === 'zh-CN')) message = message.replace(`„${m[1]}“`, `“${m[1]}”`);
     const result = original.call(this, message, kind);
     placeImportNotice();
     return result;
@@ -15038,9 +15513,9 @@ function sanitizeSessionFileStem(name, fallback) {
 }
 
 function buildSessionFileName() {
-  const left = sanitizeSessionFileStem(state.leftName, 'Original');
-  const right = sanitizeSessionFileStem(state.rightName, 'Revised');
-  return `${left}_vs_${right}${SESSION_FILE_EXT}`;
+  const left = sanitizeSessionFileStem(state.leftName, state.lang === 'zh-CN' ? t('exportFallbackLeft') : 'Original');
+  const right = sanitizeSessionFileStem(state.rightName, state.lang === 'zh-CN' ? t('exportFallbackRight') : 'Revised');
+  return `${left}_${state.lang === 'zh-CN' ? '对照' : 'vs'}_${right}${SESSION_FILE_EXT}`;
 }
 
 function serializeReviewEntries(reviews) {

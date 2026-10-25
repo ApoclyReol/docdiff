@@ -138,8 +138,8 @@ assert.equal(api.buildExportBaseName('Same.pdf', 'same.PDF'), 'same');
 assert.ok(Array.from(api.buildExportBaseName('x'.repeat(300), 'y'.repeat(300))).length <= 130);
 checks += 10;
 
-/* ── Samples in both languages, with and without header/footer filter ─────── */
-for (const lang of ['de', 'en']) {
+/* ── Samples in all languages, with and without header/footer filter ─────── */
+for (const lang of ['de', 'en', 'zh-CN']) {
   for (const ignoreHeadersFooters of [true, false]) {
     state.lang = lang;
     state.leftName = api.t('sampleLeftName');
@@ -166,6 +166,7 @@ for (const lang of ['de', 'en']) {
       assert.ok(files.get(part).startsWith('<?xml'), `${label}: ${part} has XML declaration`);
     }
     const doc = files.get('word/document.xml');
+    if (lang === 'zh-CN') assert.ok(files.get('word/styles.xml').includes('w:val="zh-CN"'), 'Chinese Word language');
     assert.match(doc, /<w:ins w:id="\d+" w:author="Doc Diff" w:date="2026-10-22T12:00:00Z">/);
     assert.match(doc, /<w:del w:id="\d+" w:author="Doc Diff" w:date="2026-10-22T12:00:00Z">/);
     assert.match(doc, /<w:pStyle w:val="Heading2"\/>/);
@@ -316,7 +317,7 @@ checks += 2;
     [['accept', 'modified', 0], ['reject', 'modified', 1], ['accept', 'inserted', 0], ['reject', 'deleted', 0], ['accept', 'modified', 4], ['reject', 'inserted', 0], ['accept', 'modified', 2]],
     [['accept', 'deleted', 0], ['reject', 'modified', 3], ['accept', 'inserted', 0], ['reject', 'inserted', 0], ['accept', 'modified', 5], ['reject', 'modified', 0], ['accept', 'modified', 1]],
   ];
-  for (const [lang, plan] of [['de', plans[0]], ['en', plans[0]], ['de', plans[1]], ['en', plans[1]]]) {
+  for (const [lang, plan] of [['de', plans[0]], ['en', plans[0]], ['de', plans[1]], ['en', plans[1]], ['zh-CN', plans[0]], ['zh-CN', plans[1]]]) {
     state.lang = lang;
     const sample = api.SAMPLES[lang];
     vm.runInContext('state.reviews = {};', context);

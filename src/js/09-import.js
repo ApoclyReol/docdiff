@@ -11,7 +11,7 @@ class ImportError extends Error {
 
 function describeImportError(err) {
   if (err && err.messageKey) return `${t(err.messageKey)}${err.detail ? ` ${err.detail}` : ''}`;
-  return (err && err.message) || String(err);
+  return state.lang === 'zh-CN' ? '无法读取文件。请检查文件格式及内容是否完整。' : (err && err.message) || String(err);
 }
 
 // Accessible, bilingual notice region (role="alert") for import errors and warnings.

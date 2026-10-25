@@ -28,8 +28,8 @@ jobs:
         run: |
           python3 scripts/build.py
           node scripts/check.mjs
-          git diff --exit-code site DocDiff.html
-          test -z "$(git status --porcelain -- site DocDiff.html)" || { git status --short -- site DocDiff.html; echo "Commit the rebuilt files"; exit 1; }
+          git diff --exit-code site DocDiff.html DocDiff_简体中文.html
+          test -z "$(git status --porcelain -- site DocDiff.html DocDiff_简体中文.html)" || { git status --short -- site DocDiff.html DocDiff_简体中文.html; echo "Commit the rebuilt files"; exit 1; }
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

@@ -320,9 +320,9 @@ function sanitizeSessionFileStem(name, fallback) {
 }
 
 function buildSessionFileName() {
-  const left = sanitizeSessionFileStem(state.leftName, 'Original');
-  const right = sanitizeSessionFileStem(state.rightName, 'Revised');
-  return `${left}_vs_${right}${SESSION_FILE_EXT}`;
+  const left = sanitizeSessionFileStem(state.leftName, state.lang === 'zh-CN' ? t('exportFallbackLeft') : 'Original');
+  const right = sanitizeSessionFileStem(state.rightName, state.lang === 'zh-CN' ? t('exportFallbackRight') : 'Revised');
+  return `${left}_${state.lang === 'zh-CN' ? '对照' : 'vs'}_${right}${SESSION_FILE_EXT}`;
 }
 
 function serializeReviewEntries(reviews) {

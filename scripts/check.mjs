@@ -101,7 +101,7 @@ for (const forbiddenStorage of ['localStorage', 'sessionStorage', 'indexedDB', '
   );
 }
 
-// 4. Verify bilingual i18n parity (de vs en)
+// 4. Verify language parity and template placeholders
 const i18nSandbox = {};
 vm.runInNewContext(
   fs.readFileSync(path.join(jsDir, '01-i18n.js'), 'utf8') + '\nthis.I18N = I18N;',
@@ -112,12 +112,18 @@ assert.ok(I18N && I18N.de && I18N.en, 'Both de and en i18n dictionaries must exi
 
 const deKeys = Object.keys(I18N.de).sort();
 const enKeys = Object.keys(I18N.en).sort();
-for (const lang of ['de', 'en']) {
+for (const lang of ['de', 'en', 'zh-CN']) {
   for (const [key, value] of Object.entries(I18N[lang])) {
     assert.ok(typeof value === 'string' && value.trim(), `i18n ${lang}.${key} must be a non-empty string`);
   }
 }
 assert.deepEqual(deKeys, enKeys, 'German and English i18n keys must match 1:1');
+assert.deepEqual(deKeys, Object.keys(I18N['zh-CN']).sort(), 'Chinese i18n keys must match 1:1');
+for (const key of deKeys) {
+  const parameters = value => [...value.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
+  assert.deepEqual(parameters(I18N['zh-CN'][key]), parameters(I18N.en[key]), `Chinese placeholders: ${key}`);
+}
+await import('./check-zh.mjs');
 
 // The CSP quoted in the docs must match the one that actually ships
 const shippedCsp = siteHtml.match(/<meta http-equiv="Content-Security-Policy" content="([^"]*)"/)[1];

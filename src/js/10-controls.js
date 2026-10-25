@@ -553,7 +553,7 @@ function clearComparison() {
 (function showOtherLanguagePageHint() {
   const hint = document.getElementById('lang-hint');
   const link = document.getElementById('lang-hint-link');
-  if (!hint || !link || !pageLang || !/^https?:$/.test(location.protocol)) return;
+  if (!hint || !link || !pageLang || pageLang === 'zh-CN' || !/^https?:$/.test(location.protocol)) return;
   const browserLang = (navigator.language || '').toLowerCase().startsWith('de') ? 'de' : 'en';
   if (browserLang === pageLang) return;
   link.textContent = I18N[browserLang].otherPageHint;
@@ -565,7 +565,7 @@ function clearComparison() {
 function toggleLanguage() {
   const langHint = document.getElementById('lang-hint');
   if (langHint) langHint.hidden = true;
-  state.lang = state.lang === 'de' ? 'en' : 'de';
+  state.lang = state.lang === 'zh-CN' ? 'en' : state.lang === 'en' ? 'de' : 'zh-CN';
   if (state.leftFormat === 'DEMO' && state.rightFormat === 'DEMO') {
     const sample = SAMPLES[state.lang] || SAMPLES.de;
     state.leftName = t('sampleLeftName');
@@ -785,7 +785,7 @@ toastEl.addEventListener('focusin', () => clearTimeout(toastTimer));
     // A scanned PDF and an image (also one renamed to .pdf) get the same message.
     if (m && (m[2] === t('errScannedPdf') || m[2] === t('errImage'))) message = formatMsg('errScannedPdfFile', { name: m[1] });
     // English text uses English quotation marks.
-    else if (m && state.lang === 'en') message = message.replace(`„${m[1]}“`, `“${m[1]}”`);
+    else if (m && (state.lang === 'en' || state.lang === 'zh-CN')) message = message.replace(`„${m[1]}“`, `“${m[1]}”`);
     const result = original.call(this, message, kind);
     placeImportNotice();
     return result;
